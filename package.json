@@ -47,6 +47,7 @@
     "postcss": "^8.5.28",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
+    "sass-embedded": "^1.104.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
   }
