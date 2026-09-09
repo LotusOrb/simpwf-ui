@@ -1,5 +1,5 @@
 import { Image, Text } from "@mantine/core";
-import logo from "../../../../assets/Gemini_Generated_Image_cn474zcn474zcn47 (1).jpg";
+import logo from "../../../assets/logo.jpg";
 import classes from "./BrandMark.module.scss";
 
 interface BrandMarkProps {

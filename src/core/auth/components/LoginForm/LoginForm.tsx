@@ -29,7 +29,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ loading, onSubmit }) => {
           Welcome Back
         </Title>
         <Text c="dimmed" fz="sm" className={classes.subtitle}>
-          Enter your API key
+          Enter your credentials
         </Text>
 
         <Stack gap="md" className={classes.fields}>

@@ -1,6 +1,6 @@
 import { Anchor, Box, Container, Flex, Group, Stack, Text } from "@mantine/core";
 import type { LoginDto } from "../../dto";
-import { BrandMark } from "../BrandMark";
+import { BrandMark } from "../../../../common/component/BrandMark";
 import { LoginForm } from "../LoginForm";
 import { LoginHero } from "../LoginHero";
 import classes from "./LoginPage.module.scss";
