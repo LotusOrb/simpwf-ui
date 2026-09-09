@@ -1,6 +1,6 @@
 import { MantineProvider } from "@mantine/core";
 import { LoginPage } from "./core/auth";
-import { themeOverride } from "./common/theme/theme.override";
+import { themeOverride } from "./core/theme/theme.override";
 
 function App() {
   return (
