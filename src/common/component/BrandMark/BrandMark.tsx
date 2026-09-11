@@ -8,15 +8,18 @@ import classes from './BrandMark.module.scss';
 
 interface BrandMarkProps {
 	size?: number;
+	withName?: boolean;
 }
 
-export const BrandMark: React.FC<BrandMarkProps> = ({ size = 32 }) => {
+export const BrandMark: React.FC<BrandMarkProps> = ({ size = 32, withName = true }) => {
 	return (
 		<div className={classes.root}>
 			<Image src={logo} alt="simpwf" w={size} h={size} className={classes.logo} />
-			<Text fz={size * 0.62} className={classes.name}>
-				simpwf
-			</Text>
+			{withName && (
+				<Text fz={size * 0.62} className={classes.name}>
+					simpwf
+				</Text>
+			)}
 		</div>
 	);
 };

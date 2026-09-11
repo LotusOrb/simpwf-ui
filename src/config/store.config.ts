@@ -1,3 +1,3 @@
-import {configureStore} from '@reduxjs/toolkit'
+import { configureStore } from '@reduxjs/toolkit';
 
-export const configStore = configureStore({reducer:{}})
+export const configStore = configureStore({ reducer: {} });
