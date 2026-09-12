@@ -1,0 +1,33 @@
+.trigger {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 32px;
+	padding: 0 8px 0 4px;
+	border: 1px solid var(--mantine-color-gray-3);
+	border-radius: var(--mantine-radius-md);
+	color: var(--mantine-color-dark-7);
+	background-color: var(--mantine-color-white);
+	transition: background-color 120ms ease;
+
+	&:hover,
+	&[data-expanded] {
+		background-color: var(--mantine-color-gray-0);
+	}
+}
+
+.chevron {
+	color: var(--mantine-color-gray-6);
+	transition: transform 150ms ease;
+
+	.trigger[data-expanded] & {
+		transform: rotate(180deg);
+	}
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	gap: var(--mantine-spacing-sm);
+	padding: 8px 12px;
+}

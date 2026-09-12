@@ -1,0 +1,32 @@
+.engineStatus {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: var(--mantine-radius-xl);
+	white-space: nowrap;
+	font-size: var(--mantine-font-size-xs);
+	font-weight: 500;
+	color: var(--mantine-color-red-7);
+	background-color: var(--mantine-color-red-0);
+
+	&[data-connected] {
+		color: var(--mantine-color-green-7);
+		background-color: var(--mantine-color-green-0);
+	}
+}
+
+.engineDot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: currentColor;
+	box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.engineLabel {
+	@media (max-width: 48em) {
+		display: none;
+	}
+}

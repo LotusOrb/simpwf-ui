@@ -1,36 +1,34 @@
 import React from 'react';
 
-import { AppShell, Burger, Group } from '@mantine/core';
+import { AppShell } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { Outlet } from 'react-router';
 
+import { AppNavRail } from '../AppNavRail';
+import { AppTopBar } from '../AppTopBar';
+import classes from './MainLayout.module.scss';
 
 export const MainLayout: React.FC = () => {
-  const [opened, { toggle }] = useDisclosure();
+	const [opened, { toggle }] = useDisclosure();
 
-  return (
-    <AppShell
-      header={{ height: 60 }}
-      footer={{ height: 60 }}
-      navbar={{ width: 300, breakpoint: 'sm', collapsed: { mobile: !opened } }}
-      aside={{
-        width: 300,
-        breakpoint: 'md',
-        collapsed: { desktop: false, mobile: true },
-      }}
-      layout="alt"
-    >
-      <AppShell.Header>
-        <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-          Header
-        </Group>
-      </AppShell.Header>
-      <AppShell.Navbar p="md">Navbar</AppShell.Navbar>
-      <AppShell.Main>
-        <div style={{ height: 1024 * 10 }}>asd</div>
-      </AppShell.Main>
-      <AppShell.Aside p="md">Aside</AppShell.Aside>
-      <AppShell.Footer p="md">Footer</AppShell.Footer>
-    </AppShell>
-  );
+	return (
+		<AppShell
+			header={{ height: 52 }}
+			navbar={{ width: 64, breakpoint: 'sm', collapsed: { mobile: !opened } }}
+			padding={0}
+			classNames={{ root: classes.root, header: classes.header, navbar: classes.navbar, main: classes.main }}
+		>
+			<AppShell.Header>
+				<AppTopBar navOpened={opened} onToggleNav={toggle} />
+			</AppShell.Header>
+			<AppShell.Navbar>
+				<AppNavRail />
+			</AppShell.Navbar>
+			<AppShell.Main>
+				<div className={classes.surface}>
+					<Outlet />
+				</div>
+			</AppShell.Main>
+		</AppShell>
+	);
 };

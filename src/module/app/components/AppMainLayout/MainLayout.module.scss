@@ -1,0 +1,29 @@
+.root {
+	--app-shell-border-color: transparent;
+	min-height: 100dvh;
+	background-color: var(--mantine-color-white);
+}
+
+.header,
+.navbar {
+	background-color: var(--mantine-color-white);
+}
+
+.main {
+	display: flex;
+	height: 100dvh;
+}
+
+.surface {
+	flex: 1;
+	min-width: 0;
+	margin: 0 var(--mantine-spacing-sm) var(--mantine-spacing-sm) 0;
+	overflow: hidden;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-lg);
+	background-color: var(--mantine-color-white);
+
+	@media (max-width: 48em) {
+		margin-left: var(--mantine-spacing-sm);
+	}
+}
