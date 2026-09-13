@@ -1,0 +1,17 @@
+.root {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.value {
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 1.15;
+	font-variant-numeric: tabular-nums;
+	color: var(--mantine-color-dark-7);
+}
+
+.delta {
+	font-size: var(--mantine-font-size-xs);
+}

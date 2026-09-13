@@ -1,0 +1,25 @@
+.card {
+	&[data-status='failed'] {
+		border-color: var(--mantine-color-red-2);
+	}
+
+	&[data-status='running'] {
+		border-color: var(--mantine-color-brand-3);
+	}
+}
+
+.icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-sm);
+}
+
+.body {
+	flex: 1;
+	min-width: 0;
+}
