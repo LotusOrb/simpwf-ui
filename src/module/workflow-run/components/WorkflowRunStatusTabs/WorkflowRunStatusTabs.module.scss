@@ -1,0 +1,52 @@
+.root {
+	display: inline-flex;
+	gap: 4px;
+	padding: 4px;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+}
+
+.tab {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	height: 30px;
+	padding: 0 10px;
+	border-radius: var(--mantine-radius-sm);
+	font-size: var(--mantine-font-size-sm);
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--mantine-color-gray-7);
+
+	&:hover {
+		background-color: var(--mantine-color-gray-0);
+	}
+
+	&[data-active] {
+		color: var(--mantine-color-dark-7);
+		background-color: var(--mantine-color-gray-1);
+	}
+}
+
+.dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+}
+
+.count {
+	min-width: 20px;
+	padding: 0 6px;
+	border-radius: var(--mantine-radius-xl);
+	font-size: var(--mantine-font-size-xs);
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+	color: var(--mantine-color-gray-7);
+	background-color: var(--mantine-color-gray-1);
+
+	.tab[data-active] & {
+		color: var(--mantine-color-white);
+		background-color: var(--mantine-color-brand-6);
+	}
+}

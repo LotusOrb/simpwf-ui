@@ -1,0 +1,23 @@
+.root {
+	overflow: hidden;
+}
+
+.head {
+	background-color: var(--mantine-color-gray-0);
+
+	th {
+		font-size: var(--mantine-font-size-xs);
+		font-weight: 600;
+		color: var(--mantine-color-gray-7);
+		white-space: nowrap;
+	}
+}
+
+.numeric {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
