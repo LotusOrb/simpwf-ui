@@ -1,11 +1,16 @@
-import { MantineProvider } from "@mantine/core";
-import { LoginPage } from "./core/auth";
-import { themeOverride } from "./core/theme/theme.override";
+import React from 'react';
+
+import { MantineProvider } from '@mantine/core';
+import { RouterProvider } from 'react-router';
+
+import { routesConfig } from '@config/routes.config';
+
+import { themeOverride } from '@core/theme/theme.override';
 
 function App() {
   return (
     <MantineProvider theme={themeOverride}>
-      <LoginPage />
+      <RouterProvider router={routesConfig} />
     </MantineProvider>
   );
 }

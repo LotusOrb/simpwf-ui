@@ -1,17 +1,15 @@
-import { Axios } from "axios";
+import { Axios } from 'axios';
 
 class Http {
-  private instance: Axios;
-  
-  constructor() {
-    this.instance = new Axios({});
-  }
+	private instance: Axios;
 
-  private createHeader(){
+	constructor() {
+		this.instance = new Axios({});
+	}
 
-  }
+	private createHeader() {}
 
-  public request(){
-    // this.instance
-  }
+	public request() {
+		// this.instance
+	}
 }

@@ -1,0 +1,18 @@
+.root {
+	min-height: 100vh;
+	background-color: var(--mantine-color-white);
+}
+
+.panel {
+	min-height: 100%;
+}
+
+.formWrapper {
+	height: 100%;
+	align-items: center;
+}
+
+.form {
+	width: 100%;
+	padding-block: var(--mantine-spacing-xl);
+}

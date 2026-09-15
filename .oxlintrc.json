@@ -1,8 +1,40 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["react", "typescript", "oxc"],
+	"jsPlugins": ["eslint-plugin-unused-imports"],
+	"rules": {
+		"react/rules-of-hooks": "error",
+		"react/only-export-components": [
+			"warn",
+			{
+				"allowConstantExport": true
+			}
+		],
+		"no-restricted-imports": [
+			"error",
+			{
+				"patterns": [
+					{
+						"regex": "^(\\.\\./){3,}",
+						"message": "Relative imports may not go deeper than '../../'. Use a path alias (@config, @core, @common, @module, @assets) instead."
+					}
+				]
+			}
+		],
+		"no-unused-vars": "off",
+		"unused-imports/no-unused-imports": "error",
+		"unused-imports/no-unused-vars": [
+			"warn",
+			{
+				"vars": "all",
+				"args": "after-used",
+				"varsIgnorePattern": "^_",
+				"argsIgnorePattern": "^_",
+				"caughtErrorsIgnorePattern": "^_",
+				"destructuredArrayIgnorePattern": "^_",
+				"ignoreRestSiblings": true
+			}
+		],
+		"react/react-in-jsx-scope": "error"
+	}
 }

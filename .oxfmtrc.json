@@ -1,0 +1,30 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"tabWidth": 4,
+	"printWidth": 120,
+	"singleQuote": true,
+	"sortImports": {
+		"newlinesBetween": true,
+		"customGroups": [
+			{ "groupName": "react", "elementNamePattern": ["react", "react/**", "react-dom", "react-dom/**"] },
+			{ "groupName": "config", "elementNamePattern": ["@config", "@config/**"] },
+			{ "groupName": "core", "elementNamePattern": ["@core", "@core/**"] },
+			{ "groupName": "common", "elementNamePattern": ["@common", "@common/**"] },
+			{ "groupName": "module", "elementNamePattern": ["@module", "@module/**"] },
+			{ "groupName": "assets", "elementNamePattern": ["@assets", "@assets/**"] }
+		],
+		"groups": [
+			"react",
+			["builtin", "external"],
+			"config",
+			"core",
+			"common",
+			"module",
+			"assets",
+			["parent", "sibling", "index", "style"],
+			"unknown"
+		]
+	},
+	"ignorePatterns": ["package-lock.json"]
+}

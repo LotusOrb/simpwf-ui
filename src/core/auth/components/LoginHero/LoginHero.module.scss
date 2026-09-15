@@ -1,25 +1,25 @@
 .root {
-  height: 100%;
-  overflow: hidden;
-  background-image: linear-gradient(
-    160deg,
-    var(--mantine-color-indigo-6) 0%,
-    var(--mantine-color-indigo-7) 55%,
-    var(--mantine-color-indigo-8) 100%
-  );
+	height: 100%;
+	overflow: hidden;
+	background-image: linear-gradient(
+		160deg,
+		var(--mantine-color-indigo-6) 0%,
+		var(--mantine-color-indigo-7) 55%,
+		var(--mantine-color-indigo-8) 100%
+	);
 }
 
 .title {
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--mantine-color-white);
+	font-weight: 600;
+	line-height: 1.25;
+	color: var(--mantine-color-white);
 }
 
 .description {
-  color: var(--mantine-color-indigo-0);
-  margin-top: var(--mantine-spacing-md);
+	color: var(--mantine-color-indigo-0);
+	margin-top: var(--mantine-spacing-md);
 }
 
 .preview {
-  background-color: rgb(255 255 255 / 12%);
+	background-color: rgb(255 255 255 / 12%);
 }

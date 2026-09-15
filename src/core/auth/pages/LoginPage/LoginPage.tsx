@@ -1,31 +1,32 @@
-import { Anchor, Box, Container, Flex, Group, Stack, Text } from "@mantine/core";
-import type { LoginDto } from "../../dto";
-import { BrandMark } from "../../../../common/component/BrandMark";
-import { LoginForm } from "../LoginForm";
-import { LoginHero } from "../LoginHero";
-import classes from "./LoginPage.module.scss";
+import React from 'react';
+
+import { Anchor, Box, Container, Flex, Group, Stack, Text } from '@mantine/core';
+import { useNavigate } from 'react-router';
+
+import { LoginForm } from '@core/auth/components/LoginForm';
+import { LoginHero } from '@core/auth/components/LoginHero';
+import type { LoginDto } from '@core/auth/dto';
+
+import { BrandMark } from '@common/component/BrandMark';
+
+import classes from './LoginPage.module.scss';
 
 interface LoginPageProps {
   loading?: boolean;
   onSubmit?: (values: LoginDto) => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({
-  loading,
-  onSubmit,
-}) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ loading, onSubmit }) => {
+  const navigate = useNavigate();
   return (
-    <Flex p={{ base: "md", md: "lg" }} gap="lg" className={classes.root}>
+    <Flex p={{ base: 'md', md: 'lg' }} gap="lg" className={classes.root}>
       <Stack flex={1} gap="xl" className={classes.panel}>
         <BrandMark />
 
         <Container size={420} w="100%" flex={1} px={0}>
           <Flex className={classes.formWrapper}>
             <Box className={classes.form}>
-              <LoginForm
-                loading={loading}
-                onSubmit={onSubmit}
-              />
+              <LoginForm loading={loading} onSubmit={() => navigate('/app')} />
             </Box>
           </Flex>
         </Container>
