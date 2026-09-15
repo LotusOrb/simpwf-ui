@@ -1,0 +1,10 @@
+.select {
+	:global(.mantine-Select-input) {
+		font-weight: 500;
+		background-color: var(--mantine-color-white);
+	}
+
+	:global(.mantine-Select-input::placeholder) {
+		color: var(--mantine-color-gray-7);
+	}
+}

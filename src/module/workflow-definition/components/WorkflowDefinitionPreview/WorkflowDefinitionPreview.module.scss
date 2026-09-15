@@ -1,0 +1,21 @@
+.root {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.edge {
+	fill: none;
+	stroke: var(--mantine-color-gray-4);
+	stroke-width: 1;
+}
+
+.node {
+	fill: var(--mantine-color-white);
+	stroke: var(--mantine-color-gray-3);
+	stroke-width: 0.75;
+}
+
+.bar {
+	fill: var(--mantine-color-gray-3);
+}

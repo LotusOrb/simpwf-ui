@@ -1,0 +1,44 @@
+.root {
+	transition:
+		border-color 150ms ease,
+		box-shadow 150ms ease;
+
+	&:hover {
+		border-color: var(--mantine-color-brand-2);
+		box-shadow: var(--mantine-shadow-sm);
+	}
+}
+
+.preview {
+	position: relative;
+	height: 132px;
+	padding: var(--mantine-spacing-xs);
+	overflow: hidden;
+	border-radius: var(--mantine-radius-sm);
+	background-color: var(--mantine-color-gray-1);
+	background-image: radial-gradient(var(--mantine-color-gray-3) 1px, transparent 1px);
+	background-size: 12px 12px;
+}
+
+.complexity {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	box-shadow: var(--mantine-shadow-xs);
+}
+
+.body {
+	padding: var(--mantine-spacing-sm) 4px 2px;
+}
+
+.version {
+	flex-shrink: 0;
+}
+
+.meta {
+	font-size: var(--mantine-font-size-xs);
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
