@@ -1,11 +1,13 @@
-export type ComplexQueryParamFilter = Record<string, undefined | string | string[] | number | number[]>;
+import type { ComplexQueryParamFilter } from "./ComplexQueryParamFilter";
 
-export type ComplexQueryParam = {
+export type ComplexQueryParam<T extends string = string> = {
 	page?: number;
 	perPage?: number;
 	search?: string;
+	filter?: ComplexQueryParamFilter<T>;
 	order?: {
-		by: string;
-		direction: string;
+		by?: string;
+		direction?: string;
 	};
 };
+
