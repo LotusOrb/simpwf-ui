@@ -1,27 +1,33 @@
-import { Axios } from 'axios';
+import axios, { Axios } from 'axios';
 
 import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
 
 // TODO: Move to common type
-type HTTPMethod = 'get' | 'post' | 'put' | 'patch' | 'head';
+type HTTPMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete';
 // TODO: Move to common type
 type HTTPHeader = Record<string, string>;
 
+type HTTPResponse<T> = {
+	message: string;
+	data: T;
+	meta: ComplexQueryParam;
+};
+
 export class Http {
 	private instance: Axios;
+	private baseURL: string;
 	// TODO: should have it's own config instance
 	private config: Record<string, string> = {};
 
 	constructor(url: () => string | string) {
-		this.instance = new Axios({
-			baseURL: typeof url === 'function' ? url() : url,
-		});
+		this.baseURL = typeof url === 'function' ? url() : url;
+		this.instance = axios.create({ timeout: 3600 });
 	}
 
-	private createHeader(head: HTTPHeader): Headers {
+	private createHeader(head: HTTPHeader): Record<string, string> {
 		const h = new Headers();
 		Object.keys(head).map((ctx) => h.set(ctx, head[ctx]));
-		return h;
+		return Object.fromEntries(h.entries());
 	}
 
 	private praseComplexQueryPram(qParam?: ComplexQueryParam) {
@@ -40,11 +46,19 @@ export class Http {
 		if (qParam?.order?.by && qParam?.order?.direction) {
 			u.set('order', `${qParam.order.direction === 'asc' ? '-' : ''}${qParam.order.by}`);
 		}
+		const s: string = u.toString();
 
-    return u.toString()
+		return u ? `?${s}` : s;
 	}
 
 	public requestJSON(method: HTTPMethod, url: string, qParam?: ComplexQueryParam, body?: unknown) {
-		const h = this.createHeader({});
+		const h = this.createHeader({
+			'Content-Type': 'Application/json',
+		});
+		if (method === 'get' || method === 'delete' || method === 'head') {
+			return this.instance[method]('', { headers: h});
+		} else {
+			return this.instance[method](url, body);
+		}
 	}
 }
