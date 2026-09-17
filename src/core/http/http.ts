@@ -1,5 +1,6 @@
-import axios, { Axios, type AxiosResponse } from 'axios';
+import axios, { Axios, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
+import { HTTPError } from '@common/exception/HTTPError';
 import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
 import type { HTTPHeader } from '@common/types/HTTPHeader';
 import type { HTTPMethod } from '@common/types/HTTPMethod';
@@ -13,7 +14,7 @@ export class Http {
 
   constructor(url: string | (() => string)) {
     this.baseURL = typeof url === 'function' ? url() : url;
-    this.instance = axios.create({ timeout: 3600 });
+    this.instance = axios.create({ baseURL: this.baseURL, timeout: 3600 });
   }
 
   private createHeader(head: HTTPHeader): Record<string, string> {
@@ -22,24 +23,42 @@ export class Http {
     return Object.fromEntries(h.entries());
   }
 
-  private parseResponse<T>(res: AxiosResponse<T>, qParam: ComplexQueryParam): HTTPResponse<T> {
+  private parseResponse<T>(res: AxiosResponse<T>, qParam?: ComplexQueryParam): HTTPResponse<T> {
     return {
-      code: 200,
+      code: res.status,
       data: res.data,
-      explain: '',
-      message: '',
-      param: qParam,
+      explain: res.statusText,
+      message: res.statusText,
+      param: qParam ?? {},
     };
   }
 
-  public parseComplexQueryPram(qParam?: ComplexQueryParam) {
+  private parseError(err: unknown): HTTPError {
+    if (err instanceof HTTPError) {
+      return err;
+    }
+
+    if (axios.isAxiosError<Partial<HTTPResponse<string>>>(err)) {
+      const res = err.response;
+      return new HTTPError(
+        res?.status,
+        res?.data?.data,
+        res?.data?.explain ?? err.code,
+        res?.data?.message ?? err.message,
+      );
+    }
+
+    return new HTTPError(500, undefined, undefined, err instanceof Error ? err.message : undefined);
+  }
+
+   private parseComplexQueryPram(qParam?: ComplexQueryParam) {
     const u = new URLSearchParams();
 
-    if (qParam?.page) {
+    if (typeof qParam?.page !== 'undefined') {
       u.set('page', String(qParam.page));
     }
-    if (qParam?.page) {
-      u.set('page', String(qParam.perPage));
+    if (typeof qParam?.perPage !== 'undefined') {
+      u.set('perPage', String(qParam.perPage));
     }
     if (qParam?.search) {
       u.set('search', qParam.search);
@@ -62,17 +81,34 @@ export class Http {
 
     const s: string = u.toString();
 
-    return u ? `?${s}` : s;
+    return s ? `?${s}` : s;
   }
 
-  public requestJSON(method: HTTPMethod, url: string, qParam?: ComplexQueryParam, body?: unknown) {
+  public async requestJSON<T>(
+    method: HTTPMethod,
+    url: string,
+    qParam?: ComplexQueryParam,
+    body?: unknown,
+  ): Promise<HTTPResponse<T>> {
     const h = this.createHeader({
-      'Content-Type': 'Application/json',
+      'Content-Type': 'application/json',
     });
-    if (method === 'get' || method === 'delete' || method === 'head') {
-      return this.instance[method]('', { headers: h });
-    } else {
-      return this.instance[method](url, body);
+
+    const cfg: AxiosRequestConfig = {
+      method,
+      url: `${url}${this.parseComplexQueryPram(qParam)}`,
+      headers: h,
+    };
+
+    if (method !== 'get' && method !== 'delete' && method !== 'head') {
+      cfg.data = body;
+    }
+
+    try {
+      const res = await this.instance.request<T>(cfg);
+      return this.parseResponse<T>(res, qParam);
+    } catch (err) {
+      throw this.parseError(err);
     }
   }
 }
