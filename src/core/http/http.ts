@@ -14,7 +14,7 @@ export class Http {
 
   constructor(url: string | (() => string)) {
     this.baseURL = typeof url === 'function' ? url() : url;
-    this.instance = axios.create({ baseURL: this.baseURL, timeout: 3600 });
+    this.instance = axios.create({ baseURL: this.baseURL, timeout: 5000 });
   }
 
   private createHeader(head: HTTPHeader): Record<string, string> {
@@ -51,7 +51,7 @@ export class Http {
     return new HTTPError(500, undefined, undefined, err instanceof Error ? err.message : undefined);
   }
 
-   private parseComplexQueryPram(qParam?: ComplexQueryParam) {
+   private parseComplexQueryParam(qParam?: ComplexQueryParam) {
     const u = new URLSearchParams();
 
     if (typeof qParam?.page !== 'undefined') {
@@ -65,7 +65,7 @@ export class Http {
     }
 
     if (qParam?.order?.by && qParam?.order?.direction) {
-      u.set('order', `${qParam.order.direction === 'asc' ? '-' : ''}${qParam.order.by}`);
+      u.set('order', `${qParam.order.direction === 'desc' ? '-' : ''}${qParam.order.by}`);
     }
 
     if (qParam?.filter) {
@@ -96,7 +96,7 @@ export class Http {
 
     const cfg: AxiosRequestConfig = {
       method,
-      url: `${url}${this.parseComplexQueryPram(qParam)}`,
+      url: `${url}${this.parseComplexQueryParam(qParam)}`,
       headers: h,
     };
 
