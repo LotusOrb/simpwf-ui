@@ -1,4 +1,4 @@
-import axios, { Axios } from 'axios';
+import axios, { Axios, type AxiosResponse } from 'axios';
 
 import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
 
@@ -8,9 +8,11 @@ type HTTPMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete';
 type HTTPHeader = Record<string, string>;
 
 type HTTPResponse<T> = {
+	code: number;
 	message: string;
+	explain: string;
 	data: T;
-	meta: ComplexQueryParam;
+	param: ComplexQueryParam;
 };
 
 export class Http {
@@ -19,7 +21,7 @@ export class Http {
 	// TODO: should have it's own config instance
 	private config: Record<string, string> = {};
 
-	constructor(url: () => string | string) {
+	constructor(url: string | (() => string)) {
 		this.baseURL = typeof url === 'function' ? url() : url;
 		this.instance = axios.create({ timeout: 3600 });
 	}
@@ -30,7 +32,17 @@ export class Http {
 		return Object.fromEntries(h.entries());
 	}
 
-	private praseComplexQueryPram(qParam?: ComplexQueryParam) {
+	private parseResponse<T>(res: AxiosResponse<T>, qParam: ComplexQueryParam): HTTPResponse<T> {
+		return {
+			code: 200,
+			data: res.data,
+			explain: '',
+			message: '',
+			param: qParam,
+		};
+	}
+
+	public praseComplexQueryPram(qParam?: ComplexQueryParam) {
 		const u = new URLSearchParams();
 
 		if (qParam?.page) {
@@ -46,6 +58,18 @@ export class Http {
 		if (qParam?.order?.by && qParam?.order?.direction) {
 			u.set('order', `${qParam.order.direction === 'asc' ? '-' : ''}${qParam.order.by}`);
 		}
+
+		if (qParam?.filter) {
+			Object.entries(qParam?.filter).map(([k, v]) => {
+				if (Array.isArray(v?.value)) {
+					u.set(k, v?.value.join(','));
+				}
+				if (typeof v?.value !== 'undefined' && !Array.isArray(v.value)) {
+					u.set(k, v?.value?.toString());
+				}
+			});
+		}
+
 		const s: string = u.toString();
 
 		return u ? `?${s}` : s;
@@ -56,7 +80,7 @@ export class Http {
 			'Content-Type': 'Application/json',
 		});
 		if (method === 'get' || method === 'delete' || method === 'head') {
-			return this.instance[method]('', { headers: h});
+			return this.instance[method]('', { headers: h });
 		} else {
 			return this.instance[method](url, body);
 		}

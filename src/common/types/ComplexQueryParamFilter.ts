@@ -1,4 +1,3 @@
 export type ComplexQueryParamFilter<T extends string = string> = Partial<
-    Record<T, string | string[] | number | number[]>
+	Record<T, { op: string; value: string | string[] | number | number[] }>
 >;
-
