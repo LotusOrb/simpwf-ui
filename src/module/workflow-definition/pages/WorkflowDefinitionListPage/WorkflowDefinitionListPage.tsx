@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Button, Group, ScrollArea, SegmentedControl, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { LuCircleAlert, LuPlus, LuSearchX } from 'react-icons/lu';
+import { Link } from 'react-router';
 
-import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
+import { PaginationBar } from '@common/component/PaginationBar';
 import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
 
 import {
@@ -17,30 +18,28 @@ import { WorkflowDefinitionHero } from '@module/workflow-definition/components/W
 import { WorkflowDefinitionTable } from '@module/workflow-definition/components/WorkflowDefinitionTable';
 import { sortOrders } from '@module/workflow-definition/data';
 import {
+	SEARCH_URL_UPDATE,
 	useDeleteWorkflowDefinitionMutation,
 	useListWorkflowDefinitionsQuery,
+	useWorkflowDefinitionListParams,
+	type WorkflowDefinitionVersionScope,
 } from '@module/workflow-definition/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
 
 import classes from './WorkflowDefinitionListPage.module.scss';
 
-type VersionScope = 'latest' | 'all';
-
-const initialFilters: WorkflowDefinitionFilterValues = { sort: 'latest', startType: null, complexity: null };
-
 export const WorkflowDefinitionListPage: React.FC = () => {
-	const [scope, setScope] = useState<VersionScope>('latest');
 	const [view, setView] = useState<ViewMode>('card');
-	const [search, setSearch] = useState('');
+	const [params, setParams] = useWorkflowDefinitionListParams();
+	const { scope, search, sort, startType, complexity, page, perPage } = params;
 	const [debouncedSearch] = useDebouncedValue(search, 300);
-	const [filters, setFilters] = useState(initialFilters);
-	const [page, setPage] = useState(1);
-	const [perPage, setPerPage] = useState(PER_PAGE_OPTIONS[0]);
+	const filters: WorkflowDefinitionFilterValues = { sort, startType, complexity };
+	const setPage = (next: number) => setParams({ page: next });
 
 	const [pendingDelete, setPendingDelete] = useState<WorkflowDefinition | null>(null);
 
-	const { by, direction } = sortOrders[filters.sort];
+	const { by, direction } = sortOrders[sort];
 	const {
 		data: result,
 		isFetching,
@@ -53,8 +52,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		order: { by, direction },
 		filter: {
 			latest_only: { op: '_eq', value: String(scope === 'latest') },
-			...(filters.startType ? { start_type: { op: '_eq' as const, value: filters.startType } } : {}),
-			...(filters.complexity ? { complexity: { op: '_eq' as const, value: filters.complexity } } : {}),
+			...(startType ? { start_type: { op: '_eq' as const, value: startType } } : {}),
+			...(complexity ? { complexity: { op: '_eq' as const, value: complexity } } : {}),
 		},
 	});
 
@@ -74,19 +73,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		closeDelete();
 	};
 
-	const resetPage =
-		<T,>(setter: (value: T) => void) =>
-		(value: T) => {
-			setter(value);
-			setPage(1);
-		};
-
-	const hasActiveFilters = !!search || !!filters.startType || !!filters.complexity;
-	const clearFilters = () => {
-		setSearch('');
-		setFilters(initialFilters);
-		setPage(1);
-	};
+	const hasActiveFilters = !!search || !!startType || !!complexity;
+	const clearFilters = () => setParams({ search: null, sort: null, startType: null, complexity: null, page: null });
 
 	const renderResults = () => {
 		if (isError && !isFetching) {
@@ -165,7 +153,9 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 							Immutable, versioned blueprints your workflow instances run from
 						</Text>
 					</div>
-					<Button leftSection={<LuPlus size={16} />}>New definition</Button>
+					<Button component={Link} to="new" leftSection={<LuPlus size={16} />}>
+						New definition
+					</Button>
 				</Group>
 
 				<SegmentedControl
@@ -173,17 +163,20 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 					size="sm"
 					className={classes.scope}
 					value={scope}
-					onChange={(value) => resetPage(setScope)(value as VersionScope)}
+					onChange={(value) => setParams({ scope: value as WorkflowDefinitionVersionScope, page: null })}
 					data={[
 						{ label: 'Latest versions', value: 'latest' },
 						{ label: 'All versions', value: 'all' },
 					]}
 				/>
 
-				<WorkflowDefinitionHero search={search} onSearchChange={resetPage(setSearch)} />
+				<WorkflowDefinitionHero
+					search={search}
+					onSearchChange={(value) => setParams({ search: value, page: null }, SEARCH_URL_UPDATE)}
+				/>
 
 				<Group justify="space-between" gap="sm">
-					<WorkflowDefinitionFilters value={filters} onChange={resetPage(setFilters)} />
+					<WorkflowDefinitionFilters value={filters} onChange={(value) => setParams({ ...value, page: null })} />
 					<Group gap="sm">
 						{result && (
 							<Text fz="sm" c="dimmed">
@@ -203,7 +196,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 						total={result.total}
 						totalPages={result.total_pages}
 						onPageChange={setPage}
-						onPerPageChange={resetPage(setPerPage)}
+						onPerPageChange={(value) => setParams({ perPage: value, page: null })}
 					/>
 				)}
 			</Stack>

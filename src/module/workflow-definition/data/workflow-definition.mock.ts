@@ -58,7 +58,7 @@ const buildContent = (lineage: number, version: number, steps: StepSpec[], conte
 					name: step.fallback,
 					next_node: null,
 				};
-				node.on_failure = fallback.id;
+				node.on_failure = { next_node: fallback.id, output_property: `${node.id.slice(-4)}_error` };
 				nodes.push(fallback);
 			}
 

@@ -8,6 +8,12 @@ import { Link, useLocation } from 'react-router';
 import classes from './AppBreadcrumb.module.scss';
 
 const HOME_PATH = '/app';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const toLabel = (segment: string) => {
+	const decoded = decodeURIComponent(segment);
+	return UUID.test(decoded) ? `#${decoded.slice(-8)}` : startCase(decoded);
+};
 
 export const AppBreadcrumb: React.FC = () => {
 	const { pathname } = useLocation();
@@ -17,7 +23,7 @@ export const AppBreadcrumb: React.FC = () => {
 		.split('/')
 		.filter(Boolean)
 		.map((segment, index, all) => ({
-			label: startCase(decodeURIComponent(segment)),
+			label: toLabel(segment),
 			to: `${HOME_PATH}/${all.slice(0, index + 1).join('/')}`,
 		}));
 

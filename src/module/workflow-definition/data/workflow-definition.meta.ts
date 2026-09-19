@@ -8,14 +8,37 @@ import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/W
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
-export const nodeTypeMeta: Record<WorkflowDefinitionNodeType, { label: string; color: string; icon: IconType }> = {
-	input: { label: 'Input', color: 'teal', icon: LuLogIn },
-	script: { label: 'Script', color: 'blue', icon: LuCode },
-	conditions: { label: 'Conditions', color: 'orange', icon: LuSplit },
-	external_call: { label: 'External call', color: 'pink', icon: LuGlobe },
-	poller: { label: 'Poller', color: 'cyan', icon: LuRadar },
-	group: { label: 'Group', color: 'violet', icon: LuBoxes },
-	output: { label: 'Output', color: 'grape', icon: LuSend },
+export const nodeTypeMeta: Record<
+	WorkflowDefinitionNodeType,
+	{ label: string; color: string; icon: IconType; description: string }
+> = {
+	input: {
+		label: 'Input',
+		color: 'teal',
+		icon: LuLogIn,
+		description: 'Wait for a payload over HTTP, Redis or RabbitMQ',
+	},
+	script: {
+		label: 'Script',
+		color: 'blue',
+		icon: LuCode,
+		description: 'Run JavaScript against the workflow context',
+	},
+	conditions: { label: 'Conditions', color: 'orange', icon: LuSplit, description: 'Route to exactly one branch' },
+	external_call: {
+		label: 'External call',
+		color: 'pink',
+		icon: LuGlobe,
+		description: 'Call an HTTP endpoint or run a command',
+	},
+	poller: { label: 'Poller', color: 'cyan', icon: LuRadar, description: 'Repeat a check until a predicate matches' },
+	group: { label: 'Group', color: 'violet', icon: LuBoxes, description: 'Nested sub-graph with its own start' },
+	output: {
+		label: 'Output',
+		color: 'grape',
+		icon: LuSend,
+		description: 'Publish a context value to Redis or RabbitMQ',
+	},
 };
 
 export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowDefinitionNodeType[];
@@ -49,7 +72,7 @@ export const getComplexity = (content: WorkflowDefinitionContent): WorkflowDefin
 };
 
 const getTargets = (node: WorkflowDefinitionNode, content: WorkflowDefinitionContent): string[] => {
-	const targets = [node.next_node, node.on_failure];
+	const targets = [node.next_node, node.on_failure?.next_node];
 	for (const condition of node.conditions ?? []) {
 		if (condition.key) targets.push(content.keys?.[condition.key]);
 	}

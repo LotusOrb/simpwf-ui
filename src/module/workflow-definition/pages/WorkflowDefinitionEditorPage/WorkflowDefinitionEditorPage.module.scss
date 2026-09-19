@@ -1,0 +1,22 @@
+.root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	background-color: var(--mantine-color-gray-0);
+}
+
+.header {
+	padding: var(--mantine-spacing-md) var(--mantine-spacing-md) var(--mantine-spacing-sm);
+	border-bottom: 1px solid var(--mantine-color-gray-2);
+	background-color: var(--mantine-color-white);
+}
+
+.title {
+	flex: 1;
+	min-width: 0;
+}
+
+.canvas {
+	flex: 1;
+	min-height: 0;
+}

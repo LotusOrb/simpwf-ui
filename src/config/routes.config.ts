@@ -1,7 +1,12 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createElement } from 'react';
+
+import { NuqsAdapter } from 'nuqs/adapters/react-router/v8';
+import { createBrowserRouter, Navigate, Outlet } from 'react-router';
 
 import { authRoutes } from '@core/auth/auth.routes';
 import { RequireAuth } from '@core/auth/components/AuthGuard';
+
+import { NotFound } from '@common/component/NotFound';
 
 import { MainLayout } from '@module/app/components/AppMainLayout';
 import { dashboardRoutes } from '@module/dashboard/dashboard.routes';
@@ -10,25 +15,38 @@ import { workflowRunRoutes } from '@module/workflow-run/workflow-run.routes';
 
 export const routesConfig = createBrowserRouter([
 	{
-		path: '/',
-		Component: () => Navigate({ to: 'auth' }),
-	},
-	authRoutes,
-	{
-		path: 'app',
-		Component: RequireAuth,
+		Component: () => createElement(NuqsAdapter, null, createElement(Outlet)),
 		children: [
 			{
-				Component: MainLayout,
+				path: '/',
+				Component: () => Navigate({ to: 'auth' }),
+			},
+			authRoutes,
+			{
+				path: 'app',
+				Component: RequireAuth,
 				children: [
 					{
-						index: true,
-						Component: () => Navigate({ to: 'dashboard', replace: true }),
+						Component: MainLayout,
+						children: [
+							{
+								index: true,
+								Component: () => Navigate({ to: 'dashboard', replace: true }),
+							},
+							dashboardRoutes,
+							workflowDefinitionRoutes,
+							workflowRunRoutes,
+							{
+								path: '*',
+								Component: () => NotFound({ homePath: '/app/dashboard', fullHeight: false }),
+							},
+						],
 					},
-					dashboardRoutes,
-					workflowDefinitionRoutes,
-					workflowRunRoutes,
 				],
+			},
+			{
+				path: '*',
+				Component: NotFound,
 			},
 		],
 	},

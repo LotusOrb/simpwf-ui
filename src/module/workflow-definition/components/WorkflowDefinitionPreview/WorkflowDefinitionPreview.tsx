@@ -62,7 +62,7 @@ export const WorkflowDefinitionPreview: React.FC<WorkflowDefinitionPreviewProps>
 							cx={8}
 							cy={NODE_HEIGHT / 2}
 							r={3}
-							fill={`var(--mantine-color-${nodeTypeMeta[node.type].color}-6)`}
+							fill={`var(--mantine-color-${nodeTypeMeta[node.type]?.color ?? 'gray'}-6)`}
 						/>
 						<rect x={15} y={NODE_HEIGHT / 2 - 1.5} width={24} height={3} rx={1.5} className={classes.bar} />
 					</g>

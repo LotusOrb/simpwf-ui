@@ -56,7 +56,7 @@ export class Http {
 			u.set('page', String(qParam.page));
 		}
 		if (typeof qParam?.perPage !== 'undefined') {
-			u.set('perPage', String(qParam.perPage));
+			u.set('per_page', String(qParam.perPage));
 		}
 		if (qParam?.search) {
 			u.set('search', qParam.search);

@@ -3,6 +3,7 @@ import { API_TAG_LIST_ID, apiTagConfig } from '@config/apiTag.config';
 import { coreApi } from '@core/api';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import type { WorkflowDefinitionCreatePayload } from '@module/workflow-definition/types/WorkflowDefinitionCreatePayload';
 import type { WorkflowDefinitionList } from '@module/workflow-definition/types/WorkflowDefinitionList';
 import type { WorkflowDefinitionQuery } from '@module/workflow-definition/types/WorkflowDefinitionQuery';
 
@@ -23,7 +24,7 @@ export const workflowDefinitionApi = coreApi.injectEndpoints({
 			providesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowDefinition, id }],
 		}),
 
-		createWorkflowDefinition: build.mutation<WorkflowDefinition, Pick<WorkflowDefinition, 'name' | 'content'>>({
+		createWorkflowDefinition: build.mutation<WorkflowDefinition, WorkflowDefinitionCreatePayload>({
 			query: (body) => ({ method: 'post', url: RESOURCE, body }),
 			invalidatesTags: [{ type: apiTagConfig.workflowDefinition, id: API_TAG_LIST_ID }],
 		}),

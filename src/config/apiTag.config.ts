@@ -1,5 +1,6 @@
 export const apiTagConfig = {
 	workflowDefinition: 'WorkflowDefinition',
+	nodeDefinition: 'NodeDefinition',
 	workflowRun: 'WorkflowRun',
 } as const;
 

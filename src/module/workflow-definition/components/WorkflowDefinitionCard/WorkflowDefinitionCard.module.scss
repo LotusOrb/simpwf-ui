@@ -1,4 +1,5 @@
 .root {
+	position: relative;
 	transition:
 		border-color 150ms ease,
 		box-shadow 150ms ease;
@@ -7,11 +8,16 @@
 		border-color: var(--mantine-color-brand-2);
 		box-shadow: var(--mantine-shadow-sm);
 	}
+
+	&:has(.link:focus-visible) {
+		outline: 2px solid var(--mantine-primary-color-filled);
+		outline-offset: 2px;
+	}
 }
 
 .preview {
 	position: relative;
-	height: 132px;
+	height: 148px;
 	padding: var(--mantine-spacing-xs);
 	overflow: hidden;
 	border-radius: var(--mantine-radius-sm);
@@ -20,10 +26,29 @@
 	background-size: 12px 12px;
 }
 
+.badges {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	right: 42px;
+
+	& > * {
+		box-shadow: var(--mantine-shadow-xs);
+	}
+}
+
 .complexity {
+	position: absolute;
+	bottom: 8px;
+	left: 8px;
+	box-shadow: var(--mantine-shadow-xs);
+}
+
+.menu {
 	position: absolute;
 	top: 8px;
 	right: 8px;
+	z-index: 1;
 	box-shadow: var(--mantine-shadow-xs);
 }
 
@@ -31,14 +56,21 @@
 	padding: var(--mantine-spacing-sm) 4px 2px;
 }
 
-.version {
-	flex-shrink: 0;
+// Stretched link: the whole card navigates to the detail page.
+.link {
+	color: inherit;
+	text-decoration: none;
+	overflow-wrap: anywhere;
+	outline: none;
+
+	&::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
 }
 
-.meta {
-	font-size: var(--mantine-font-size-xs);
-	font-weight: 500;
-	letter-spacing: 0.02em;
-	text-transform: uppercase;
-	white-space: nowrap;
+.nodeType {
+	position: relative;
+	z-index: 1;
 }

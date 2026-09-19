@@ -1,0 +1,29 @@
+.frame {
+	position: relative;
+	overflow: hidden;
+	border: 1px solid var(--mantine-color-gray-3);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+
+	&:focus-within {
+		border-color: var(--mantine-primary-color-filled);
+	}
+
+	&[data-error] {
+		border-color: var(--mantine-color-error);
+	}
+}
+
+.expand {
+	position: absolute;
+	top: 4px;
+	right: 12px;
+	z-index: 1;
+	background-color: var(--mantine-color-white);
+}
+
+.fallback {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}

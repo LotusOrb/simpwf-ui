@@ -5,4 +5,5 @@ export interface WorkflowDefinitionContent {
 	context_mode?: 'full' | 'lean';
 	keys?: Record<string, string | null>;
 	nodes: WorkflowDefinitionNode[];
+	status_update?: Record<string, unknown>;
 }

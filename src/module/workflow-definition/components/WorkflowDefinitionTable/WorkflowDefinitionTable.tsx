@@ -1,9 +1,10 @@
 import React from 'react';
 
-import { ActionIcon, Badge, Button, Card, Group, Skeleton, Table, Text, ThemeIcon, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Card, Group, Menu, Skeleton, Table, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { LuTrash2 } from 'react-icons/lu';
+import { LuEllipsisVertical, LuTrash2 } from 'react-icons/lu';
+import { Link } from 'react-router';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
@@ -30,6 +31,7 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 					<Table.Thead className={classes.head}>
 						<Table.Tr>
 							<Table.Th>Name</Table.Th>
+							<Table.Th>Version</Table.Th>
 							<Table.Th>Trigger</Table.Th>
 							<Table.Th ta="right">Nodes</Table.Th>
 							<Table.Th>Node types</Table.Th>
@@ -42,7 +44,7 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 						{skeletonRows
 							? Array.from({ length: skeletonRows }, (_, index) => (
 									<Table.Tr key={index}>
-										{Array.from({ length: 7 }, (_, cell) => (
+										{Array.from({ length: 8 }, (_, cell) => (
 											<Table.Td key={cell}>
 												<Skeleton height={10} width={cell === 0 ? '70%' : '50%'} />
 											</Table.Td>
@@ -52,23 +54,31 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 							: definitions.map((definition) => {
 									const { content } = definition;
 									const startNode = getStartNode(content);
-									const StartIcon = startNode && nodeTypeMeta[startNode.type].icon;
+									const StartIcon = startNode && nodeTypeMeta[startNode.type]?.icon;
 									const complexity = complexityMeta[getComplexity(content)];
 
 									return (
-										<Table.Tr key={definition.id}>
+										<Table.Tr key={definition.id} className={classes.row}>
 											<Table.Td>
-												<Group gap={6} wrap="nowrap">
-													<Text fz="sm" fw={600} truncate maw={240} title={definition.name}>
-														{definition.name}
-													</Text>
-													<Badge size="xs" color="gray">
-														v{definition.version}
-													</Badge>
-												</Group>
+												<Text
+													component={Link}
+													to={definition.id}
+													display="block"
+													fz="sm"
+													fw={600}
+													truncate
+													maw={260}
+													title={definition.name}
+													className={classes.link}
+												>
+													{definition.name}
+												</Text>
 												<Text fz="xs" c="dimmed" ff="monospace" truncate maw={260}>
 													{definition.id}
 												</Text>
+											</Table.Td>
+											<Table.Td>
+												<Badge color="gray">v{definition.version}</Badge>
 											</Table.Td>
 											<Table.Td>
 												{startNode && StartIcon ? (
@@ -100,6 +110,7 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 																	variant="default"
 																	radius="sm"
 																	c={`${meta.color}.6`}
+																	className={classes.interactive}
 																>
 																	<meta.icon size={12} />
 																</ThemeIcon>
@@ -121,25 +132,30 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 												</Text>
 											</Table.Td>
 											<Table.Td ta="right">
-												<Group gap={4} justify="flex-end" wrap="nowrap">
-													<Button size="compact-xs" radius="xl" px="sm" variant="light">
-														View detail
-													</Button>
-													{onDelete && (
-														<Tooltip label="Delete">
+												{onDelete && (
+													<Menu position="bottom-end" shadow="md" withinPortal>
+														<Menu.Target>
 															<ActionIcon
-																size={22}
-																radius="xl"
+																size={26}
 																variant="subtle"
+																color="gray"
+																className={classes.interactive}
+																aria-label={`Actions for ${definition.name}`}
+															>
+																<LuEllipsisVertical size={14} />
+															</ActionIcon>
+														</Menu.Target>
+														<Menu.Dropdown>
+															<Menu.Item
 																color="red"
-																aria-label={`Delete ${definition.name}`}
+																leftSection={<LuTrash2 size={14} />}
 																onClick={() => onDelete(definition)}
 															>
-																<LuTrash2 size={13} />
-															</ActionIcon>
-														</Tooltip>
-													)}
-												</Group>
+																Delete
+															</Menu.Item>
+														</Menu.Dropdown>
+													</Menu>
+												)}
 											</Table.Td>
 										</Table.Tr>
 									);
