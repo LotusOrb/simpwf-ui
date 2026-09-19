@@ -39,7 +39,7 @@ export const openCoreStream = <TMessage>(options: CoreStreamOptions<TMessage>): 
 			new Promise<void>((resolve, reject) => {
 				if (closed) return resolve();
 
-				const url = buildUrl(value.APP_SIMPWF_URL, options as CoreStreamOptions<unknown>);
+				const url = buildUrl(value.SIMPWF_UI_API, options as CoreStreamOptions<unknown>);
 				socket = transport === 'ws' ? new WebSocket(url) : new EventSource(url);
 
 				socket.addEventListener('open', () => resolve());

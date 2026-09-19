@@ -1,6 +1,6 @@
 export type ConfigValue = {
-	APP_NAME: string;
-	APP_SIMPWF_URL: string;
+	SIMPWF_UI_NAME: string;
+	SIMPWF_UI_API: string;
 };
 
 export class Config {
@@ -9,8 +9,8 @@ export class Config {
 	private pending: Promise<void> | null = null;
 
 	private config: ConfigValue = {
-		APP_NAME: 'Simpwf-ui',
-		APP_SIMPWF_URL: 'http://localhost:9999',
+		SIMPWF_UI_NAME: '',
+		SIMPWF_UI_API: '',
 	};
 
 	public async fetchConfigFile() {
@@ -35,10 +35,8 @@ export class Config {
 
 			const value = (await res.json()) as Partial<ConfigValue>;
 			this.config = { ...this.config, ...value };
-		} catch (err) {
-			console.error('Config fallback to default value', err);
-		} finally {
 			this.isReady = true;
+		} finally {
 			this.pending = null;
 		}
 	}

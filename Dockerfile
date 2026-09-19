@@ -15,10 +15,29 @@ RUN npm run build
 
 FROM openresty/openresty:1.27.1.2-0-alpine AS runtime
 
-ENV APP_NAME="Simpwf-ui" \
-	APP_SIMPWF_URL="http://localhost:9999"
+ENV SIMPWF_UI_NAME="Simpwf-ui" \
+	SIMPWF_UI_API="http://localhost:9999"
 
 COPY <<'EOF' /etc/nginx/conf.d/default.conf
+init_by_lua_block {
+	local cjson = require "cjson.safe"
+	local config = {}
+
+	local fh = io.open("/proc/self/environ", "rb")
+	if fh then
+		local environ = fh:read("*a")
+		fh:close()
+		for entry in environ:gmatch("[^%z]+") do
+			local key, value = entry:match("^(SIMPWF_UI_[A-Za-z0-9_]*)=(.*)$")
+			if key then
+				config[key] = value
+			end
+		end
+	end
+
+	CONFIG_JSON = cjson.encode(config) or "{}"
+}
+
 server {
 	listen 80;
 	server_name _;
@@ -26,8 +45,11 @@ server {
 	index index.html;
 
 	location = /config.json {
+		default_type application/json;
 		add_header Cache-Control "no-store";
-		try_files $uri =404;
+		content_by_lua_block {
+			ngx.print(CONFIG_JSON)
+		}
 	}
 
 	location /assets/ {
@@ -43,35 +65,8 @@ server {
 }
 EOF
 
-COPY <<'EOF' /docker-entrypoint.sh
-#!/bin/sh
-# Renders every APP_* environment variable into the config.json the app fetches
-# at boot, so a single image can be pointed anywhere with `docker run -e APP_X=y`.
-set -eu
-
-target=/usr/local/openresty/nginx/html/config.json
-
-{
-	printf '{'
-	first=1
-	for key in $(env | sed -n 's/^\(APP_[A-Za-z0-9_]*\)=.*/\1/p' | sort); do
-		eval "value=\${$key}"
-		value=$(printf '%s' "$value" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
-		[ "$first" -eq 1 ] || printf ','
-		first=0
-		printf '"%s":"%s"' "$key" "$value"
-	done
-	printf '}'
-} > "$target"
-
-exec "$@"
-EOF
-
-RUN chmod +x /docker-entrypoint.sh
-
 COPY --from=build /app/dist /usr/local/openresty/nginx/html
 
 EXPOSE 80
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["openresty", "-g", "daemon off;"]

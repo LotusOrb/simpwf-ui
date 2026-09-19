@@ -1,4 +1,4 @@
 {
-	"APP_NAME": "Simpwf-ui",
-	"APP_SIMPWF_URL": "http://localhost:9999"
+	"SIMPWF_UI_NAME": "Simpwf-ui",
+	"SIMPWF_UI_API": "http://localhost:9999"
 }
