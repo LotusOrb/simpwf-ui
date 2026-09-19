@@ -3,7 +3,10 @@ import React from 'react';
 import { ActionIcon, Loader, Menu } from '@mantine/core';
 import { LuEllipsisVertical, LuEye, LuPause, LuPlay, LuSquare } from 'react-icons/lu';
 
-import { getAllowedActions, type WorkflowRun, type WorkflowRunAction } from '../../data';
+import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
+
+import { getAllowedActions } from '../../data';
 
 interface WorkflowRunActionsProps {
 	run: WorkflowRun;

@@ -2,7 +2,9 @@ import React from 'react';
 
 import { ScrollArea, UnstyledButton } from '@mantine/core';
 
-import { runStatusMeta, runStatusOrder, type WorkflowRunStatus } from '../../data';
+import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
+
+import { runStatusMeta, runStatusOrder } from '../../data';
 import classes from './WorkflowRunStatusTabs.module.scss';
 
 export type WorkflowRunStatusTab = WorkflowRunStatus | 'all';

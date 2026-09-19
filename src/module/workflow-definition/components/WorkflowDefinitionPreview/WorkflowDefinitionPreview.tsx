@@ -1,6 +1,8 @@
 import React from 'react';
 
-import { layoutGraph, nodeTypeMeta, type WorkflowContent } from '../../data';
+import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
+
+import { layoutGraph, nodeTypeMeta } from '../../data';
 import classes from './WorkflowDefinitionPreview.module.scss';
 
 const NODE_WIDTH = 46;
@@ -10,7 +12,7 @@ const ROW_GAP = 12;
 const PADDING = 14;
 
 interface WorkflowDefinitionPreviewProps {
-	content: WorkflowContent;
+	content: WorkflowDefinitionContent;
 }
 
 export const WorkflowDefinitionPreview: React.FC<WorkflowDefinitionPreviewProps> = ({ content }) => {

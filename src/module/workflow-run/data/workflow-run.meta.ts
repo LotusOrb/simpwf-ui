@@ -1,7 +1,10 @@
 import type { IconType } from 'react-icons';
 import { LuCircleCheck, LuCirclePause, LuCircleStop, LuCircleX, LuHourglass, LuLoaderCircle } from 'react-icons/lu';
 
-import type { WorkflowRun, WorkflowRunStatus } from './workflow-run.mock';
+import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
+import type { WorkflowRunSort } from '@module/workflow-run/types/WorkflowRunSort';
+import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
 
 export const runStatusMeta: Record<WorkflowRunStatus, { label: string; color: string; icon: IconType }> = {
 	running: { label: 'Running', color: 'blue', icon: LuLoaderCircle },
@@ -13,8 +16,6 @@ export const runStatusMeta: Record<WorkflowRunStatus, { label: string; color: st
 };
 
 export const runStatusOrder = Object.keys(runStatusMeta) as WorkflowRunStatus[];
-
-export type WorkflowRunAction = 'pause' | 'resume' | 'stop';
 
 export const getAllowedActions = (run: WorkflowRun): WorkflowRunAction[] => {
 	if (run.termination_pending) return [];
@@ -39,8 +40,6 @@ export const formatRunDuration = (run: WorkflowRun): string => {
 };
 
 export const shortRunId = (id: string) => id.slice(-8);
-
-export type WorkflowRunSort = 'newest' | 'oldest' | 'updated' | 'status';
 
 export const runSortOrders: Record<WorkflowRunSort, { label: string; by: string; direction: 'asc' | 'desc' }> = {
 	newest: { label: 'Newest', by: 'created_at', direction: 'desc' },

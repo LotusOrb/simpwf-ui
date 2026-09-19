@@ -42,9 +42,10 @@ import {
 	resumeWorkflowRun,
 	runSortOrders,
 	stopWorkflowRun,
-	type WorkflowRun,
-	type WorkflowRunAction,
 } from '@module/workflow-run/data';
+import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
+import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
 
 import classes from './WorkflowRunListPage.module.scss';
 
@@ -71,17 +72,26 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [pendingStop, setPendingStop] = useState<WorkflowRun | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 
-	const baseQuery = { search: debouncedSearch, workflowDefinitionId: filters.definitionId };
+	const baseQuery: WorkflowRunQuery = {
+		search: debouncedSearch,
+		filter: filters.definitionId ? { workflow_definition_id: { op: '_eq', value: filters.definitionId } } : {},
+	};
 
 	const runs = useAsyncQuery(listWorkflowRuns, {
 		...baseQuery,
 		page,
 		perPage,
 		order: runSortOrders[filters.sort],
-		status: statusTab === 'all' ? undefined : [statusTab],
+		filter: {
+			...baseQuery.filter,
+			...(statusTab === 'all' ? {} : { status: { op: '_eq' as const, value: [statusTab] } }),
+		},
 	});
 	const counts = useAsyncQuery(countWorkflowRunsByStatus, baseQuery);
-	const definitions = useAsyncQuery(listWorkflowDefinitions, { latestOnly: false, perPage: 200 });
+	const definitions = useAsyncQuery(listWorkflowDefinitions, {
+		perPage: 200,
+		filter: { latest_only: { op: '_eq', value: 'false' } },
+	});
 
 	const definitionInfo = new Map<string, WorkflowRunDefinitionInfo>(
 		(definitions.data?.items ?? []).map((definition) => [

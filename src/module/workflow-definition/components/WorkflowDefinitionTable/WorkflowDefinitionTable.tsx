@@ -4,15 +4,9 @@ import { Badge, Button, Card, Group, Skeleton, Table, Text, ThemeIcon, Tooltip }
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import {
-	complexityMeta,
-	countNodes,
-	getComplexity,
-	getNodeTypes,
-	getStartNode,
-	nodeTypeMeta,
-	type WorkflowDefinition,
-} from '../../data';
+import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+
+import { complexityMeta, countNodes, getComplexity, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
 import classes from './WorkflowDefinitionTable.module.scss';
 
 dayjs.extend(relativeTime);

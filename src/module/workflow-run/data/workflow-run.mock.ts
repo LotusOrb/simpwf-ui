@@ -1,37 +1,9 @@
-import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
-
-import { workflowDefinitions, type WorkflowNode } from '@module/workflow-definition/data';
-
-export type WorkflowRunStatus = 'waiting' | 'running' | 'paused' | 'finished' | 'failed' | 'stopped';
-
-export interface WorkflowRun {
-	id: string;
-	workflow_definition_id: string;
-	status: WorkflowRunStatus;
-	waiting_reason: string | null;
-	pause_requested: boolean;
-	termination_pending: boolean;
-	error: string | null;
-	started_at?: string | null;
-	finished_at?: string | null;
-	created_by: string;
-	updated_by: string;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface WorkflowRunList {
-	items: WorkflowRun[];
-	page: number;
-	per_page: number;
-	total: number;
-	total_pages: number;
-}
-
-export interface WorkflowRunQuery extends ComplexQueryParam {
-	workflowDefinitionId?: string | null;
-	status?: WorkflowRunStatus[];
-}
+import { workflowDefinitions } from '@module/workflow-definition/data';
+import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+import type { WorkflowRunList } from '@module/workflow-run/types/WorkflowRunList';
+import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
+import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
 
 const users = ['0198f000-0000-7000-8000-00000000a001', '0198f000-0000-7000-8000-00000000a002'];
 const now = Date.now();
@@ -46,7 +18,7 @@ const random = (() => {
 })();
 const pick = <T>(items: T[]): T => items[Math.floor(random() * items.length)];
 
-const flatten = (nodes: WorkflowNode[]): WorkflowNode[] =>
+const flatten = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
 	nodes.flatMap((node) => [node, ...flatten(node.nodes ?? [])]);
 
 const statusPlan: WorkflowRunStatus[] = [
@@ -139,7 +111,11 @@ const sortableFields = ['id', 'workflow_definition_id', 'status', 'created_at', 
 type SortableField = (typeof sortableFields)[number];
 
 export const listWorkflowRuns = async (query: WorkflowRunQuery = {}): Promise<WorkflowRunList> => {
-	const { page = 1, perPage = 8, search, order, workflowDefinitionId, status } = query;
+	const { page = 1, perPage = 8, search, order, filter } = query;
+
+	const workflowDefinitionId = (filter?.workflow_definition_id?.value as string | undefined) ?? null;
+	const statusValue = filter?.status?.value;
+	const status = (Array.isArray(statusValue) ? statusValue : statusValue ? [statusValue] : []) as WorkflowRunStatus[];
 
 	await delay(300);
 
@@ -147,7 +123,7 @@ export const listWorkflowRuns = async (query: WorkflowRunQuery = {}): Promise<Wo
 	const filtered = workflowRuns.filter((run) => {
 		if (term && !run.id.includes(term)) return false;
 		if (workflowDefinitionId && run.workflow_definition_id !== workflowDefinitionId) return false;
-		if (status?.length && !status.includes(run.status)) return false;
+		if (status.length && !status.includes(run.status)) return false;
 		return true;
 	});
 
@@ -170,12 +146,18 @@ export const listWorkflowRuns = async (query: WorkflowRunQuery = {}): Promise<Wo
 };
 
 export const countWorkflowRunsByStatus = async (
-	query: Omit<WorkflowRunQuery, 'status' | 'page' | 'perPage' | 'order'>,
+	query: Omit<WorkflowRunQuery, 'page' | 'perPage' | 'order'>,
 ): Promise<Record<WorkflowRunStatus | 'all', number>> => {
 	const statuses: WorkflowRunStatus[] = ['waiting', 'running', 'paused', 'finished', 'failed', 'stopped'];
 	const [all, ...byStatus] = await Promise.all([
 		listWorkflowRuns({ ...query, perPage: 1 }),
-		...statuses.map((status) => listWorkflowRuns({ ...query, status: [status], perPage: 1 })),
+		...statuses.map((status) =>
+			listWorkflowRuns({
+				...query,
+				filter: { ...query.filter, status: { op: '_eq', value: [status] } },
+				perPage: 1,
+			}),
+		),
 	]);
 
 	return Object.fromEntries([

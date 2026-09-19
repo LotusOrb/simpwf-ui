@@ -1,9 +1,14 @@
 import type { IconType } from 'react-icons';
 import { LuBoxes, LuCode, LuGlobe, LuLogIn, LuRadar, LuSend, LuSplit } from 'react-icons/lu';
 
-import type { WorkflowContent, WorkflowNode, WorkflowNodeType } from './workflow-definition.mock';
+import type { WorkflowDefinitionComplexity } from '@module/workflow-definition/types/WorkflowDefinitionComplexity';
+import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
+import type { WorkflowDefinitionGraphLayout } from '@module/workflow-definition/types/WorkflowDefinitionGraphLayout';
+import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
+import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
-export const nodeTypeMeta: Record<WorkflowNodeType, { label: string; color: string; icon: IconType }> = {
+export const nodeTypeMeta: Record<WorkflowDefinitionNodeType, { label: string; color: string; icon: IconType }> = {
 	input: { label: 'Input', color: 'teal', icon: LuLogIn },
 	script: { label: 'Script', color: 'blue', icon: LuCode },
 	conditions: { label: 'Conditions', color: 'orange', icon: LuSplit },
@@ -13,30 +18,28 @@ export const nodeTypeMeta: Record<WorkflowNodeType, { label: string; color: stri
 	output: { label: 'Output', color: 'grape', icon: LuSend },
 };
 
-export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowNodeType[];
+export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowDefinitionNodeType[];
 
-export type WorkflowComplexity = 'simple' | 'standard' | 'complex';
-
-export const complexityMeta: Record<WorkflowComplexity, { label: string; color: string }> = {
+export const complexityMeta: Record<WorkflowDefinitionComplexity, { label: string; color: string }> = {
 	simple: { label: 'Simple', color: 'teal' },
 	standard: { label: 'Standard', color: 'gray' },
 	complex: { label: 'Complex', color: 'pink' },
 };
 
-const flattenNodes = (nodes: WorkflowNode[]): WorkflowNode[] =>
+const flattenNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
 	nodes.flatMap((node) => [node, ...(node.nodes ? flattenNodes(node.nodes) : [])]);
 
-export const countNodes = (content: WorkflowContent) => flattenNodes(content.nodes).length;
+export const countNodes = (content: WorkflowDefinitionContent) => flattenNodes(content.nodes).length;
 
-export const getNodeTypes = (content: WorkflowContent): WorkflowNodeType[] => {
+export const getNodeTypes = (content: WorkflowDefinitionContent): WorkflowDefinitionNodeType[] => {
 	const present = new Set(flattenNodes(content.nodes).map((node) => node.type));
 	return nodeTypeOrder.filter((type) => present.has(type));
 };
 
-export const getStartNode = (content: WorkflowContent) =>
+export const getStartNode = (content: WorkflowDefinitionContent) =>
 	content.nodes.find((node) => node.id === content.start_node_id);
 
-export const getComplexity = (content: WorkflowContent): WorkflowComplexity => {
+export const getComplexity = (content: WorkflowDefinitionContent): WorkflowDefinitionComplexity => {
 	const nodes = flattenNodes(content.nodes);
 	const branches = nodes.reduce((sum, node) => sum + Math.max(0, (node.conditions?.length ?? 0) - 1), 0);
 	const score = nodes.length + branches * 2;
@@ -45,7 +48,7 @@ export const getComplexity = (content: WorkflowContent): WorkflowComplexity => {
 	return 'complex';
 };
 
-const getTargets = (node: WorkflowNode, content: WorkflowContent): string[] => {
+const getTargets = (node: WorkflowDefinitionNode, content: WorkflowDefinitionContent): string[] => {
 	const targets = [node.next_node, node.on_failure];
 	for (const condition of node.conditions ?? []) {
 		if (condition.key) targets.push(content.keys?.[condition.key]);
@@ -53,24 +56,10 @@ const getTargets = (node: WorkflowNode, content: WorkflowContent): string[] => {
 	return targets.filter((target): target is string => !!target);
 };
 
-export interface GraphLayoutNode {
-	id: string;
-	type: WorkflowNodeType;
-	column: number;
-	row: number;
-}
-
-export interface GraphLayout {
-	nodes: GraphLayoutNode[];
-	edges: { from: string; to: string }[];
-	columns: number;
-	rows: number;
-}
-
-export const layoutGraph = (content: WorkflowContent): GraphLayout => {
+export const layoutGraph = (content: WorkflowDefinitionContent): WorkflowDefinitionGraphLayout => {
 	const byId = new Map(content.nodes.map((node) => [node.id, node]));
 	const depth = new Map<string, number>();
-	const edges: GraphLayout['edges'] = [];
+	const edges: WorkflowDefinitionGraphLayout['edges'] = [];
 
 	const visit = (id: string, level: number, trail: Set<string>) => {
 		const node = byId.get(id);
@@ -107,8 +96,6 @@ export const layoutGraph = (content: WorkflowContent): GraphLayout => {
 	};
 };
 
-export type WorkflowDefinitionSort = 'latest' | 'oldest' | 'name-asc' | 'name-desc' | 'version-desc';
-
 export const sortOrders: Record<WorkflowDefinitionSort, { label: string; by: string; direction: 'asc' | 'desc' }> = {
 	latest: { label: 'Latest', by: 'updated_at', direction: 'desc' },
 	oldest: { label: 'Oldest', by: 'updated_at', direction: 'asc' },
@@ -116,9 +103,3 @@ export const sortOrders: Record<WorkflowDefinitionSort, { label: string; by: str
 	'name-desc': { label: 'Name Z–A', by: 'name', direction: 'desc' },
 	'version-desc': { label: 'Highest version', by: 'version', direction: 'desc' },
 };
-
-export interface WorkflowDefinitionFilterValues {
-	sort: WorkflowDefinitionSort;
-	startType: WorkflowNodeType | null;
-	complexity: WorkflowComplexity | null;
-}
