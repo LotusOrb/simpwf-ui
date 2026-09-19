@@ -17,6 +17,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { LuCircleAlert, LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert } from 'react-icons/lu';
+import { useSearchParams } from 'react-router';
 
 import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
@@ -52,12 +53,18 @@ const SETTLE_REFRESH_MS = 3200;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const DEFINITION_PARAM = 'definition';
+
 const initialFilters: WorkflowRunFilterValues = { search: '', definitionId: null, sort: 'newest' };
 
 export const WorkflowRunListPage: React.FC = () => {
 	const [view, setView] = useState<ViewMode>('card');
 	const [statusTab, setStatusTab] = useState<WorkflowRunStatusTab>('all');
-	const [filters, setFilters] = useState(initialFilters);
+	const [searchParams] = useSearchParams();
+	const [filters, setFilters] = useState(() => ({
+		...initialFilters,
+		definitionId: searchParams.get(DEFINITION_PARAM),
+	}));
 	const [debouncedSearch] = useDebouncedValue(filters.search, 300);
 	const [page, setPage] = useState(1);
 	const [perPage, setPerPage] = useState(PER_PAGE_OPTIONS[0]);

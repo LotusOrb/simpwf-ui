@@ -44,11 +44,11 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			invalidatesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
 
-		startWorkflowRun: build.mutation<WorkflowRun, { workflowDefinitionId: string; input?: unknown }>({
-			query: ({ workflowDefinitionId, input }) => ({
+		startWorkflowRun: build.mutation<Pick<WorkflowRun, 'id' | 'status'>, string>({
+			query: (workflowDefinitionId) => ({
 				method: 'post',
 				url: RESOURCE,
-				body: { workflow_definition_id: workflowDefinitionId, input },
+				body: { workflow_definition_id: workflowDefinitionId },
 			}),
 			invalidatesTags: [{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID }],
 		}),

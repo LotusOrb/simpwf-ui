@@ -16,7 +16,7 @@ import {
 	Tooltip,
 } from '@mantine/core';
 import { ReactFlowProvider } from '@xyflow/react';
-import { LuCircleAlert, LuPanelLeft, LuPanelRight, LuSave } from 'react-icons/lu';
+import { LuCircleAlert, LuPanelLeft, LuPanelRight, LuPlay, LuSave } from 'react-icons/lu';
 import { useBlocker, useNavigate, useParams } from 'react-router';
 
 import { useCoreDispatch, useCoreSelector, useCoreStore } from '@core/store';
@@ -29,7 +29,7 @@ import type { NodeDefinition } from '@module/node-definition/types/NodeDefinitio
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
 import { WorkflowDefinitionInspector } from '@module/workflow-definition/components/WorkflowDefinitionInspector';
 import { WorkflowDefinitionPalette } from '@module/workflow-definition/components/WorkflowDefinitionPalette';
-import { collectReferenceIds, toEditorDocument } from '@module/workflow-definition/data';
+import { collectReferenceIds, getStartNode, toEditorDocument } from '@module/workflow-definition/data';
 import { useCreateWorkflowDefinitionMutation, useGetWorkflowDefinitionQuery } from '@module/workflow-definition/hooks';
 import {
 	editorLoaded,
@@ -45,10 +45,12 @@ import {
 	selectEditorSourceId,
 	selectEditorSourceVersion,
 } from '@module/workflow-definition/store';
+import { useStartWorkflowRunMutation } from '@module/workflow-run/hooks';
 
 import classes from './WorkflowDefinitionEditorPage.module.scss';
 
 const DEFINITION_ROUTE = '/app/workflow-definition';
+const RUN_ROUTE = '/app/workflow-run';
 
 export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
@@ -60,8 +62,10 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const definition = useGetWorkflowDefinitionQuery(id ?? '', { skip: !id, refetchOnFocus: false });
 	const [fetchNodeDefinition] = useLazyGetNodeDefinitionQuery();
 	const [createDefinition, createState] = useCreateWorkflowDefinitionMutation();
+	const [startRun, startState] = useStartWorkflowRunMutation();
 
 	const [saveError, setSaveError] = useState<string | null>(null);
+	const [startError, setStartError] = useState<string | null>(null);
 	const allowLeave = useRef(false);
 
 	const loadedKey = useCoreSelector(selectEditorLoadedKey);
@@ -73,6 +77,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 
 	const routeKey = id ?? 'new';
 	const ready = loadedKey === routeKey;
+	const startsWithInput = !!definition.data && getStartNode(definition.data.content)?.type === 'input';
 
 	const { setOpened: setPanelOpened } = panel;
 	useEffect(() => {
@@ -146,6 +151,20 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 		allowLeave.current = true;
 		navigate(`${DEFINITION_ROUTE}/${result.data.id}`, { replace: !sourceId });
 		allowLeave.current = false;
+	};
+
+	const start = async () => {
+		if (!id) return;
+		setStartError(null);
+
+		const result = await startRun(id);
+		if ('error' in result) {
+			const error = result.error as { message?: string; explain?: string };
+			setStartError(error.message || error.explain || 'Something went wrong while starting the workflow');
+			return;
+		}
+
+		navigate(`${RUN_ROUTE}?definition=${id}`);
 	};
 
 	if (id && definition.isError) {
@@ -230,6 +249,19 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 						<Button variant="default" onClick={() => navigate(DEFINITION_ROUTE)}>
 							Cancel
 						</Button>
+						{startsWithInput && (
+							<Tooltip label="Save your changes first" disabled={!dirty}>
+								<Button
+									variant="default"
+									leftSection={<LuPlay size={16} />}
+									loading={startState.isLoading}
+									disabled={!ready || dirty}
+									onClick={start}
+								>
+									Start workflow
+								</Button>
+							</Tooltip>
+						)}
 						<Tooltip
 							label={`${issues.length} ${issues.length === 1 ? 'issue' : 'issues'} to fix`}
 							disabled={issues.length === 0}
@@ -257,6 +289,20 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 						onClose={() => setSaveError(null)}
 					>
 						{saveError}
+					</Alert>
+				)}
+
+				{startError && (
+					<Alert
+						color="red"
+						variant="light"
+						mx="md"
+						mb="sm"
+						title="Couldn't start workflow"
+						withCloseButton
+						onClose={() => setStartError(null)}
+					>
+						{startError}
 					</Alert>
 				)}
 
