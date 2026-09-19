@@ -4,7 +4,10 @@ import { Badge, Card, Group, Skeleton, Table, Text, Tooltip } from '@mantine/cor
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { formatRunDuration, type WorkflowRun, type WorkflowRunAction } from '../../data';
+import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
+
+import { formatRunDuration } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import type { WorkflowRunDefinitionInfo } from '../WorkflowRunCard';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';

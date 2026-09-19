@@ -1,62 +1,15 @@
-import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
+import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import type { WorkflowDefinitionComplexity } from '@module/workflow-definition/types/WorkflowDefinitionComplexity';
+import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
+import type { WorkflowDefinitionList } from '@module/workflow-definition/types/WorkflowDefinitionList';
+import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
+import type { WorkflowDefinitionQuery } from '@module/workflow-definition/types/WorkflowDefinitionQuery';
 
-import { getComplexity, type WorkflowComplexity } from './workflow-definition.meta';
-
-export type WorkflowNodeType = 'script' | 'conditions' | 'input' | 'output' | 'group' | 'external_call' | 'poller';
-
-export interface WorkflowNodeCondition {
-	key?: string;
-	condition: string;
-}
-
-export interface WorkflowNode {
-	id: string;
-	type: WorkflowNodeType;
-	name: string;
-	next_node?: string | null;
-	on_failure?: string | null;
-	conditions?: WorkflowNodeCondition[];
-	start_node_id?: string;
-	keys?: Record<string, string | null>;
-	nodes?: WorkflowNode[];
-}
-
-export interface WorkflowContent {
-	start_node_id: string;
-	context_mode?: 'full' | 'lean';
-	keys?: Record<string, string | null>;
-	nodes: WorkflowNode[];
-}
-
-export interface WorkflowDefinition {
-	id: string;
-	name: string;
-	version: number;
-	previous_version_id?: string | null;
-	lineage_id: string;
-	content: WorkflowContent;
-	created_by: string;
-	updated_by: string;
-	created_at: string;
-	updated_at: string;
-}
-
-export interface WorkflowDefinitionList {
-	items: WorkflowDefinition[];
-	page: number;
-	per_page: number;
-	total: number;
-	total_pages: number;
-}
-
-export interface WorkflowDefinitionQuery extends ComplexQueryParam {
-	latestOnly?: boolean;
-	startType?: WorkflowNodeType | null;
-	complexity?: WorkflowComplexity | null;
-}
+import { getComplexity } from './workflow-definition.meta';
 
 type StepSpec = {
-	type: WorkflowNodeType;
+	type: WorkflowDefinitionNodeType;
 	name: string;
 	branches?: StepSpec[][];
 	children?: StepSpec[];
@@ -74,12 +27,12 @@ const buildContent = (lineage: number, version: number, steps: StepSpec[], conte
 	const buildSequence = (
 		sequence: StepSpec[],
 		exitId: string | null,
-	): { headId: string | null; nodes: WorkflowNode[] } => {
+	): { headId: string | null; nodes: WorkflowDefinitionNode[] } => {
 		let followingId = exitId;
-		const nodes: WorkflowNode[] = [];
+		const nodes: WorkflowDefinitionNode[] = [];
 
 		for (const step of [...sequence].reverse()) {
-			const node: WorkflowNode = { id: nextId(), type: step.type, name: step.name };
+			const node: WorkflowDefinitionNode = { id: nextId(), type: step.type, name: step.name };
 
 			if (step.type === 'conditions' && step.branches) {
 				node.conditions = step.branches.map((branch, index) => {
@@ -99,7 +52,12 @@ const buildContent = (lineage: number, version: number, steps: StepSpec[], conte
 			}
 
 			if (step.fallback) {
-				const fallback: WorkflowNode = { id: nextId(), type: 'script', name: step.fallback, next_node: null };
+				const fallback: WorkflowDefinitionNode = {
+					id: nextId(),
+					type: 'script',
+					name: step.fallback,
+					next_node: null,
+				};
 				node.on_failure = fallback.id;
 				nodes.push(fallback);
 			}
@@ -112,7 +70,7 @@ const buildContent = (lineage: number, version: number, steps: StepSpec[], conte
 	};
 
 	const { headId, nodes } = buildSequence(steps, null);
-	const content: WorkflowContent = { start_node_id: headId ?? '', context_mode: contextMode, nodes };
+	const content: WorkflowDefinitionContent = { start_node_id: headId ?? '', context_mode: contextMode, nodes };
 	if (Object.keys(keys).length > 0) content.keys = keys;
 	return content;
 };
@@ -436,7 +394,13 @@ const sortableFields = ['name', 'version', 'created_at', 'updated_at'] as const;
 type SortableField = (typeof sortableFields)[number];
 
 export const listWorkflowDefinitions = async (query: WorkflowDefinitionQuery = {}): Promise<WorkflowDefinitionList> => {
-	const { page = 1, perPage = 8, search, order, latestOnly = true, startType, complexity } = query;
+	const { page = 1, perPage = 8, search, order, filter } = query;
+
+	// Module facets live in `filter` so the shape matches what the real endpoint
+	// receives once `Http.parseComplexQueryParam` serializes it.
+	const latestOnly = filter?.latest_only ? filter.latest_only.value === 'true' : true;
+	const startType = (filter?.start_type?.value as WorkflowDefinitionNodeType | undefined) ?? null;
+	const complexity = (filter?.complexity?.value as WorkflowDefinitionComplexity | undefined) ?? null;
 
 	await new Promise((resolve) => setTimeout(resolve, 350));
 

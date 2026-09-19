@@ -11,7 +11,7 @@ export class Config {
 	}
 
 	public async getValue() {
-		if (this.isReady) {
+		if (!this.isReady) {
 			throw new Error('Config is not ready');
 		}
 		return this.config;

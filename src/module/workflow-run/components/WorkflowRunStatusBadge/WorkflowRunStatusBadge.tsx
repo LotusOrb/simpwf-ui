@@ -2,7 +2,9 @@ import React from 'react';
 
 import { Badge, Tooltip } from '@mantine/core';
 
-import { runStatusMeta, type WorkflowRun } from '../../data';
+import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+
+import { runStatusMeta } from '../../data';
 import classes from './WorkflowRunStatusBadge.module.scss';
 
 interface WorkflowRunStatusBadgeProps {

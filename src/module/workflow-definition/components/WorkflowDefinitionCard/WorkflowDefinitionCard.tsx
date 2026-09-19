@@ -5,15 +5,9 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuClock, LuLayers, LuZap } from 'react-icons/lu';
 
-import {
-	complexityMeta,
-	countNodes,
-	getComplexity,
-	getNodeTypes,
-	getStartNode,
-	nodeTypeMeta,
-	type WorkflowDefinition,
-} from '../../data';
+import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+
+import { complexityMeta, countNodes, getComplexity, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
 import { WorkflowDefinitionPreview } from '../WorkflowDefinitionPreview';
 import classes from './WorkflowDefinitionCard.module.scss';
 

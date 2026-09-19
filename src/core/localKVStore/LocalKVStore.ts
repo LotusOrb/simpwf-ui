@@ -12,7 +12,7 @@ export class LocalKVStore {
 	}
 
 	public get<T = unknown | null>(k: string): null | T {
-		const item = localStorage.getItem(k);
+		const item = localStorage.getItem(`${this.prefix}::${k}`);
 		if (item === undefined || item === null) {
 			return null;
 		}

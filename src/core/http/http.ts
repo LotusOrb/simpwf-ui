@@ -1,6 +1,5 @@
 import axios, { Axios, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
-
 import { HTTPError } from '@common/exception/HTTPError';
 import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
 import type { HTTPHeader } from '@common/types/HTTPHeader';
@@ -88,9 +87,11 @@ export class Http {
 		url: string,
 		qParam?: ComplexQueryParam,
 		body?: unknown,
+		head?: HTTPHeader,
 	): Promise<HTTPResponse<T>> {
 		const h = this.createHeader({
 			'Content-Type': 'application/json',
+			...head,
 		});
 
 		const cfg: AxiosRequestConfig = {

@@ -3,16 +3,12 @@ import React from 'react';
 import { Group, Select } from '@mantine/core';
 import { LuArrowUpDown, LuGitBranch, LuZap } from 'react-icons/lu';
 
-import {
-	complexityMeta,
-	nodeTypeMeta,
-	nodeTypeOrder,
-	sortOrders,
-	type WorkflowComplexity,
-	type WorkflowDefinitionFilterValues,
-	type WorkflowDefinitionSort,
-	type WorkflowNodeType,
-} from '../../data';
+import type { WorkflowDefinitionComplexity } from '@module/workflow-definition/types/WorkflowDefinitionComplexity';
+import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
+import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
+import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
+
+import { complexityMeta, nodeTypeMeta, nodeTypeOrder, sortOrders } from '../../data';
 import classes from './WorkflowDefinitionFilters.module.scss';
 
 interface WorkflowDefinitionFiltersProps {
@@ -46,7 +42,9 @@ export const WorkflowDefinitionFilters: React.FC<WorkflowDefinitionFiltersProps>
 					.filter((type) => type !== 'group')
 					.map((type) => ({ value: type, label: nodeTypeMeta[type].label }))}
 				value={value.startType}
-				onChange={(startType) => onChange({ ...value, startType: startType as WorkflowNodeType | null })}
+				onChange={(startType) =>
+					onChange({ ...value, startType: startType as WorkflowDefinitionNodeType | null })
+				}
 			/>
 			<Select
 				size="sm"
@@ -58,7 +56,9 @@ export const WorkflowDefinitionFilters: React.FC<WorkflowDefinitionFiltersProps>
 				leftSection={<LuGitBranch size={14} />}
 				data={Object.entries(complexityMeta).map(([key, meta]) => ({ value: key, label: meta.label }))}
 				value={value.complexity}
-				onChange={(complexity) => onChange({ ...value, complexity: complexity as WorkflowComplexity | null })}
+				onChange={(complexity) =>
+					onChange({ ...value, complexity: complexity as WorkflowDefinitionComplexity | null })
+				}
 			/>
 		</Group>
 	);

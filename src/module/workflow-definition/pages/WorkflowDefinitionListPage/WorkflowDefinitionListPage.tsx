@@ -15,11 +15,8 @@ import {
 import { WorkflowDefinitionFilters } from '@module/workflow-definition/components/WorkflowDefinitionFilters';
 import { WorkflowDefinitionHero } from '@module/workflow-definition/components/WorkflowDefinitionHero';
 import { WorkflowDefinitionTable } from '@module/workflow-definition/components/WorkflowDefinitionTable';
-import {
-	listWorkflowDefinitions,
-	sortOrders,
-	type WorkflowDefinitionFilterValues,
-} from '@module/workflow-definition/data';
+import { listWorkflowDefinitions, sortOrders } from '@module/workflow-definition/data';
+import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
 
 import classes from './WorkflowDefinitionListPage.module.scss';
 
@@ -41,9 +38,11 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		perPage,
 		search: debouncedSearch,
 		order: sortOrders[filters.sort],
-		latestOnly: scope === 'latest',
-		startType: filters.startType,
-		complexity: filters.complexity,
+		filter: {
+			latest_only: { op: '_eq', value: String(scope === 'latest') },
+			...(filters.startType ? { start_type: { op: '_eq' as const, value: filters.startType } } : {}),
+			...(filters.complexity ? { complexity: { op: '_eq' as const, value: filters.complexity } } : {}),
+		},
 	});
 
 	const resetPage =
