@@ -1,7 +1,10 @@
 import React from 'react';
 
-import { Box, Button, Group, ScrollArea, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { LuDownload, LuPlus } from 'react-icons/lu';
+import { ActionIcon, Button, Group, ScrollArea, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core';
+import { LuDownload, LuPanelLeft, LuPanelRight, LuPlus } from 'react-icons/lu';
+
+import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
+import { useAppLayoutPanel } from '@module/app/hooks';
 
 import { DashboardExecutionList } from '@module/dashboard/components/DashboardExecutionList';
 import { DashboardExplorer } from '@module/dashboard/components/DashboardExplorer';
@@ -12,21 +15,20 @@ import { dashboardStats } from '@module/dashboard/data';
 
 import classes from './DashboardPage.module.scss';
 
-interface DashboardPageProps {
-	withExplorer?: boolean;
-	withSettingsPanel?: boolean;
-}
+export const DashboardPage: React.FC = () => {
+	const panel = useAppLayoutPanel();
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ withExplorer = false, withSettingsPanel = false }) => {
 	return (
-		<div className={classes.root}>
-			{withExplorer && (
-				<Box w={280} visibleFrom="lg" className={classes.side}>
-					<DashboardExplorer />
-				</Box>
-			)}
+		<>
+			<MainLayoutPanel side="left" w={280} visibleFrom="lg">
+				<DashboardExplorer />
+			</MainLayoutPanel>
 
-			<ScrollArea flex={1} className={classes.canvas}>
+			<MainLayoutPanel side="right" w={320} visibleFrom="md">
+				<DashboardSettingsPanel />
+			</MainLayoutPanel>
+
+			<ScrollArea h="100%" className={classes.canvas}>
 				<Stack gap="lg" p={{ base: 'md', md: 'xl' }} maw={1080} mx="auto">
 					<Group justify="space-between" align="flex-end" gap="sm">
 						<div>
@@ -38,6 +40,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ withExplorer = fal
 							</Text>
 						</div>
 						<Group gap="xs">
+							<Tooltip label={panel.opened.left ? 'Hide explorer' : 'Show explorer'}>
+								<ActionIcon
+									variant="default"
+									size="lg"
+									visibleFrom="lg"
+									aria-label="Toggle explorer"
+									aria-pressed={panel.opened.left}
+									onClick={() => panel.toggle('left')}
+								>
+									<LuPanelLeft size={16} />
+								</ActionIcon>
+							</Tooltip>
+							<Tooltip label={panel.opened.right ? 'Hide settings' : 'Show settings'}>
+								<ActionIcon
+									variant="default"
+									size="lg"
+									visibleFrom="md"
+									aria-label="Toggle settings"
+									aria-pressed={panel.opened.right}
+									onClick={() => panel.toggle('right')}
+								>
+									<LuPanelRight size={16} />
+								</ActionIcon>
+							</Tooltip>
 							<Button variant="default" leftSection={<LuDownload size={16} />}>
 								Export
 							</Button>
@@ -55,12 +81,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ withExplorer = fal
 					<DashboardExecutionList />
 				</Stack>
 			</ScrollArea>
-
-			{withSettingsPanel && (
-				<Box w={320} visibleFrom="md" className={classes.side}>
-					<DashboardSettingsPanel />
-				</Box>
-			)}
-		</div>
+		</>
 	);
 };

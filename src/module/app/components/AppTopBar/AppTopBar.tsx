@@ -1,13 +1,30 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { ActionIcon, Burger, Group, Indicator, ScrollArea, Tooltip, UnstyledButton } from '@mantine/core';
 import { LuBell } from 'react-icons/lu';
 
 import { BrandMark } from '@common/component/BrandMark';
 
+import { useAppHealthStatus } from '@module/app/hooks';
+import type { AppHealthStatus } from '@module/app/types/AppHealthStatus';
+
 import { AppBreadcrumb } from '../AppBreadcrumb';
 import { AppProfileMenu } from '../AppProfileMenu';
 import classes from './AppTopBar.module.scss';
+
+const HEALTH_LABEL: Record<AppHealthStatus, string> = {
+	checking: 'Checking Workflow Engine',
+	ready: 'Connected to Workflow Engine',
+	'not-ready': 'Workflow Engine not ready',
+	down: 'Disconnected from Workflow Engine',
+};
+
+const HEALTH_HINT: Record<AppHealthStatus, string> = {
+	checking: 'Checking engine health…',
+	ready: 'Engine is live and ready. Click to recheck',
+	'not-ready': 'Engine is live but its dependencies are not ready. Click to recheck',
+	down: 'Engine is unreachable. Click to recheck',
+};
 
 interface AppTopBarProps {
 	navOpened: boolean;
@@ -15,8 +32,7 @@ interface AppTopBarProps {
 }
 
 export const AppTopBar: React.FC<AppTopBarProps> = ({ navOpened, onToggleNav }) => {
-	// TODO: replace mock with real workflow engine connection status
-	const [engineConnected, setEngineConnected] = useState(true);
+	const health = useAppHealthStatus();
 
 	return (
 		<Group h="100%" px="sm" gap="sm" wrap="nowrap">
@@ -30,16 +46,15 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({ navOpened, onToggleNav }) 
 			</ScrollArea>
 
 			<Group gap="xs" wrap="nowrap">
-				<Tooltip label="Mock: click to toggle">
+				<Tooltip label={HEALTH_HINT[health.status]}>
 					<UnstyledButton
 						className={classes.engineStatus}
-						data-connected={engineConnected || undefined}
-						onClick={() => setEngineConnected((value) => !value)}
+						data-status={health.status}
+						disabled={health.fetching}
+						onClick={health.refetch}
 					>
 						<span className={classes.engineDot} />
-						<span className={classes.engineLabel}>
-							{engineConnected ? 'Connected to Workflow Engine' : 'Disconnected from Workflow Engine'}
-						</span>
+						<span className={classes.engineLabel}>{HEALTH_LABEL[health.status]}</span>
 					</UnstyledButton>
 				</Tooltip>
 				<Indicator color="red" size={8} offset={7} processing>

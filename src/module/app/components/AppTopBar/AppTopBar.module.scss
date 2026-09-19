@@ -11,9 +11,19 @@
 	color: var(--mantine-color-red-7);
 	background-color: var(--mantine-color-red-0);
 
-	&[data-connected] {
+	&[data-status='ready'] {
 		color: var(--mantine-color-green-7);
 		background-color: var(--mantine-color-green-0);
+	}
+
+	&[data-status='not-ready'] {
+		color: var(--mantine-color-yellow-8);
+		background-color: var(--mantine-color-yellow-0);
+	}
+
+	&[data-status='checking'] {
+		color: var(--mantine-color-gray-6);
+		background-color: var(--mantine-color-gray-0);
 	}
 }
 

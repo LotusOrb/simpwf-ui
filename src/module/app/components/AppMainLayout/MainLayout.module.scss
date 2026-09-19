@@ -15,6 +15,7 @@
 }
 
 .surface {
+	display: flex;
 	flex: 1;
 	min-width: 0;
 	margin: 0 var(--mantine-spacing-sm) var(--mantine-spacing-sm) 0;
@@ -26,4 +27,24 @@
 	@media (max-width: 48em) {
 		margin-left: var(--mantine-spacing-sm);
 	}
+}
+
+.content {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+}
+
+.slot {
+	display: flex;
+	flex-shrink: 0;
+	height: 100%;
+
+	&:empty {
+		display: none;
+	}
+}
+
+.panel {
+	height: 100%;
 }

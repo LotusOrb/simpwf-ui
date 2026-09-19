@@ -6,7 +6,7 @@ import type { WorkflowDefinition } from '@module/workflow-definition/types/Workf
 import type { WorkflowDefinitionList } from '@module/workflow-definition/types/WorkflowDefinitionList';
 import type { WorkflowDefinitionQuery } from '@module/workflow-definition/types/WorkflowDefinitionQuery';
 
-const RESOURCE = '/workflow-definitions';
+const RESOURCE = 'v1/workflow/definition';
 
 export const workflowDefinitionApi = coreApi.injectEndpoints({
 	endpoints: (build) => ({

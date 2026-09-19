@@ -4,6 +4,10 @@ import { Avatar, Menu, Text, UnstyledButton } from '@mantine/core';
 import { LuChevronDown, LuLogOut, LuSettings } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
 
+import { coreApi } from '@core/api';
+import { clearToken } from '@core/auth/store';
+import { useCoreDispatch } from '@core/store';
+
 import classes from './AppProfileMenu.module.scss';
 
 interface AppProfileMenuProps {
@@ -13,12 +17,19 @@ interface AppProfileMenuProps {
 
 export const AppProfileMenu: React.FC<AppProfileMenuProps> = ({ name = 'Admin', role = 'Workspace owner' }) => {
 	const navigate = useNavigate();
+	const dispatch = useCoreDispatch();
 	const initials = name
 		.split(' ')
 		.map((part) => part.charAt(0))
 		.join('')
 		.slice(0, 2)
 		.toUpperCase();
+
+	const handleLogout = () => {
+		dispatch(clearToken());
+		dispatch(coreApi.util.resetApiState());
+		navigate('/auth/login', { replace: true });
+	};
 
 	return (
 		<Menu position="bottom-end" offset={6} width={220}>
@@ -52,7 +63,7 @@ export const AppProfileMenu: React.FC<AppProfileMenuProps> = ({ name = 'Admin', 
 				<Menu.Item leftSection={<LuSettings size={16} />} onClick={() => navigate('/app/settings')}>
 					Settings
 				</Menu.Item>
-				<Menu.Item color="red" leftSection={<LuLogOut size={16} />} onClick={() => navigate('/auth/login')}>
+				<Menu.Item color="red" leftSection={<LuLogOut size={16} />} onClick={handleLogout}>
 					Logout
 				</Menu.Item>
 			</Menu.Dropdown>

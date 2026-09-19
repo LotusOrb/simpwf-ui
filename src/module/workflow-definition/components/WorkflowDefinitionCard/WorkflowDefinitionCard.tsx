@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { Badge, Button, Card, Group, Skeleton, Text, ThemeIcon, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Button, Card, Group, Skeleton, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { LuClock, LuLayers, LuZap } from 'react-icons/lu';
+import { LuClock, LuLayers, LuTrash2, LuZap } from 'react-icons/lu';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
@@ -15,9 +15,10 @@ dayjs.extend(relativeTime);
 
 interface WorkflowDefinitionCardProps {
 	definition: WorkflowDefinition;
+	onDelete?: (definition: WorkflowDefinition) => void;
 }
 
-export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ definition }) => {
+export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ definition, onDelete }) => {
 	const { content } = definition;
 	const complexity = complexityMeta[getComplexity(content)];
 	const startNode = getStartNode(content);
@@ -74,9 +75,25 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ 
 							);
 						})}
 					</Group>
-					<Button size="compact-xs" radius="xl" px="sm">
-						View detail
-					</Button>
+					<Group gap={4} wrap="nowrap">
+						{onDelete && (
+							<Tooltip label="Delete">
+								<ActionIcon
+									size={22}
+									radius="xl"
+									variant="subtle"
+									color="red"
+									aria-label={`Delete ${definition.name}`}
+									onClick={() => onDelete(definition)}
+								>
+									<LuTrash2 size={13} />
+								</ActionIcon>
+							</Tooltip>
+						)}
+						<Button size="compact-xs" radius="xl" px="sm">
+							View detail
+						</Button>
+					</Group>
 				</Group>
 			</div>
 		</Card>

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 
 import { authRoutes } from '@core/auth/auth.routes';
+import { RequireAuth } from '@core/auth/components/AuthGuard';
 
 import { MainLayout } from '@module/app/components/AppMainLayout';
 import { dashboardRoutes } from '@module/dashboard/dashboard.routes';
@@ -15,15 +16,20 @@ export const routesConfig = createBrowserRouter([
 	authRoutes,
 	{
 		path: 'app',
-		Component: MainLayout,
+		Component: RequireAuth,
 		children: [
 			{
-				index: true,
-				Component: () => Navigate({ to: 'dashboard', replace: true }),
+				Component: MainLayout,
+				children: [
+					{
+						index: true,
+						Component: () => Navigate({ to: 'dashboard', replace: true }),
+					},
+					dashboardRoutes,
+					workflowDefinitionRoutes,
+					workflowRunRoutes,
+				],
 			},
-			dashboardRoutes,
-			workflowDefinitionRoutes,
-			workflowRunRoutes,
 		],
 	},
 ]);

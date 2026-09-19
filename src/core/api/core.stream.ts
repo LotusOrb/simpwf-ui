@@ -16,7 +16,7 @@ export interface CoreStream {
 }
 
 const buildUrl = (origin: string, options: CoreStreamOptions<unknown>) => {
-	const url = new URL(options.path, origin);
+	const url = new URL(options.path.replace(/^\/+/, ''), origin.endsWith('/') ? origin : `${origin}/`);
 
 	for (const [key, value] of Object.entries(options.params ?? {})) {
 		if (value !== undefined && value !== null) url.searchParams.set(key, String(value));

@@ -2,6 +2,8 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 
 import { config } from '@config/config';
 
+import { AUTH_TOKEN_HEADER } from '@core/auth/auth.constants';
+import { clearToken } from '@core/auth/store';
 import { Http } from '@core/http';
 
 import { HTTPError } from '@common/exception/HTTPError';
@@ -68,17 +70,22 @@ export const coreBaseQuery: BaseQueryFn<
 > = async (args, api, extraOptions) => {
 	try {
 		const http = await getHttp();
-		const head: HTTPHeader = { ...args.head };
+		const head: HTTPHeader = {};
 
 		if (!extraOptions?.anonymous) {
 			const token = (api.getState() as { auth?: { token?: string | null } }).auth?.token;
-			if (token) head.Authorization = `Bearer ${token}`;
+			if (token) head[AUTH_TOKEN_HEADER] = token;
 		}
+
+		Object.assign(head, args.head);
 
 		const res: HTTPResponse<unknown> = await http.requestJSON(args.method, args.url, args.qParam, args.body, head);
 
 		return { data: res.data, meta: { code: res.code, explain: res.explain, param: res.param } };
 	} catch (err) {
-		return { error: toCoreQueryError(err) };
+		const error = toCoreQueryError(err);
+		if (error.code === 401 && !extraOptions?.anonymous) api.dispatch(clearToken());
+
+		return { error };
 	}
 };

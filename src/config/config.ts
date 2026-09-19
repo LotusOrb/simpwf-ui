@@ -35,6 +35,8 @@ export class Config {
 
 			const value = (await res.json()) as Partial<ConfigValue>;
 			this.config = { ...this.config, ...value };
+			// A relative API path (e.g. "/") targets the current origin, which the dev proxy forwards to the backend.
+			this.config.SIMPWF_UI_API = new URL(this.config.SIMPWF_UI_API || '/', window.location.origin).toString();
 			this.isReady = true;
 		} finally {
 			this.pending = null;

@@ -2,20 +2,25 @@ import React, { useState } from 'react';
 
 import { Button, Group, ScrollArea, SegmentedControl, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { LuPlus, LuSearchX } from 'react-icons/lu';
+import { LuCircleAlert, LuPlus, LuSearchX } from 'react-icons/lu';
 
 import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
-import { useAsyncQuery } from '@common/hooks/useAsyncQuery';
 
 import {
 	WorkflowDefinitionCard,
 	WorkflowDefinitionCardSkeleton,
 } from '@module/workflow-definition/components/WorkflowDefinitionCard';
+import { WorkflowDefinitionDeleteModal } from '@module/workflow-definition/components/WorkflowDefinitionDeleteModal';
 import { WorkflowDefinitionFilters } from '@module/workflow-definition/components/WorkflowDefinitionFilters';
 import { WorkflowDefinitionHero } from '@module/workflow-definition/components/WorkflowDefinitionHero';
 import { WorkflowDefinitionTable } from '@module/workflow-definition/components/WorkflowDefinitionTable';
-import { listWorkflowDefinitions, sortOrders } from '@module/workflow-definition/data';
+import { sortOrders } from '@module/workflow-definition/data';
+import {
+	useDeleteWorkflowDefinitionMutation,
+	useListWorkflowDefinitionsQuery,
+} from '@module/workflow-definition/hooks';
+import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
 
 import classes from './WorkflowDefinitionListPage.module.scss';
@@ -33,17 +38,41 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 	const [page, setPage] = useState(1);
 	const [perPage, setPerPage] = useState(PER_PAGE_OPTIONS[0]);
 
-	const { data: result, loading } = useAsyncQuery(listWorkflowDefinitions, {
+	const [pendingDelete, setPendingDelete] = useState<WorkflowDefinition | null>(null);
+
+	const { by, direction } = sortOrders[filters.sort];
+	const {
+		data: result,
+		isFetching,
+		isError,
+		refetch,
+	} = useListWorkflowDefinitionsQuery({
 		page,
 		perPage,
 		search: debouncedSearch,
-		order: sortOrders[filters.sort],
+		order: { by, direction },
 		filter: {
 			latest_only: { op: '_eq', value: String(scope === 'latest') },
 			...(filters.startType ? { start_type: { op: '_eq' as const, value: filters.startType } } : {}),
 			...(filters.complexity ? { complexity: { op: '_eq' as const, value: filters.complexity } } : {}),
 		},
 	});
+
+	const [deleteDefinition, deleteState] = useDeleteWorkflowDefinitionMutation();
+	const deleteError = deleteState.error && 'message' in deleteState.error ? (deleteState.error.message ?? null) : null;
+
+	const closeDelete = () => {
+		setPendingDelete(null);
+		deleteState.reset();
+	};
+
+	const confirmDelete = async (definition: WorkflowDefinition) => {
+		const response = await deleteDefinition(definition.id);
+		if ('error' in response) return;
+
+		if (result && result.items.length === 1 && page > 1) setPage(page - 1);
+		closeDelete();
+	};
 
 	const resetPage =
 		<T,>(setter: (value: T) => void) =>
@@ -60,6 +89,20 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 	};
 
 	const renderResults = () => {
+		if (isError && !isFetching) {
+			return (
+				<Stack align="center" gap="xs" py={48}>
+					<ThemeIcon size={48} radius="xl" variant="light" color="red">
+						<LuCircleAlert size={22} />
+					</ThemeIcon>
+					<Text fw={600}>Couldn't load workflow definitions</Text>
+					<Button variant="default" size="xs" mt={4} onClick={refetch}>
+						Try again
+					</Button>
+				</Stack>
+			);
+		}
+
 		if (!result) {
 			return view === 'card' ? (
 				<SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing="md">
@@ -92,15 +135,19 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		}
 
 		return (
-			<div className={classes.results} data-loading={loading || undefined} aria-busy={loading}>
+			<div className={classes.results} data-loading={isFetching || undefined} aria-busy={isFetching}>
 				{view === 'card' ? (
 					<SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing="md">
 						{result.items.map((definition) => (
-							<WorkflowDefinitionCard key={definition.id} definition={definition} />
+							<WorkflowDefinitionCard
+								key={definition.id}
+								definition={definition}
+								onDelete={setPendingDelete}
+							/>
 						))}
 					</SimpleGrid>
 				) : (
-					<WorkflowDefinitionTable definitions={result.items} />
+					<WorkflowDefinitionTable definitions={result.items} onDelete={setPendingDelete} />
 				)}
 			</div>
 		);
@@ -160,6 +207,14 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 					/>
 				)}
 			</Stack>
+
+			<WorkflowDefinitionDeleteModal
+				definition={pendingDelete}
+				loading={deleteState.isLoading}
+				error={deleteError}
+				onClose={closeDelete}
+				onConfirm={confirmDelete}
+			/>
 		</ScrollArea>
 	);
 };

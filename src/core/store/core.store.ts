@@ -1,10 +1,9 @@
-import { combineSlices, configureStore } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 
-import { coreApi } from '@core/api';
-import { authSlice } from '@core/auth/store';
+import { coreReducer } from '@config/reducer.config';
 
-export const coreReducer = combineSlices(authSlice, coreApi);
+import { coreApi } from '@core/api';
 
 export const createCoreStore = () => {
 	const store = configureStore({

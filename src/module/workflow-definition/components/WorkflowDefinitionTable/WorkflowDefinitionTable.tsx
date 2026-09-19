@@ -1,8 +1,9 @@
 import React from 'react';
 
-import { Badge, Button, Card, Group, Skeleton, Table, Text, ThemeIcon, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Button, Card, Group, Skeleton, Table, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { LuTrash2 } from 'react-icons/lu';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
@@ -14,9 +15,14 @@ dayjs.extend(relativeTime);
 interface WorkflowDefinitionTableProps {
 	definitions: WorkflowDefinition[];
 	skeletonRows?: number;
+	onDelete?: (definition: WorkflowDefinition) => void;
 }
 
-export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = ({ definitions, skeletonRows }) => {
+export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = ({
+	definitions,
+	skeletonRows,
+	onDelete,
+}) => {
 	return (
 		<Card padding={0} className={classes.root}>
 			<Table.ScrollContainer minWidth={820} type="native">
@@ -115,9 +121,25 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 												</Text>
 											</Table.Td>
 											<Table.Td ta="right">
-												<Button size="compact-xs" radius="xl" px="sm" variant="light">
-													View detail
-												</Button>
+												<Group gap={4} justify="flex-end" wrap="nowrap">
+													<Button size="compact-xs" radius="xl" px="sm" variant="light">
+														View detail
+													</Button>
+													{onDelete && (
+														<Tooltip label="Delete">
+															<ActionIcon
+																size={22}
+																radius="xl"
+																variant="subtle"
+																color="red"
+																aria-label={`Delete ${definition.name}`}
+																onClick={() => onDelete(definition)}
+															>
+																<LuTrash2 size={13} />
+															</ActionIcon>
+														</Tooltip>
+													)}
+												</Group>
 											</Table.Td>
 										</Table.Tr>
 									);

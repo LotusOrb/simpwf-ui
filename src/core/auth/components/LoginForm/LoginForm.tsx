@@ -8,10 +8,11 @@ import classes from './LoginForm.module.scss';
 
 interface LoginFormProps {
 	loading?: boolean;
+	error?: string | null;
 	onSubmit?: (values: LoginDto) => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ loading, onSubmit }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({ loading, error, onSubmit }) => {
 	const form = useForm<LoginDto>({
 		mode: 'uncontrolled',
 		initialValues: loginInitialValues,
@@ -41,6 +42,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ loading, onSubmit }) => {
 						autoComplete="off"
 						key={form.key('apiKey')}
 						{...form.getInputProps('apiKey')}
+						error={form.errors.apiKey ?? error}
 					/>
 
 					<Button type="submit" size="md" fullWidth loading={loading}>
