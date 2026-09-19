@@ -44,7 +44,7 @@ export const WorkflowRunStatusTabs: React.FC<WorkflowRunStatusTabsProps> = ({ va
 							/>
 						)}
 						{tab.label}
-						<span className={classes.count}>{counts ? counts[tab.value] : '–'}</span>
+						{counts && <span className={classes.count}>{counts[tab.value]}</span>}
 					</UnstyledButton>
 				))}
 			</div>

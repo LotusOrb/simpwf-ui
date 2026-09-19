@@ -36,13 +36,13 @@ export class Http {
 			return err;
 		}
 
-		if (axios.isAxiosError<Partial<HTTPResponse<string>>>(err)) {
+		if (axios.isAxiosError<Partial<HTTPResponse<string>> & { title?: string; detail?: string }>(err)) {
 			const res = err.response;
 			return new HTTPError(
 				res?.status,
 				res?.data?.data,
-				res?.data?.explain ?? err.code,
-				res?.data?.message ?? err.message,
+				res?.data?.explain ?? res?.data?.title ?? err.code,
+				res?.data?.message ?? res?.data?.detail ?? err.message,
 			);
 		}
 

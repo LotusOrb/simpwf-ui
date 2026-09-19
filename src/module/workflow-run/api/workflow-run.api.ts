@@ -1,25 +1,13 @@
 import { API_TAG_LIST_ID, apiTagConfig } from '@config/apiTag.config';
 
-import { coreApi, openCoreStream } from '@core/api';
+import { coreApi } from '@core/api';
 
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunList } from '@module/workflow-run/types/WorkflowRunList';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
 import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
-import type { WorkflowRunStreamMessage } from '@module/workflow-run/types/WorkflowRunStreamMessage';
 
-const RESOURCE = '/workflow-runs';
-
-const matchesQuery = (run: WorkflowRun, param: WorkflowRunQuery) => {
-	const definitionId = param.filter?.workflow_definition_id?.value;
-	if (definitionId && run.workflow_definition_id !== definitionId) return false;
-
-	const statusValue = param.filter?.status?.value;
-	const statuses = Array.isArray(statusValue) ? statusValue : statusValue ? [statusValue] : [];
-	if (statuses.length && !statuses.includes(run.status)) return false;
-
-	return true;
-};
+const RESOURCE = 'v1/workflow/instance';
 
 export const workflowRunApi = coreApi.injectEndpoints({
 	endpoints: (build) => ({
@@ -29,74 +17,11 @@ export const workflowRunApi = coreApi.injectEndpoints({
 				{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID },
 				...(result?.items ?? []).map((item) => ({ type: apiTagConfig.workflowRun, id: item.id })),
 			],
-
-			async onCacheEntryAdded(param, { cacheDataLoaded, cacheEntryRemoved, updateCachedData }) {
-				const stream = openCoreStream<WorkflowRunStreamMessage>({
-					path: `${RESOURCE}/stream`,
-					params: { workflow_definition_id: param.filter?.workflow_definition_id?.value?.toString() },
-					onMessage: (message) => {
-						updateCachedData((draft) => {
-							if (message.type === 'run.deleted') {
-								const index = draft.items.findIndex((item) => item.id === message.payload.id);
-								if (index !== -1) {
-									draft.items.splice(index, 1);
-									draft.total -= 1;
-								}
-								return;
-							}
-
-							const run = message.payload;
-							const index = draft.items.findIndex((item) => item.id === run.id);
-
-							if (index !== -1) {
-								if (matchesQuery(run, param)) draft.items[index] = run;
-								else {
-									draft.items.splice(index, 1);
-									draft.total -= 1;
-								}
-								return;
-							}
-
-							if (matchesQuery(run, param) && (param.page ?? 1) === 1) {
-								draft.items.unshift(run);
-								draft.total += 1;
-								if (param.perPage && draft.items.length > param.perPage) draft.items.pop();
-							}
-						});
-					},
-				});
-
-				try {
-					await cacheDataLoaded;
-					await cacheEntryRemoved;
-				} catch {
-				} finally {
-					stream.close();
-				}
-			},
 		}),
 
 		getWorkflowRun: build.query<WorkflowRun, string>({
-			query: (id) => ({ method: 'get', url: `${RESOURCE}/${id}` }),
+			query: (id) => ({ method: 'get', url: `${RESOURCE}/${id}/status` }),
 			providesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowRun, id }],
-
-			async onCacheEntryAdded(id, { cacheDataLoaded, cacheEntryRemoved, updateCachedData }) {
-				const stream = openCoreStream<WorkflowRunStreamMessage>({
-					path: `${RESOURCE}/${id}/stream`,
-					onMessage: (message) => {
-						if (message.type !== 'run.updated') return;
-						updateCachedData(() => message.payload);
-					},
-				});
-
-				try {
-					await cacheDataLoaded;
-					await cacheEntryRemoved;
-				} catch {
-				} finally {
-					stream.close();
-				}
-			},
 		}),
 
 		countWorkflowRunsByStatus: build.query<Record<WorkflowRunStatus | 'all', number>, WorkflowRunQuery>({

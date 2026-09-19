@@ -1,4 +1,4 @@
-import React, { useEffect, useEffectEvent, useState } from 'react';
+import React, { useState } from 'react';
 
 import {
 	ActionIcon,
@@ -16,13 +16,12 @@ import {
 	Tooltip,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert } from 'react-icons/lu';
+import { LuCircleAlert, LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert } from 'react-icons/lu';
 
 import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
-import { useAsyncQuery } from '@common/hooks/useAsyncQuery';
 
-import { listWorkflowDefinitions } from '@module/workflow-definition/data';
+import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
 import {
 	WorkflowRunCard,
 	WorkflowRunCardSkeleton,
@@ -35,14 +34,13 @@ import {
 	type WorkflowRunStatusTab,
 } from '@module/workflow-run/components/WorkflowRunStatusTabs';
 import { WorkflowRunTable } from '@module/workflow-run/components/WorkflowRunTable';
+import { runSortOrders } from '@module/workflow-run/data';
 import {
-	countWorkflowRunsByStatus,
-	listWorkflowRuns,
-	pauseWorkflowRun,
-	resumeWorkflowRun,
-	runSortOrders,
-	stopWorkflowRun,
-} from '@module/workflow-run/data';
+	useListWorkflowRunsQuery,
+	usePauseWorkflowRunMutation,
+	useResumeWorkflowRunMutation,
+	useStopWorkflowRunMutation,
+} from '@module/workflow-run/hooks';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
@@ -52,13 +50,9 @@ import classes from './WorkflowRunListPage.module.scss';
 const AUTO_REFRESH_MS = 5000;
 const SETTLE_REFRESH_MS = 3200;
 
-const initialFilters: WorkflowRunFilterValues = { search: '', definitionId: null, sort: 'newest' };
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const actionRequests: Record<WorkflowRunAction, (id: string) => Promise<unknown>> = {
-	pause: pauseWorkflowRun,
-	resume: resumeWorkflowRun,
-	stop: stopWorkflowRun,
-};
+const initialFilters: WorkflowRunFilterValues = { search: '', definitionId: null, sort: 'newest' };
 
 export const WorkflowRunListPage: React.FC = () => {
 	const [view, setView] = useState<ViewMode>('card');
@@ -72,36 +66,50 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [pendingStop, setPendingStop] = useState<WorkflowRun | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 
-	const baseQuery: WorkflowRunQuery = {
-		search: debouncedSearch,
-		filter: filters.definitionId ? { workflow_definition_id: { op: '_eq', value: filters.definitionId } } : {},
-	};
-
-	const runs = useAsyncQuery(listWorkflowRuns, {
-		...baseQuery,
+	const runId = debouncedSearch.trim();
+	const { by, direction } = runSortOrders[filters.sort];
+	const query: WorkflowRunQuery = {
 		page,
 		perPage,
-		order: runSortOrders[filters.sort],
+		order: { by, direction },
 		filter: {
-			...baseQuery.filter,
+			...(UUID_PATTERN.test(runId) ? { id: { op: '_eq' as const, value: [runId] } } : {}),
+			...(filters.definitionId
+				? { workflow_definition_id: { op: '_eq' as const, value: filters.definitionId } }
+				: {}),
 			...(statusTab === 'all' ? {} : { status: { op: '_eq' as const, value: [statusTab] } }),
 		},
-	});
-	const counts = useAsyncQuery(countWorkflowRunsByStatus, baseQuery);
-	const definitions = useAsyncQuery(listWorkflowDefinitions, {
+	};
+
+	const {
+		data: result,
+		isFetching,
+		isError,
+		refetch,
+	} = useListWorkflowRunsQuery(query, { pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0 });
+	const { data: definitions } = useListWorkflowDefinitionsQuery({
 		perPage: 200,
 		filter: { latest_only: { op: '_eq', value: 'false' } },
 	});
 
+	const [pauseRun] = usePauseWorkflowRunMutation();
+	const [resumeRun] = useResumeWorkflowRunMutation();
+	const [stopRun] = useStopWorkflowRunMutation();
+	const actionRequests: Record<WorkflowRunAction, (id: string) => { unwrap: () => Promise<unknown> }> = {
+		pause: pauseRun,
+		resume: resumeRun,
+		stop: stopRun,
+	};
+
 	const definitionInfo = new Map<string, WorkflowRunDefinitionInfo>(
-		(definitions.data?.items ?? []).map((definition) => [
+		(definitions?.items ?? []).map((definition) => [
 			definition.id,
 			{ name: definition.name, version: definition.version },
 		]),
 	);
 
 	const definitionGroups = new Map<string, { value: string; label: string; version: number }[]>();
-	for (const definition of definitions.data?.items ?? []) {
+	for (const definition of definitions?.items ?? []) {
 		const items = definitionGroups.get(definition.name) ?? [];
 		items.push({
 			value: definition.id,
@@ -117,18 +125,6 @@ export const WorkflowRunListPage: React.FC = () => {
 			items: items.sort((a, b) => b.version - a.version).map(({ value, label }) => ({ value, label })),
 		}));
 
-	const refresh = () => {
-		runs.refetch();
-		counts.refetch();
-	};
-
-	const tick = useEffectEvent(refresh);
-	useEffect(() => {
-		if (!autoRefresh) return;
-		const timer = setInterval(tick, AUTO_REFRESH_MS);
-		return () => clearInterval(timer);
-	}, [autoRefresh]);
-
 	const resetPage =
 		<T,>(setter: (value: T) => void) =>
 		(value: T) => {
@@ -140,11 +136,11 @@ export const WorkflowRunListPage: React.FC = () => {
 		setActionError(null);
 		setBusyIds((current) => [...current, run.id]);
 		try {
-			await actionRequests[action](run.id);
-			refresh();
-			if (action !== 'resume') setTimeout(refresh, SETTLE_REFRESH_MS);
+			await actionRequests[action](run.id).unwrap();
+			if (action !== 'resume') setTimeout(refetch, SETTLE_REFRESH_MS);
 		} catch (error) {
-			setActionError(error instanceof Error ? error.message : `Failed to ${action} run`);
+			const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
+			setActionError(typeof message === 'string' && message ? message : `Failed to ${action} run`);
 		} finally {
 			setBusyIds((current) => current.filter((id) => id !== run.id));
 		}
@@ -167,9 +163,21 @@ export const WorkflowRunListPage: React.FC = () => {
 		setPage(1);
 	};
 
-	const result = runs.data;
-
 	const renderResults = () => {
+		if (isError && !isFetching) {
+			return (
+				<Stack align="center" gap="xs" py={48}>
+					<ThemeIcon size={48} radius="xl" variant="light" color="red">
+						<LuCircleAlert size={22} />
+					</ThemeIcon>
+					<Text fw={600}>Couldn't load workflow runs</Text>
+					<Button variant="default" size="xs" mt={4} onClick={refetch}>
+						Try again
+					</Button>
+				</Stack>
+			);
+		}
+
 		if (!result) {
 			return view === 'card' ? (
 				<SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing="md">
@@ -207,7 +215,7 @@ export const WorkflowRunListPage: React.FC = () => {
 		}
 
 		return (
-			<div className={classes.results} data-loading={runs.loading || undefined} aria-busy={runs.loading}>
+			<div className={classes.results} data-loading={isFetching || undefined} aria-busy={isFetching}>
 				{view === 'card' ? (
 					<SimpleGrid cols={{ base: 1, xs: 2, md: 3, lg: 4 }} spacing="md">
 						{result.items.map((run) => (
@@ -256,8 +264,8 @@ export const WorkflowRunListPage: React.FC = () => {
 								variant="default"
 								size={36}
 								aria-label="Refresh runs"
-								onClick={refresh}
-								loading={runs.fetching && !!result}
+								onClick={refetch}
+								loading={isFetching && !!result}
 							>
 								<LuRefreshCw size={16} />
 							</ActionIcon>
@@ -266,7 +274,7 @@ export const WorkflowRunListPage: React.FC = () => {
 					</Group>
 				</Group>
 
-				<WorkflowRunStatusTabs value={statusTab} counts={counts.data} onChange={resetPage(setStatusTab)} />
+				<WorkflowRunStatusTabs value={statusTab} counts={null} onChange={resetPage(setStatusTab)} />
 
 				{actionError && (
 					<Alert

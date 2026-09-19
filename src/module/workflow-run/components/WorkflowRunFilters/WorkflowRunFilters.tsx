@@ -27,8 +27,8 @@ export const WorkflowRunFilters: React.FC<WorkflowRunFiltersProps> = ({ value, d
 				size="sm"
 				w={220}
 				className={classes.field}
-				aria-label="Search by run ID"
-				placeholder="Search by run ID"
+				aria-label="Filter by run ID"
+				placeholder="Paste a run ID"
 				leftSection={<LuSearch size={14} />}
 				value={value.search}
 				onChange={(event) => onChange({ ...value, search: event.currentTarget.value })}
