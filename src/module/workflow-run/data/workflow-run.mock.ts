@@ -113,8 +113,6 @@ type SortableField = (typeof sortableFields)[number];
 export const listWorkflowRuns = async (query: WorkflowRunQuery = {}): Promise<WorkflowRunList> => {
 	const { page = 1, perPage = 8, search, order, filter } = query;
 
-	// Module facets live in `filter` so the shape matches what the real endpoint
-	// receives once `Http.parseComplexQueryParam` serializes it.
 	const workflowDefinitionId = (filter?.workflow_definition_id?.value as string | undefined) ?? null;
 	const statusValue = filter?.status?.value;
 	const status = (Array.isArray(statusValue) ? statusValue : statusValue ? [statusValue] : []) as WorkflowRunStatus[];

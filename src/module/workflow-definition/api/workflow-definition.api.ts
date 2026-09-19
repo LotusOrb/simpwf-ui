@@ -11,7 +11,6 @@ const RESOURCE = '/workflow-definitions';
 export const workflowDefinitionApi = coreApi.injectEndpoints({
 	endpoints: (build) => ({
 		listWorkflowDefinitions: build.query<WorkflowDefinitionList, WorkflowDefinitionQuery>({
-			// The param is already a `ComplexQueryParam`, so it goes to `Http` untouched.
 			query: (param) => ({ method: 'get', url: RESOURCE, qParam: param }),
 			providesTags: (result) => [
 				{ type: apiTagConfig.workflowDefinition, id: API_TAG_LIST_ID },
@@ -29,7 +28,6 @@ export const workflowDefinitionApi = coreApi.injectEndpoints({
 			invalidatesTags: [{ type: apiTagConfig.workflowDefinition, id: API_TAG_LIST_ID }],
 		}),
 
-		/** A new version is a new row in the same lineage, so the list changes too. */
 		updateWorkflowDefinition: build.mutation<
 			WorkflowDefinition,
 			{ id: string } & Partial<Pick<WorkflowDefinition, 'name' | 'content'>>

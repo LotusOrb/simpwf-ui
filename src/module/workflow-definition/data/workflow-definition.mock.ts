@@ -396,8 +396,6 @@ type SortableField = (typeof sortableFields)[number];
 export const listWorkflowDefinitions = async (query: WorkflowDefinitionQuery = {}): Promise<WorkflowDefinitionList> => {
 	const { page = 1, perPage = 8, search, order, filter } = query;
 
-	// Module facets live in `filter` so the shape matches what the real endpoint
-	// receives once `Http.parseComplexQueryParam` serializes it.
 	const latestOnly = filter?.latest_only ? filter.latest_only.value === 'true' : true;
 	const startType = (filter?.start_type?.value as WorkflowDefinitionNodeType | undefined) ?? null;
 	const complexity = (filter?.complexity?.value as WorkflowDefinitionComplexity | undefined) ?? null;

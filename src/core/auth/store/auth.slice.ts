@@ -8,7 +8,6 @@ const TOKEN_KEY = 'token';
 
 export interface AuthState {
 	token: string | null;
-	/** Hydrated from storage on boot, so there is no flash of logged-out UI. */
 	initialized: boolean;
 }
 

@@ -3,17 +3,14 @@ import { config } from '@config/config';
 export type CoreStreamTransport = 'ws' | 'sse';
 
 export interface CoreStreamOptions<TMessage> {
-	/** Path appended to the API origin, e.g. `/workflow-runs/stream`. */
 	path: string;
 	transport?: CoreStreamTransport;
-	/** Serialized onto the connect URL as a query string. */
 	params?: Record<string, string | number | boolean | undefined | null>;
 	onMessage: (message: TMessage) => void;
 	onError?: (event: Event) => void;
 }
 
 export interface CoreStream {
-	/** Resolves once the socket is open; rejects if it never opens. */
 	opened: Promise<void>;
 	close: () => void;
 }
@@ -32,13 +29,6 @@ const buildUrl = (origin: string, options: CoreStreamOptions<unknown>) => {
 	return url.toString();
 };
 
-/**
- * Transport-agnostic live feed, used from `onCacheEntryAdded`.
- *
- * The backend contract is not settled yet, so both transports are here and the
- * call sites only pick a string. Swapping `'ws'` for `'sse'` changes nothing
- * above this function.
- */
 export const openCoreStream = <TMessage>(options: CoreStreamOptions<TMessage>): CoreStream => {
 	const transport = options.transport ?? 'ws';
 	let socket: WebSocket | EventSource | null = null;
@@ -61,15 +51,11 @@ export const openCoreStream = <TMessage>(options: CoreStreamOptions<TMessage>): 
 					const data = (event as MessageEvent<string>).data;
 					try {
 						options.onMessage(JSON.parse(data) as TMessage);
-					} catch {
-						// A frame we cannot parse is dropped rather than tearing down the feed.
-					}
+					} catch {}
 				});
 			}),
 	);
 
-	// Nobody awaits `opened` on the teardown path; swallow so it never surfaces
-	// as an unhandled rejection.
 	opened.catch(() => {});
 
 	return {

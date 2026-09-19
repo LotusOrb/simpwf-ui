@@ -2,7 +2,6 @@ import type { WorkflowDefinitionComplexity } from './WorkflowDefinitionComplexit
 import type { WorkflowDefinitionNodeType } from './WorkflowDefinitionNodeType';
 import type { WorkflowDefinitionSort } from './WorkflowDefinitionSort';
 
-/** Filter form state held by the UI, before it is mapped onto `WorkflowDefinitionQuery`. */
 export interface WorkflowDefinitionFilterValues {
 	sort: WorkflowDefinitionSort;
 	startType: WorkflowDefinitionNodeType | null;

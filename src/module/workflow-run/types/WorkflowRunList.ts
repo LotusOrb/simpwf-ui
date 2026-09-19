@@ -1,6 +1,5 @@
 import type { WorkflowRun } from './WorkflowRun';
 
-/** Paginated envelope. Use `WorkflowRun[]` for a plain collection. */
 export interface WorkflowRunList {
 	items: WorkflowRun[];
 	page: number;

@@ -10,7 +10,6 @@ import type { HTTPHeader } from '@common/types/HTTPHeader';
 import type { HTTPMethod } from '@common/types/HTTPMethod';
 import type { HTTPResponse } from '@common/types/HTTPResponse';
 
-/** What every endpoint's `query()` returns. Mirrors `Http.requestJSON`. */
 export interface CoreQueryArgs {
 	method: HTTPMethod;
 	url: string;
@@ -19,10 +18,6 @@ export interface CoreQueryArgs {
 	head?: HTTPHeader;
 }
 
-/**
- * `HTTPError` is a class, and RTK Query keeps errors in the store, so it has to
- * be flattened into something serializable before it crosses the boundary.
- */
 export interface CoreQueryError {
 	code: number;
 	data: string;
@@ -30,9 +25,7 @@ export interface CoreQueryError {
 	message: string;
 }
 
-/** Extra knobs an endpoint can pass through `extraOptions`. */
 export interface CoreQueryExtraOptions {
-	/** Skip the Authorization header (login, public config, ...). */
 	anonymous?: boolean;
 }
 
@@ -42,10 +35,6 @@ export interface CoreQueryMeta {
 	param: ComplexQueryParam;
 }
 
-/**
- * `Config.getValue()` is async, so the transport cannot be built at module
- * scope. It is created once, on the first request, and reused after that.
- */
 let httpPromise: Promise<Http> | null = null;
 
 const getHttp = (): Promise<Http> => {
@@ -53,7 +42,6 @@ const getHttp = (): Promise<Http> => {
 	return httpPromise;
 };
 
-/** Test/HMR escape hatch: forget the memoized transport. */
 export const resetCoreHttp = () => {
 	httpPromise = null;
 };
@@ -71,10 +59,6 @@ const toCoreQueryError = (err: unknown): CoreQueryError => {
 	};
 };
 
-/**
- * Unwraps the `HTTPResponse<T>` envelope so endpoints only ever see `T`, and
- * parks the envelope's metadata on `meta` for the rare caller that needs it.
- */
 export const coreBaseQuery: BaseQueryFn<
 	CoreQueryArgs,
 	unknown,
@@ -87,7 +71,6 @@ export const coreBaseQuery: BaseQueryFn<
 		const head: HTTPHeader = { ...args.head };
 
 		if (!extraOptions?.anonymous) {
-			// Imported lazily-by-cast to keep `core/api` free of a store import cycle.
 			const token = (api.getState() as { auth?: { token?: string | null } }).auth?.token;
 			if (token) head.Authorization = `Bearer ${token}`;
 		}
