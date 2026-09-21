@@ -1,7 +1,7 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 import { Box, type BoxProps, type MantineBreakpoint } from '@mantine/core';
-import { createPortal } from 'react-dom';
 
 import { useCoreSelector } from '@core/store';
 

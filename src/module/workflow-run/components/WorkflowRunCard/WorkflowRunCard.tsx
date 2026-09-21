@@ -4,6 +4,7 @@ import { Badge, Card, Group, Skeleton, Text, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuClock, LuHourglass, LuTimer, LuTriangleAlert } from 'react-icons/lu';
+import { useNavigate } from 'react-router';
 
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
@@ -29,13 +30,34 @@ interface WorkflowRunCardProps {
 }
 
 export const WorkflowRunCard: React.FC<WorkflowRunCardProps> = ({ run, definition, busy, onAction }) => {
+	const navigate = useNavigate();
 	const startedAt = run.started_at ?? run.created_at;
+	const detailPath = `/app/workflow-run/${run.id}`;
+
+	// Clicks on nested controls (copy id, actions menu — including its portalled dropdown) stay local.
+	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+		if ((event.target as HTMLElement).closest('button, a, [role="menu"]')) return;
+		navigate(detailPath);
+	};
+
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+		if (event.target !== event.currentTarget || event.key !== 'Enter') return;
+		navigate(detailPath);
+	};
 
 	return (
-		<Card className={classes.root} data-status={run.status}>
+		<Card
+			className={classes.root}
+			data-status={run.status}
+			role="link"
+			tabIndex={0}
+			aria-label={`Open run ${definition?.name ?? run.id}`}
+			onClick={handleClick}
+			onKeyDown={handleKeyDown}
+		>
 			<Group justify="space-between" wrap="nowrap">
 				<WorkflowRunStatusBadge run={run} />
-				<WorkflowRunActions run={run} busy={busy} onAction={onAction} />
+				<WorkflowRunActions run={run} busy={busy} withDetailLink={false} onAction={onAction} />
 			</Group>
 
 			<Group gap={6} mt="sm" wrap="nowrap">

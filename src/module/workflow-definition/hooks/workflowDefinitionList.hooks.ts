@@ -1,4 +1,11 @@
-import { debounce, parseAsInteger, parseAsNumberLiteral, parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import {
+	debounce,
+	parseAsInteger,
+	parseAsNumberLiteral,
+	parseAsString,
+	parseAsStringLiteral,
+	useQueryStates,
+} from 'nuqs';
 
 import { PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 

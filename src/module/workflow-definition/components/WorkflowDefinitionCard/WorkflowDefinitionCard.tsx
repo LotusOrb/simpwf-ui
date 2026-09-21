@@ -58,7 +58,11 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ 
 							</ActionIcon>
 						</Menu.Target>
 						<Menu.Dropdown>
-							<Menu.Item color="red" leftSection={<LuTrash2 size={14} />} onClick={() => onDelete(definition)}>
+							<Menu.Item
+								color="red"
+								leftSection={<LuTrash2 size={14} />}
+								onClick={() => onDelete(definition)}
+							>
 								Delete
 							</Menu.Item>
 						</Menu.Dropdown>
@@ -91,7 +95,13 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ 
 						const meta = nodeTypeMeta[type];
 						return (
 							<Tooltip key={type} label={meta.label}>
-								<ThemeIcon size={24} variant="default" radius="sm" c={`${meta.color}.6`} className={classes.nodeType}>
+								<ThemeIcon
+									size={24}
+									variant="default"
+									radius="sm"
+									c={`${meta.color}.6`}
+									className={classes.nodeType}
+								>
 									<meta.icon size={13} />
 								</ThemeIcon>
 							</Tooltip>

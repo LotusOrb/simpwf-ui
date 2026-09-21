@@ -1,0 +1,42 @@
+.root {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--mantine-spacing-lg);
+	align-items: center;
+	padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+}
+
+.progress {
+	flex: 1 1 200px;
+	min-width: 180px;
+}
+
+.stats {
+	display: grid;
+	flex: 2 1 480px;
+	grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+	gap: var(--mantine-spacing-md);
+}
+
+.stat {
+	min-width: 0;
+}
+
+.value {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.numeric {
+	font-variant-numeric: tabular-nums;
+}

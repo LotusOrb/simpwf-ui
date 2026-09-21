@@ -1,0 +1,171 @@
+$gutter: 190px;
+$meta: 28px;
+
+.root {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.axis {
+	display: flex;
+	align-items: flex-end;
+	height: 22px;
+	padding-right: $meta;
+	border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.axisTrack {
+	position: relative;
+	flex: 1;
+	height: 100%;
+}
+
+.tick {
+	position: absolute;
+	bottom: 2px;
+	transform: translateX(-50%);
+	white-space: nowrap;
+
+	&:first-of-type .tickLabel {
+		transform: translateX(18px);
+	}
+
+	&:last-of-type .tickLabel {
+		transform: translateX(-18px);
+	}
+}
+
+.tickLabel {
+	font-variant-numeric: tabular-nums;
+}
+
+.rows {
+	display: flex;
+	flex-direction: column;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	padding: 0;
+	border: 0;
+	border-bottom: 1px solid var(--mantine-color-gray-1);
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+
+	&:hover {
+		background-color: var(--mantine-color-gray-0);
+	}
+
+	&[data-selected] {
+		background-color: var(--mantine-color-blue-0);
+	}
+}
+
+.gutter {
+	display: flex;
+	flex-shrink: 0;
+	gap: 6px;
+	align-items: center;
+	box-sizing: border-box;
+	width: $gutter;
+	padding: 0 10px 0 4px;
+}
+
+.rowIcon {
+	flex-shrink: 0;
+	color: var(--mantine-color-gray-6);
+}
+
+.retry {
+	flex-shrink: 0;
+	gap: 2px;
+	padding: 0 4px;
+}
+
+.track {
+	position: relative;
+	flex: 1;
+	height: 30px;
+}
+
+.gridline {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background-color: var(--mantine-color-gray-1);
+}
+
+.bar {
+	position: absolute;
+	top: 9px;
+	height: 12px;
+	min-width: 3px;
+	border-radius: 3px;
+	background-color: var(--mantine-color-gray-4);
+
+	&[data-status='succeeded'] {
+		background-color: var(--mantine-color-teal-5);
+	}
+
+	&[data-status='running'] {
+		background-color: var(--mantine-color-blue-5);
+	}
+
+	&[data-status='waiting'] {
+		background-color: var(--mantine-color-yellow-5);
+	}
+
+	&[data-status='failed'] {
+		background-color: var(--mantine-color-red-5);
+	}
+
+	&[data-status='cancelled'] {
+		background-color: var(--mantine-color-gray-5);
+	}
+
+	&[data-status='rolled_back'] {
+		background-color: var(--mantine-color-grape-4);
+	}
+
+	&[data-running] {
+		background-image: linear-gradient(
+			110deg,
+			transparent 0 35%,
+			rgba(255, 255, 255, 0.45) 50%,
+			transparent 65% 100%
+		);
+		background-size: 200% 100%;
+		animation: sweep 1.3s linear infinite;
+	}
+}
+
+.barLabel {
+	position: absolute;
+	top: 10px;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	pointer-events: none;
+}
+
+.meta {
+	display: flex;
+	flex-shrink: 0;
+	justify-content: center;
+	width: $meta;
+}
+
+.errorIcon {
+	display: inline-flex;
+	color: var(--mantine-color-red-6);
+}
+
+@keyframes sweep {
+	to {
+		background-position: -200% 0;
+	}
+}
