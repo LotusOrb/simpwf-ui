@@ -84,9 +84,17 @@
 }
 
 .timeline {
+	display: flex;
+	flex-direction: column;
 	flex-shrink: 0;
 	border-top: 1px solid var(--mantine-color-gray-2);
 	background-color: var(--mantine-color-white);
+
+	&[data-mode='full'] {
+		flex: 1;
+		min-height: 0;
+		border-top: 0;
+	}
 }
 
 .mono {

@@ -125,7 +125,7 @@ export const buildRunTimeline = (
 			occurrenceId: occurrence.occurrence_id,
 			name: node.name,
 			type: node.type,
-			status: node.status,
+			status: occurrence.status,
 			attempt: occurrence.attempt,
 			attemptCount: node.attempt_count,
 			startedAt,

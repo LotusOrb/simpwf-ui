@@ -20,8 +20,12 @@ import {
 import { ReactFlowProvider } from '@xyflow/react';
 import {
 	LuArrowLeft,
+	LuChevronDown,
+	LuChevronUp,
 	LuCircleAlert,
 	LuHourglass,
+	LuMaximize2,
+	LuMinimize2,
 	LuPanelRight,
 	LuPause,
 	LuPlay,
@@ -45,7 +49,7 @@ import { WorkflowRunRollbackModal } from '@module/workflow-run/components/Workfl
 import { WorkflowRunStatusBadge } from '@module/workflow-run/components/WorkflowRunStatusBadge';
 import { WorkflowRunSummary } from '@module/workflow-run/components/WorkflowRunSummary';
 import { WorkflowRunTimeline } from '@module/workflow-run/components/WorkflowRunTimeline';
-import { getAllowedActions, indexDefinitionNodes } from '@module/workflow-run/data';
+import { formatWaitingReason, getAllowedActions, indexDefinitionNodes } from '@module/workflow-run/data';
 import {
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
@@ -59,6 +63,8 @@ import {
 import classes from './WorkflowRunDetailPage.module.scss';
 
 const RUN_LIST_ROUTE = '/app/workflow-run';
+
+type TimelineMode = 'collapsed' | 'normal' | 'full';
 
 const errorMessage = (error: unknown, fallback: string): string => {
 	const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
@@ -77,6 +83,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const [inputOpened, setInputOpened] = useState(false);
 	const [stopOpened, setStopOpened] = useState(false);
 	const [actionError, setActionError] = useState<string | null>(null);
+	const [timelineMode, setTimelineMode] = useState<TimelineMode>('normal');
 
 	const [pauseRun, pauseState] = usePauseWorkflowRunMutation();
 	const [resumeRun, resumeState] = useResumeWorkflowRunMutation();
@@ -140,7 +147,10 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const selectedOccurrence = selectedNodeId ? (detail.nodes[selectedNodeId] ?? null) : null;
 	const selectedDebug = selectedOccurrence ? (debug[selectedOccurrence.occurrence_id] ?? null) : null;
 
-	const currentNode = detail.current_node_id ? (nodesById.get(detail.current_node_id) ?? null) : null;
+	// A run parked on input reports no current node; the parked node is the one in flight.
+	const currentNodeId = detail.current_node_id ?? detail.pending_input?.node_id ?? null;
+	const currentNode = currentNodeId ? (nodesById.get(currentNodeId) ?? null) : null;
+	const pendingNode = detail.pending_input ? (nodesById.get(detail.pending_input.node_id) ?? null) : null;
 	const actions = getAllowedActions(detail);
 	const rollbackTargets = timeline.entries.filter((entry) => detail.nodes[entry.nodeId]?.rollbackable);
 	const canRollback = ['paused', 'failed', 'stopped'].includes(detail.status) && rollbackTargets.length > 0;
@@ -320,7 +330,19 @@ export const WorkflowRunDetailPage: React.FC = () => {
 						)}
 						{!detail.error && detail.waiting_reason && (
 							<Alert color="yellow" icon={<LuHourglass size={16} />} p="sm">
-								<Text fz="xs">{detail.waiting_reason}</Text>
+								{detail.pending_input ? (
+									<Text fz="xs">
+										Waiting for input on{' '}
+										<strong>{pendingNode?.name ?? detail.pending_input.node_id}</strong>
+										<Text span fz="xs" c="dimmed">
+											{' · '}
+											{detail.pending_input.channel} →{' '}
+											{detail.pending_input.context_path || '(root)'}
+										</Text>
+									</Text>
+								) : (
+									<Text fz="xs">{formatWaitingReason(detail.waiting_reason)}</Text>
+								)}
 							</Alert>
 						)}
 
@@ -333,31 +355,92 @@ export const WorkflowRunDetailPage: React.FC = () => {
 								</Tabs.List>
 
 								<Tabs.Panel value="graph" className={classes.tabPanel}>
-									<div className={classes.canvas}>
-										<ReactFlowProvider>
-											<WorkflowRunGraph
-												definition={definition}
-												detail={detail}
-												debug={debug}
+									{timelineMode !== 'full' && (
+										<div className={classes.canvas}>
+											<ReactFlowProvider>
+												<WorkflowRunGraph
+													definition={definition}
+													detail={detail}
+													debug={debug}
+													selectedNodeId={selectedNodeId}
+													onSelect={selectNode}
+												/>
+											</ReactFlowProvider>
+										</div>
+									)}
+									<div className={classes.timeline} data-mode={timelineMode}>
+										<Group justify="space-between" px="xs" py={4} wrap="nowrap">
+											<Group gap={6} wrap="nowrap">
+												<Tooltip
+													label={
+														timelineMode === 'collapsed'
+															? 'Expand timeline'
+															: 'Collapse timeline'
+													}
+												>
+													<ActionIcon
+														variant="subtle"
+														color="gray"
+														size="sm"
+														aria-label="Toggle timeline"
+														aria-expanded={timelineMode !== 'collapsed'}
+														onClick={() =>
+															setTimelineMode((mode) =>
+																mode === 'collapsed' ? 'normal' : 'collapsed',
+															)
+														}
+													>
+														{timelineMode === 'collapsed' ? (
+															<LuChevronUp size={14} />
+														) : (
+															<LuChevronDown size={14} />
+														)}
+													</ActionIcon>
+												</Tooltip>
+												<Text fz={11} fw={600} c="dimmed" tt="uppercase" lts={0.4}>
+													Timeline
+												</Text>
+											</Group>
+											<Group gap={6} wrap="nowrap">
+												<Text fz={11} c="dimmed">
+													{timeline.entries.length} occurrences
+												</Text>
+												<Tooltip
+													label={
+														timelineMode === 'full'
+															? 'Show node graph'
+															: 'Full height (hides node graph)'
+													}
+												>
+													<ActionIcon
+														variant="subtle"
+														color="gray"
+														size="sm"
+														aria-label="Toggle full-height timeline"
+														aria-pressed={timelineMode === 'full'}
+														onClick={() =>
+															setTimelineMode((mode) =>
+																mode === 'full' ? 'normal' : 'full',
+															)
+														}
+													>
+														{timelineMode === 'full' ? (
+															<LuMinimize2 size={13} />
+														) : (
+															<LuMaximize2 size={13} />
+														)}
+													</ActionIcon>
+												</Tooltip>
+											</Group>
+										</Group>
+										{timelineMode !== 'collapsed' && (
+											<WorkflowRunTimeline
+												timeline={timeline}
+												fill={timelineMode === 'full'}
 												selectedNodeId={selectedNodeId}
 												onSelect={selectNode}
 											/>
-										</ReactFlowProvider>
-									</div>
-									<div className={classes.timeline}>
-										<Group justify="space-between" px="xs" pt={6}>
-											<Text fz={11} fw={600} c="dimmed" tt="uppercase" lts={0.4}>
-												Timeline
-											</Text>
-											<Text fz={11} c="dimmed">
-												{timeline.entries.length} occurrences
-											</Text>
-										</Group>
-										<WorkflowRunTimeline
-											timeline={timeline}
-											selectedNodeId={selectedNodeId}
-											onSelect={selectNode}
-										/>
+										)}
 									</div>
 								</Tabs.Panel>
 

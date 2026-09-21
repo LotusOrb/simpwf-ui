@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 
-import { formatRunDuration } from '../../data';
+import { formatRunDuration, formatWaitingReason } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
 import { WorkflowRunStatusBadge } from '../WorkflowRunStatusBadge';
@@ -84,7 +84,7 @@ export const WorkflowRunCard: React.FC<WorkflowRunCardProps> = ({ run, definitio
 					<Group gap={6} wrap="nowrap" align="flex-start" c="yellow.8">
 						<LuHourglass size={13} className={classes.detailIcon} aria-hidden />
 						<Text fz="xs" lineClamp={2} inherit>
-							{run.waiting_reason}
+							{formatWaitingReason(run.waiting_reason)}
 						</Text>
 					</Group>
 				) : (

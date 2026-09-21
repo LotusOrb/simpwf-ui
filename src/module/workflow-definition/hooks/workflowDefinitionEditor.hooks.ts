@@ -3,7 +3,7 @@ import { useStoreApi, useReactFlow } from '@xyflow/react';
 import { useCoreDispatch, useCoreStore } from '@core/store';
 
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
-import { createEditorNode } from '@module/workflow-definition/data';
+import { createEditorNode, scopeKey } from '@module/workflow-definition/data';
 import {
 	jsonDraftChanged,
 	nodeAdded,
@@ -11,6 +11,7 @@ import {
 	nodeRawChanged,
 	selectEditorNodes,
 	selectEditorScope,
+	selectEditorStarts,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
 import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
@@ -46,7 +47,11 @@ export const useWorkflowDefinitionEditorAddNode = () => {
 		const position = { x: center.x - NODE_ANCHOR.x, y: center.y - NODE_ANCHOR.y };
 
 		if (!screenPoint) {
-			const occupied = Object.values(nodes).filter((node) => node.parentId === scope);
+			const start = selectEditorStarts(state)[scopeKey(scope)];
+			const occupied = [
+				...Object.values(nodes).filter((node) => node.parentId === scope),
+				...(start ? [start] : []),
+			];
 			const isFree = () =>
 				occupied.every(
 					(node) =>

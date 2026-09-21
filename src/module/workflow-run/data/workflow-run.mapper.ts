@@ -71,12 +71,15 @@ export const toRunNodeStatus = (status: string): WorkflowRunNodeStatus =>
 
 export const toRunDetail = (res: WorkflowRunStatusResponse): WorkflowRunDetail => {
 	// Nodes the engine never reached carry no occurrence; the views treat a missing entry as pending.
+	// A node parked on input is still `running` to the engine, so it is surfaced as waiting.
+	const parkedNodeId = res.status === 'waiting' ? res.pending_input?.node_id : undefined;
 	const nodes: Record<string, WorkflowRunNodeOccurrence> = {};
 	for (const [nodeId, occurrence] of Object.entries(res.nodes ?? {})) {
 		if (!occurrence.occurrence_id) continue;
+		const status = toRunNodeStatus(occurrence.status);
 		nodes[nodeId] = {
 			occurrence_id: occurrence.occurrence_id,
-			status: toRunNodeStatus(occurrence.status),
+			status: nodeId === parkedNodeId && status === 'running' ? 'waiting' : status,
 			attempt: occurrence.attempt ?? 1,
 			rollbackable: occurrence.rollbackable,
 		};

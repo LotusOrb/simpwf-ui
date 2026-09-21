@@ -4,7 +4,18 @@ $meta: 28px;
 .root {
 	display: flex;
 	flex-direction: column;
+	min-width: 0;
 	min-height: 0;
+	overflow-x: hidden;
+
+	&[data-fill] {
+		flex: 1;
+
+		.scroll {
+			flex: 1;
+			min-height: 0;
+		}
+	}
 }
 
 .axis {
@@ -18,6 +29,7 @@ $meta: 28px;
 .axisTrack {
 	position: relative;
 	flex: 1;
+	min-width: 0;
 	height: 100%;
 }
 
@@ -48,6 +60,7 @@ $meta: 28px;
 .row {
 	display: flex;
 	align-items: center;
+	width: 100%;
 	padding: 0;
 	border: 0;
 	border-bottom: 1px solid var(--mantine-color-gray-1);
@@ -89,7 +102,9 @@ $meta: 28px;
 .track {
 	position: relative;
 	flex: 1;
-	height: 30px;
+	min-width: 0;
+	height: 32px;
+	overflow: hidden;
 }
 
 .gridline {
@@ -103,7 +118,7 @@ $meta: 28px;
 .bar {
 	position: absolute;
 	top: 9px;
-	height: 12px;
+	height: 14px;
 	min-width: 3px;
 	border-radius: 3px;
 	background-color: var(--mantine-color-gray-4);
@@ -146,7 +161,8 @@ $meta: 28px;
 
 .barLabel {
 	position: absolute;
-	top: 10px;
+	top: 11px;
+	line-height: 10px;
 	white-space: nowrap;
 	font-variant-numeric: tabular-nums;
 	pointer-events: none;

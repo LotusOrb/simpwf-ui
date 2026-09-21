@@ -34,7 +34,8 @@ export const WorkflowRunSummary: React.FC<WorkflowRunSummaryProps> = ({ detail, 
 			),
 			title: currentNode?.name,
 		},
-		{ label: 'Attempt', value: `#${detail.attempt}` },
+		// The engine resets the attempt once no node is in flight, so a settled run shows none.
+		{ label: 'Attempt', value: detail.current_node_instance_id ? `#${detail.attempt}` : '—' },
 		{ label: 'Context mode', value: detail.context_mode },
 		{
 			label: 'Started',
