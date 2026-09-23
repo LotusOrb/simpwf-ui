@@ -11,7 +11,8 @@ export type WorkflowRunStatusTab = WorkflowRunStatus | 'all';
 
 interface WorkflowRunStatusTabsProps {
 	value: WorkflowRunStatusTab;
-	counts: Record<WorkflowRunStatusTab, number> | null;
+	/** Tabs without a count render no badge. */
+	counts: Partial<Record<WorkflowRunStatusTab, number>> | null;
 	onChange: (value: WorkflowRunStatusTab) => void;
 }
 
@@ -44,7 +45,9 @@ export const WorkflowRunStatusTabs: React.FC<WorkflowRunStatusTabsProps> = ({ va
 							/>
 						)}
 						{tab.label}
-						{counts && <span className={classes.count}>{counts[tab.value]}</span>}
+						{counts?.[tab.value] !== undefined && (
+							<span className={classes.count}>{counts[tab.value]}</span>
+						)}
 					</UnstyledButton>
 				))}
 			</div>

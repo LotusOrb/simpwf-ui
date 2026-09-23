@@ -1,9 +1,16 @@
 .card {
+	transition: border-color 120ms ease;
+
+	&:hover {
+		border-color: var(--mantine-color-gray-4);
+	}
+
 	&[data-status='failed'] {
 		border-color: var(--mantine-color-red-2);
 	}
 
-	&[data-status='running'] {
+	&[data-status='running'],
+	&[data-status='waiting'] {
 		border-color: var(--mantine-color-brand-3);
 	}
 }
