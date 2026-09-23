@@ -1,1 +1,1 @@
-export { DashboardStatCard } from './DashboardStatCard';
+export { DashboardStatCard, DashboardStatCardSkeleton } from './DashboardStatCard';

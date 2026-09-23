@@ -24,6 +24,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
 
+import { useGetStatisticsQuery } from '@module/dashboard/hooks';
 import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
 import {
 	WorkflowRunCard,
@@ -99,6 +100,20 @@ export const WorkflowRunListPage: React.FC = () => {
 		isError,
 		refetch,
 	} = useListWorkflowRunsQuery(query, { pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0 });
+	const { data: statistics, refetch: refetchStatistics } = useGetStatisticsQuery(
+		{},
+		{ pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0 },
+	);
+	const statusCounts = statistics && {
+		all: statistics.total_runs,
+		finished: statistics.finished_runs,
+		failed: statistics.failed_runs,
+		stopped: statistics.stopped_runs,
+	};
+	const refresh = () => {
+		refetch();
+		refetchStatistics();
+	};
 	const { data: definitions } = useListWorkflowDefinitionsQuery({
 		perPage: 200,
 		filter: { latest_only: { op: '_eq', value: 'false' } },
@@ -167,7 +182,7 @@ export const WorkflowRunListPage: React.FC = () => {
 		setBusyIds((current) => [...current, run.id]);
 		try {
 			await actionRequests[action](run.id).unwrap();
-			if (action !== 'resume') setTimeout(refetch, SETTLE_REFRESH_MS);
+			if (action !== 'resume') setTimeout(refresh, SETTLE_REFRESH_MS);
 		} catch (error) {
 			const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
 			setActionError(typeof message === 'string' && message ? message : `Failed to ${action} run`);
@@ -215,7 +230,7 @@ export const WorkflowRunListPage: React.FC = () => {
 						<LuCircleAlert size={22} />
 					</ThemeIcon>
 					<Text fw={600}>Couldn't load workflow runs</Text>
-					<Button variant="default" size="xs" mt={4} onClick={refetch}>
+					<Button variant="default" size="xs" mt={4} onClick={refresh}>
 						Try again
 					</Button>
 				</Stack>
@@ -308,7 +323,7 @@ export const WorkflowRunListPage: React.FC = () => {
 								variant="default"
 								size={36}
 								aria-label="Refresh runs"
-								onClick={refetch}
+								onClick={refresh}
 								loading={isFetching && !!result}
 							>
 								<LuRefreshCw size={16} />
@@ -358,7 +373,11 @@ export const WorkflowRunListPage: React.FC = () => {
 					</Group>
 				</Group>
 
-				<WorkflowRunStatusTabs value={statusTab} counts={null} onChange={resetPage(setStatusTab)} />
+				<WorkflowRunStatusTabs
+					value={statusTab}
+					counts={statusCounts ?? null}
+					onChange={resetPage(setStatusTab)}
+				/>
 
 				{actionError && (
 					<Alert

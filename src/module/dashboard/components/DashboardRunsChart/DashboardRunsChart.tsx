@@ -1,14 +1,81 @@
 import React, { useState } from 'react';
 
-import { AreaChart } from '@mantine/charts';
-import { Card, Group, ScrollArea, SegmentedControl, Table, Text } from '@mantine/core';
+import { BarChart } from '@mantine/charts';
+import { Card, Center, ColorSwatch, Group, Skeleton, Text, UnstyledButton } from '@mantine/core';
+import { Rectangle, type BarShapeProps } from 'recharts';
 
-import { runsSeries } from '../../data';
+import type { DashboardRunsPoint } from '@module/dashboard/types/DashboardRunsPoint';
 
-type RunsView = 'chart' | 'table';
+interface DashboardRunsChartProps {
+	series: DashboardRunsPoint[];
+	rangeLabel: string;
+	loading?: boolean;
+}
 
-export const DashboardRunsChart: React.FC = () => {
-	const [view, setView] = useState<RunsView>('chart');
+const CHART_HEIGHT = 360;
+const BAR_TOP_RADIUS: [number, number, number, number] = [4, 4, 0, 0];
+
+type RunsSeriesName = 'finished' | 'failed' | 'stopped';
+
+const RUNS_SERIES: { name: RunsSeriesName; label: string; color: string }[] = [
+	{ name: 'finished', label: 'Finished', color: 'teal.5' },
+	{ name: 'failed', label: 'Failed', color: 'red.5' },
+	{ name: 'stopped', label: 'Stopped', color: 'gray.5' },
+];
+
+export const DashboardRunsChart: React.FC<DashboardRunsChartProps> = ({ series, rangeLabel, loading }) => {
+	const [activeSeries, setActiveSeries] = useState<RunsSeriesName | null>(null);
+	const isEmpty = series.every((point) => point.total === 0);
+	const visibleSeries = activeSeries ? RUNS_SERIES.filter((item) => item.name === activeSeries) : RUNS_SERIES;
+
+	// Round only the topmost non-empty segment of each stacked bar.
+	const renderBarShape = (seriesName: RunsSeriesName) => (props: BarShapeProps) => {
+		const point = props.payload as DashboardRunsPoint;
+		const seriesAbove = visibleSeries.slice(visibleSeries.findIndex((item) => item.name === seriesName) + 1);
+		const isTop = seriesAbove.every((item) => point[item.name] === 0);
+		return <Rectangle {...props} radius={isTop ? BAR_TOP_RADIUS : 0} />;
+	};
+
+	const toggleSeries = (name: RunsSeriesName) => {
+		setActiveSeries((current) => (current === name ? null : name));
+	};
+
+	const renderBody = () => {
+		if (loading) return <Skeleton h={CHART_HEIGHT} />;
+
+		if (isEmpty) {
+			return (
+				<Center h={CHART_HEIGHT}>
+					<Text fz="sm" c="dimmed">
+						No runs in this period
+					</Text>
+				</Center>
+			);
+		}
+
+		return (
+			<BarChart
+				h={CHART_HEIGHT}
+				data={series}
+				dataKey="label"
+				type="stacked"
+				series={visibleSeries}
+				gridAxis="y"
+				tickLine="none"
+				withLegend={false}
+				barProps={(item) => ({ shape: renderBarShape(item.name as RunsSeriesName) })}
+				withBarValueLabel
+				valueLabelProps={{
+					position: 'center',
+					angle: -45,
+					fontSize: 11,
+					fill: 'var(--mantine-color-white)',
+					formatter: (value) => (Number(value) > 0 ? Number(value).toLocaleString() : ''),
+				}}
+				valueFormatter={(value) => value.toLocaleString()}
+			/>
+		);
+	};
 
 	return (
 		<Card padding="lg">
@@ -16,56 +83,34 @@ export const DashboardRunsChart: React.FC = () => {
 				<div>
 					<Text fw={600}>Workflow runs per day</Text>
 					<Text fz="xs" c="dimmed">
-						Last 14 days, all workflows
+						{rangeLabel}, all workflows
 					</Text>
 				</div>
-				<SegmentedControl
-					size="xs"
-					fullWidth={false}
-					value={view}
-					onChange={(value) => setView(value as RunsView)}
-					data={[
-						{ label: 'Chart', value: 'chart' },
-						{ label: 'Table', value: 'table' },
-					]}
-				/>
+				<Group gap="md" wrap="nowrap">
+					{RUNS_SERIES.map((item) => {
+						const dimmed = activeSeries !== null && activeSeries !== item.name;
+						return (
+							<UnstyledButton
+								key={item.name}
+								onClick={() => toggleSeries(item.name)}
+								aria-pressed={activeSeries === item.name}
+								style={{ opacity: dimmed ? 0.4 : 1 }}
+							>
+								<Group gap={6} wrap="nowrap">
+									<ColorSwatch
+										color={`var(--mantine-color-${item.color.replace('.', '-')})`}
+										size={10}
+										withShadow={false}
+									/>
+									<Text fz="xs">{item.label}</Text>
+								</Group>
+							</UnstyledButton>
+						);
+					})}
+				</Group>
 			</Group>
 
-			{view === 'chart' ? (
-				<AreaChart
-					h={240}
-					data={runsSeries}
-					dataKey="date"
-					series={[{ name: 'runs', label: 'Runs', color: 'brand.4' }]}
-					curveType="monotone"
-					strokeWidth={2}
-					gridAxis="x"
-					tickLine="none"
-					fillOpacity={0.18}
-					withDots={false}
-					activeDotProps={{ r: 5, strokeWidth: 2, stroke: 'var(--mantine-color-white)' }}
-					valueFormatter={(value) => value.toLocaleString()}
-				/>
-			) : (
-				<ScrollArea h={240}>
-					<Table striped highlightOnHover fz="sm">
-						<Table.Thead>
-							<Table.Tr>
-								<Table.Th>Date</Table.Th>
-								<Table.Th ta="right">Runs</Table.Th>
-							</Table.Tr>
-						</Table.Thead>
-						<Table.Tbody>
-							{runsSeries.map((point) => (
-								<Table.Tr key={point.date}>
-									<Table.Td>{point.date}</Table.Td>
-									<Table.Td ta="right">{point.runs.toLocaleString()}</Table.Td>
-								</Table.Tr>
-							))}
-						</Table.Tbody>
-					</Table>
-				</ScrollArea>
-			)}
+			{renderBody()}
 		</Card>
 	);
 };

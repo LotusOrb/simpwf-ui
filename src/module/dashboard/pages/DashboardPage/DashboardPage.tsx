@@ -1,92 +1,77 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import { ActionIcon, Button, Group, ScrollArea, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core';
-import { LuDownload, LuPanelLeft, LuPanelRight, LuPlus } from 'react-icons/lu';
+import { Alert, Button, Group, ScrollArea, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import dayjs from 'dayjs';
+import { LuPlus, LuTriangleAlert } from 'react-icons/lu';
 import { Link } from 'react-router';
 
-import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
-import { useAppLayoutPanel } from '@module/app/hooks';
+import { DashboardDateRangePicker } from '@module/dashboard/components/DashboardDateRangePicker';
 import { DashboardExecutionList } from '@module/dashboard/components/DashboardExecutionList';
-import { DashboardExplorer } from '@module/dashboard/components/DashboardExplorer';
 import { DashboardRunsChart } from '@module/dashboard/components/DashboardRunsChart';
-import { DashboardSettingsPanel } from '@module/dashboard/components/DashboardSettingsPanel';
-import { DashboardStatCard } from '@module/dashboard/components/DashboardStatCard';
-import { dashboardStats } from '@module/dashboard/data';
+import { DashboardStatCard, DashboardStatCardSkeleton } from '@module/dashboard/components/DashboardStatCard';
+import { DASHBOARD_RANGE_LABEL_FORMAT } from '@module/dashboard/constant/dashboard.constant';
+import { getRecentDaysRange, useDashboardOverview } from '@module/dashboard/hooks';
+import type { DashboardDateRange } from '@module/dashboard/types/DashboardDateRange';
 
 import classes from './DashboardPage.module.scss';
 
+const formatRangeLabel = ([start, end]: DashboardDateRange) =>
+	start === end
+		? dayjs(start).format(DASHBOARD_RANGE_LABEL_FORMAT)
+		: `${dayjs(start).format(DASHBOARD_RANGE_LABEL_FORMAT)} – ${dayjs(end).format(DASHBOARD_RANGE_LABEL_FORMAT)}`;
+
 export const DashboardPage: React.FC = () => {
-	const panel = useAppLayoutPanel();
+	const [range, setRange] = useState<DashboardDateRange>(() => getRecentDaysRange());
+	const overview = useDashboardOverview(range);
 
 	return (
-		<>
-			<MainLayoutPanel side="left" w={280} visibleFrom="lg">
-				<DashboardExplorer />
-			</MainLayoutPanel>
+		<ScrollArea h="100%" className={classes.canvas}>
+			<Stack gap="lg" p={{ base: 'md', md: 'xl' }} maw={1080} mx="auto">
+				<Group justify="space-between" align="flex-end" gap="sm">
+					<div>
+						<Title order={2} fz={22}>
+							Dashboard
+						</Title>
+						<Text fz="sm" c="dimmed">
+							Overview of your workflows and executions
+						</Text>
+					</div>
+					<Group gap="xs">
+						<DashboardDateRangePicker value={range} onChange={setRange} />
+						<Button component={Link} to="/app/workflow-definition/new" leftSection={<LuPlus size={16} />}>
+							New definition
+						</Button>
+					</Group>
+				</Group>
 
-			<MainLayoutPanel side="right" w={320} visibleFrom="md">
-				<DashboardSettingsPanel />
-			</MainLayoutPanel>
-
-			<ScrollArea h="100%" className={classes.canvas}>
-				<Stack gap="lg" p={{ base: 'md', md: 'xl' }} maw={1080} mx="auto">
-					<Group justify="space-between" align="flex-end" gap="sm">
-						<div>
-							<Title order={2} fz={22}>
-								Dashboard
-							</Title>
-							<Text fz="sm" c="dimmed">
-								Overview of your workflows and executions
-							</Text>
-						</div>
-						<Group gap="xs">
-							<Tooltip label={panel.opened.left ? 'Hide explorer' : 'Show explorer'}>
-								<ActionIcon
-									variant="default"
-									size="lg"
-									visibleFrom="lg"
-									aria-label="Toggle explorer"
-									aria-pressed={panel.opened.left}
-									onClick={() => panel.toggle('left')}
-								>
-									<LuPanelLeft size={16} />
-								</ActionIcon>
-							</Tooltip>
-							<Tooltip label={panel.opened.right ? 'Hide settings' : 'Show settings'}>
-								<ActionIcon
-									variant="default"
-									size="lg"
-									visibleFrom="md"
-									aria-label="Toggle settings"
-									aria-pressed={panel.opened.right}
-									onClick={() => panel.toggle('right')}
-								>
-									<LuPanelRight size={16} />
-								</ActionIcon>
-							</Tooltip>
-							<Button variant="default" leftSection={<LuDownload size={16} />}>
-								Export
-							</Button>
-							<Button
-								component={Link}
-								to="/app/workflow-definition/new"
-								leftSection={<LuPlus size={16} />}
-							>
-								New definition
+				{overview.isError && (
+					<Alert color="red" icon={<LuTriangleAlert size={16} />} title="Failed to load statistics">
+						<Group justify="space-between" gap="sm">
+							<Text fz="sm">The run statistics for this period could not be loaded.</Text>
+							<Button size="compact-sm" variant="light" color="red" onClick={overview.refetch}>
+								Retry
 							</Button>
 						</Group>
-					</Group>
+					</Alert>
+				)}
 
-					<SimpleGrid cols={{ base: 1, xs: 2, lg: 4 }} spacing="sm">
-						{dashboardStats.map((stat) => (
-							<DashboardStatCard key={stat.id} stat={stat} />
-						))}
-					</SimpleGrid>
+				<SimpleGrid cols={{ base: 1, xs: 2, lg: 4 }} spacing="sm">
+					{overview.stats.map((stat) =>
+						overview.isLoading ? (
+							<DashboardStatCardSkeleton key={stat.id} />
+						) : (
+							<DashboardStatCard key={stat.id} stat={stat} comparisonLabel={overview.comparisonLabel} />
+						),
+					)}
+				</SimpleGrid>
 
-					<DashboardRunsChart />
-					<DashboardExecutionList />
-				</Stack>
-			</ScrollArea>
-		</>
+				<DashboardRunsChart
+					series={overview.series}
+					rangeLabel={formatRangeLabel(range)}
+					loading={overview.isLoading}
+				/>
+				<DashboardExecutionList />
+			</Stack>
+		</ScrollArea>
 	);
 };

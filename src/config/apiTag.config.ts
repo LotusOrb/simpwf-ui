@@ -2,6 +2,7 @@ export const apiTagConfig = {
 	workflowDefinition: 'WorkflowDefinition',
 	nodeDefinition: 'NodeDefinition',
 	workflowRun: 'WorkflowRun',
+	statistics: 'Statistics',
 } as const;
 
 export type ApiTag = (typeof apiTagConfig)[keyof typeof apiTagConfig];
