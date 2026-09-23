@@ -1,0 +1,198 @@
+.root {
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+
+	:global(.react-flow__node) {
+		cursor: pointer;
+	}
+
+	:global(.react-flow__handle) {
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+
+.node {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	padding: 8px 10px;
+	border: 1px solid var(--mantine-color-gray-3);
+	border-left: 3px solid var(--mantine-color-gray-4);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+	box-shadow: var(--mantine-shadow-xs);
+	transition:
+		border-color 140ms ease,
+		box-shadow 140ms ease,
+		opacity 140ms ease;
+
+	&[data-status='pending'],
+	&[data-status='skipped'] {
+		opacity: 0.55;
+		border-style: dashed;
+		background-color: var(--mantine-color-gray-0);
+	}
+
+	&[data-status='succeeded'] {
+		border-left-color: var(--mantine-color-teal-6);
+	}
+
+	&[data-status='running'] {
+		border-left-color: var(--mantine-color-blue-6);
+	}
+
+	&[data-status='waiting'] {
+		border-left-color: var(--mantine-color-yellow-6);
+	}
+
+	&[data-status='failed'] {
+		border-left-color: var(--mantine-color-red-6);
+		background-color: var(--mantine-color-red-0);
+	}
+
+	&[data-status='rolled_back'] {
+		border-left-color: var(--mantine-color-grape-6);
+	}
+
+	&[data-status='cancelled'] {
+		border-left-color: var(--mantine-color-gray-6);
+	}
+
+	&[data-current] {
+		box-shadow: 0 0 0 3px var(--mantine-color-blue-1);
+	}
+
+	&[data-current][data-status='waiting'] {
+		box-shadow: 0 0 0 3px var(--mantine-color-yellow-1);
+	}
+
+	&[data-selected] {
+		border-color: var(--mantine-color-blue-5);
+		box-shadow: 0 0 0 2px var(--mantine-color-blue-4);
+	}
+}
+
+.nodeHead {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+}
+
+.nodeTitle {
+	flex: 1;
+	min-width: 0;
+}
+
+.statusDot {
+	display: inline-flex;
+	color: var(--mantine-color-gray-6);
+
+	&[data-spin] {
+		animation: spin 1.4s linear infinite;
+		color: var(--mantine-color-blue-6);
+	}
+}
+
+.nodeFoot {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	min-width: 0;
+}
+
+.statusBadge {
+	flex-shrink: 0;
+	text-transform: none;
+}
+
+.attempts {
+	display: inline-flex;
+	gap: 3px;
+	align-items: center;
+	padding: 1px 5px;
+	border-radius: var(--mantine-radius-sm);
+	background-color: var(--mantine-color-orange-1);
+	color: var(--mantine-color-orange-8);
+	font-size: 10px;
+	font-weight: 600;
+}
+
+.duration {
+	margin-left: auto;
+	font-variant-numeric: tabular-nums;
+}
+
+.handle {
+	border: 0;
+	background: transparent;
+}
+
+.group {
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	border: 1px dashed var(--mantine-color-violet-3);
+	border-radius: var(--mantine-radius-md);
+	background-color: color-mix(in srgb, var(--mantine-color-violet-0) 65%, transparent);
+
+	&[data-reached] {
+		border-color: var(--mantine-color-violet-5);
+	}
+}
+
+.groupLabel {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	margin: 6px 0 0 10px;
+	color: var(--mantine-color-violet-7);
+}
+
+.edgeIdle {
+	:global(.react-flow__edge-path) {
+		stroke: var(--mantine-color-gray-4);
+		stroke-dasharray: 4 4;
+	}
+}
+
+.edgeActive {
+	:global(.react-flow__edge-path) {
+		stroke: var(--mantine-color-blue-5);
+		stroke-width: 2;
+	}
+}
+
+.legend {
+	background-color: var(--mantine-color-white);
+}
+
+.legendDot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: var(--mantine-color-gray-4);
+
+	&[data-status='succeeded'] {
+		background-color: var(--mantine-color-teal-6);
+	}
+
+	&[data-status='running'] {
+		background-color: var(--mantine-color-blue-6);
+	}
+
+	&[data-status='failed'] {
+		background-color: var(--mantine-color-red-6);
+	}
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

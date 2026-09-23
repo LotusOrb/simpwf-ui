@@ -58,7 +58,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 	});
 
 	const [deleteDefinition, deleteState] = useDeleteWorkflowDefinitionMutation();
-	const deleteError = deleteState.error && 'message' in deleteState.error ? (deleteState.error.message ?? null) : null;
+	const deleteError =
+		deleteState.error && 'message' in deleteState.error ? (deleteState.error.message ?? null) : null;
 
 	const closeDelete = () => {
 		setPendingDelete(null);
@@ -176,7 +177,10 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 				/>
 
 				<Group justify="space-between" gap="sm">
-					<WorkflowDefinitionFilters value={filters} onChange={(value) => setParams({ ...value, page: null })} />
+					<WorkflowDefinitionFilters
+						value={filters}
+						onChange={(value) => setParams({ ...value, page: null })}
+					/>
 					<Group gap="sm">
 						{result && (
 							<Text fz="sm" c="dimmed">

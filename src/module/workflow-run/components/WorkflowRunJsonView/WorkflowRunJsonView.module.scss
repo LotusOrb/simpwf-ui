@@ -1,0 +1,24 @@
+.root {
+	position: relative;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-sm);
+	background-color: var(--mantine-color-gray-0);
+}
+
+.copy {
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	z-index: 1;
+}
+
+.code {
+	margin: 0;
+	padding: 10px 34px 10px 10px;
+	color: var(--mantine-color-dark-6);
+	font-family: var(--mantine-font-family-monospace);
+	font-size: 11px;
+	line-height: 1.55;
+	white-space: pre-wrap;
+	word-break: break-word;
+}

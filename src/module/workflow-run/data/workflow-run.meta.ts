@@ -39,6 +39,9 @@ export const formatRunDuration = (run: WorkflowRun): string => {
 	return `${Math.floor(hours / 24)}d ${hours % 24}h`;
 };
 
+/** Engine park reasons are bare enums (`input`); unknown ones are shown as sent. */
+export const formatWaitingReason = (reason: string): string => (reason === 'input' ? 'Waiting for input' : reason);
+
 export const shortRunId = (id: string) => id.slice(-8);
 
 export const runSortOrders: Record<WorkflowRunSort, { label: string; by: string; direction: 'asc' | 'desc' }> = {

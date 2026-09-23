@@ -1,4 +1,4 @@
-import type { ComplexQueryParamFilter } from "./ComplexQueryParamFilter";
+import type { ComplexQueryParamFilter } from './ComplexQueryParamFilter';
 
 export type ComplexQueryParam<T extends string = string> = {
 	page?: number;
@@ -10,4 +10,3 @@ export type ComplexQueryParam<T extends string = string> = {
 		direction?: string;
 	};
 };
-

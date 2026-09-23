@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 
-import { formatRunDuration } from '../../data';
+import { formatRunDuration, formatWaitingReason } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import type { WorkflowRunDefinitionInfo } from '../WorkflowRunCard';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
@@ -62,7 +62,8 @@ export const WorkflowRunTable: React.FC<WorkflowRunTableProps> = ({
 							: runs.map((run) => {
 									const definition = definitions.get(run.workflow_definition_id);
 									const startedAt = run.started_at ?? run.created_at;
-									const detail = run.error ?? run.waiting_reason;
+									const detail =
+										run.error ?? (run.waiting_reason && formatWaitingReason(run.waiting_reason));
 
 									return (
 										<Table.Tr key={run.id}>

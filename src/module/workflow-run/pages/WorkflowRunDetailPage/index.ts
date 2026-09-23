@@ -1,0 +1,1 @@
+export { WorkflowRunDetailPage } from './WorkflowRunDetailPage';

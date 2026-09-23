@@ -48,11 +48,11 @@ export const LoginPage: React.FC = () => {
 
 				<Group justify="space-between" wrap="wrap" gap="xs">
 					<Text fz="xs" c="dimmed">
-						Copyright &copy; {new Date().getFullYear()} simpwf Enterprises LTD.
+						Copyright &copy; 2026 .
+						<Anchor fz={'xs'} target="_blank" href="https://github.com/LotusOrb/simpwf-ui">
+							SimpwfUI And Contributor
+						</Anchor>
 					</Text>
-					<Anchor component="button" type="button" fz="xs" c="dimmed">
-						Privacy Policy
-					</Anchor>
 				</Group>
 			</Stack>
 
