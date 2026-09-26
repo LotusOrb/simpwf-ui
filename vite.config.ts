@@ -9,9 +9,15 @@ const src = (dir: string) => fileURLToPath(new URL(`./src/${dir}`, import.meta.u
 const apiProxyTarget = process.env.SIMPWF_API_PROXY ?? 'http://localhost:8080';
 const API_PROXY_PREFIX = '/wf-engine';
 
+// Set by the Docker build (release tag); local builds show "dev".
+const appVersion = process.env.APP_VERSION || 'dev';
+
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+	define: {
+		__APP_VERSION__: JSON.stringify(appVersion),
+	},
 	server: {
 		proxy: {
 			[API_PROXY_PREFIX]: {

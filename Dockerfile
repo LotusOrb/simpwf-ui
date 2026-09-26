@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:24-slim AS build
+FROM --platform=$BUILDPLATFORM node:24-slim AS build
 
 WORKDIR /app
 
@@ -11,7 +11,9 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY . .
 
-RUN npm run build
+ARG APP_VERSION=dev
+
+RUN APP_VERSION="$APP_VERSION" npm run build
 
 FROM openresty/openresty:1.27.1.2-0-alpine AS runtime
 
