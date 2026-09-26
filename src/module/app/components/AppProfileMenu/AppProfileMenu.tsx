@@ -10,6 +10,8 @@ import { useCoreDispatch } from '@core/store';
 
 import classes from './AppProfileMenu.module.scss';
 
+const APP_VERSION_LABEL = __APP_VERSION__ === 'dev' ? 'dev' : `v${__APP_VERSION__}`;
+
 interface AppProfileMenuProps {
 	name?: string;
 	role?: string;
@@ -66,6 +68,10 @@ export const AppProfileMenu: React.FC<AppProfileMenuProps> = ({ name = 'Admin', 
 				<Menu.Item color="red" leftSection={<LuLogOut size={16} />} onClick={handleLogout}>
 					Logout
 				</Menu.Item>
+				<Menu.Divider />
+				<Text className={classes.version} fz="xs" c="dimmed">
+					{APP_VERSION_LABEL}
+				</Text>
 			</Menu.Dropdown>
 		</Menu>
 	);
