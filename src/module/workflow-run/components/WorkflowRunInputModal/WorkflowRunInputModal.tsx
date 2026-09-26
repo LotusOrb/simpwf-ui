@@ -53,7 +53,7 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({ pe
 					<Alert color="blue" icon={<LuInfo size={16} />} p="sm">
 						<Text fz="xs">
 							The run is parked on <strong>{pending.node_id}</strong>. The payload is written to context
-							path <strong>{pending.context_path || '(root)'}</strong>.
+							key <strong>{pending.output_property || pending.node_id}</strong>.
 						</Text>
 						<Badge size="xs" variant="light" mt={6}>
 							channel {pending.channel}

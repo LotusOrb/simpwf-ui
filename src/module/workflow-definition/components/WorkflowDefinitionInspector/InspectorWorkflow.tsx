@@ -1,20 +1,8 @@
 import React from 'react';
 
-import {
-	Alert,
-	Button,
-	Card,
-	Group,
-	Modal,
-	ScrollArea,
-	Select,
-	Stack,
-	Text,
-	TextInput,
-	UnstyledButton,
-} from '@mantine/core';
+import { Button, Card, Group, Modal, ScrollArea, Select, Stack, Text, TextInput } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { LuBraces, LuChevronsUpDown, LuCircleAlert, LuCircleCheck } from 'react-icons/lu';
+import { LuBraces, LuChevronsUpDown } from 'react-icons/lu';
 
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
@@ -23,16 +11,12 @@ import { CodeEditor } from '@common/component/CodeEditor';
 import {
 	contextModeChanged,
 	nameChanged,
-	nodeSelected,
-	scopeEntered,
 	selectEditorContent,
 	selectEditorContextMode,
-	selectEditorIssues,
 	selectEditorName,
 	selectEditorNodes,
 	selectEditorSourceVersion,
 } from '@module/workflow-definition/store';
-import type { WorkflowDefinitionEditorIssue } from '@module/workflow-definition/types/WorkflowDefinitionEditorIssue';
 
 import { SectionLabel } from './InspectorControls';
 import classes from './WorkflowDefinitionInspector.module.scss';
@@ -47,17 +31,10 @@ export const InspectorWorkflow: React.FC = () => {
 	const contextMode = useCoreSelector(selectEditorContextMode);
 	const sourceVersion = useCoreSelector(selectEditorSourceVersion);
 	const nodes = useCoreSelector(selectEditorNodes);
-	const issues = useCoreSelector(selectEditorIssues);
 	const content = useCoreSelector(selectEditorContent);
 
 	const nodeCount = Object.keys(nodes).length;
 	const groupCount = Object.values(nodes).filter((node) => node.config.type === 'group').length;
-
-	const focusIssue = (issue: WorkflowDefinitionEditorIssue) => {
-		const node = issue.nodeId ? nodes[issue.nodeId] : undefined;
-		dispatch(scopeEntered(node ? node.parentId : issue.scope));
-		if (node) dispatch(nodeSelected(node.id));
-	};
 
 	return (
 		<div className={classes.root}>
@@ -128,37 +105,6 @@ export const InspectorWorkflow: React.FC = () => {
 							<Text fz="xs" c="dimmed">
 								Definitions are immutable. Saving creates v{sourceVersion + 1} from v{sourceVersion}.
 							</Text>
-						)}
-					</Stack>
-
-					<Stack gap="xs">
-						<SectionLabel>Validation</SectionLabel>
-						{issues.length === 0 ? (
-							<Alert color="teal" variant="light" p="xs" icon={<LuCircleCheck size={16} />}>
-								<Text fz="sm">Ready to save</Text>
-							</Alert>
-						) : (
-							<Stack gap={6}>
-								{issues.map((issue, index) => (
-									<UnstyledButton
-										key={`${issue.nodeId}-${index}`}
-										className={classes.issue}
-										onClick={() => focusIssue(issue)}
-									>
-										<LuCircleAlert size={14} className={classes.issueIcon} />
-										<div>
-											{issue.nodeId && nodes[issue.nodeId] && (
-												<Text fz="xs" fw={600} truncate>
-													{nodes[issue.nodeId].config.name || 'Untitled'}
-												</Text>
-											)}
-											<Text fz="xs" c="dark.4">
-												{issue.message}
-											</Text>
-										</div>
-									</UnstyledButton>
-								))}
-							</Stack>
 						)}
 					</Stack>
 				</Stack>

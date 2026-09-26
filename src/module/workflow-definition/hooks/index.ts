@@ -5,10 +5,12 @@ export {
 	useLazyGetWorkflowDefinitionQuery,
 	useLazyListWorkflowDefinitionsQuery,
 	useListWorkflowDefinitionsQuery,
-	useUpdateWorkflowDefinitionMutation,
+	useListWorkflowDefinitionVersionsQuery,
 } from './workflow-definition.hooks';
+export { useWorkflowDefinitionDelete } from './workflowDefinitionDelete.hooks';
 export {
 	PALETTE_DRAG_TYPE,
+	useFocusEditorIssue,
 	useWorkflowDefinitionEditorAddNode,
 	useWorkflowDefinitionEditorNodeActions,
 	type WorkflowDefinitionPaletteItem,

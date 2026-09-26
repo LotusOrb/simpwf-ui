@@ -91,7 +91,7 @@ export const WorkflowRunContextPanel: React.FC<WorkflowRunContextPanelProps> = (
 					</Button>
 				)}
 			</Group>
-			<WorkflowRunJsonView value={context} maxHeight={420} emptyLabel="Context is still empty" />
+			<WorkflowRunJsonView value={context} maxHeight="none" emptyLabel="Context is still empty" />
 		</Stack>
 	);
 };

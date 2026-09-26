@@ -16,11 +16,12 @@ import { WorkflowDefinitionDeleteModal } from '@module/workflow-definition/compo
 import { WorkflowDefinitionFilters } from '@module/workflow-definition/components/WorkflowDefinitionFilters';
 import { WorkflowDefinitionHero } from '@module/workflow-definition/components/WorkflowDefinitionHero';
 import { WorkflowDefinitionTable } from '@module/workflow-definition/components/WorkflowDefinitionTable';
+import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
 import { sortOrders } from '@module/workflow-definition/data';
 import {
 	SEARCH_URL_UPDATE,
-	useDeleteWorkflowDefinitionMutation,
 	useListWorkflowDefinitionsQuery,
+	useWorkflowDefinitionDelete,
 	useWorkflowDefinitionListParams,
 	type WorkflowDefinitionVersionScope,
 } from '@module/workflow-definition/hooks';
@@ -37,7 +38,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 	const filters: WorkflowDefinitionFilterValues = { sort, startType, complexity };
 	const setPage = (next: number) => setParams({ page: next });
 
-	const [pendingDelete, setPendingDelete] = useState<WorkflowDefinition | null>(null);
+	const [historyFor, setHistoryFor] = useState<WorkflowDefinition | null>(null);
 
 	const { by, direction } = sortOrders[sort];
 	const {
@@ -57,22 +58,10 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		},
 	});
 
-	const [deleteDefinition, deleteState] = useDeleteWorkflowDefinitionMutation();
-	const deleteError =
-		deleteState.error && 'message' in deleteState.error ? (deleteState.error.message ?? null) : null;
-
-	const closeDelete = () => {
-		setPendingDelete(null);
-		deleteState.reset();
-	};
-
-	const confirmDelete = async (definition: WorkflowDefinition) => {
-		const response = await deleteDefinition(definition.id);
-		if ('error' in response) return;
-
-		if (result && result.items.length === 1 && page > 1) setPage(page - 1);
-		closeDelete();
-	};
+	const deletion = useWorkflowDefinitionDelete((definition) => {
+		const lastOnPage = result?.items.length === 1 && result.items[0].id === definition.id;
+		if (lastOnPage && page > 1) setPage(page - 1);
+	});
 
 	const hasActiveFilters = !!search || !!startType || !!complexity;
 	const clearFilters = () => setParams({ search: null, sort: null, startType: null, complexity: null, page: null });
@@ -131,12 +120,17 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 							<WorkflowDefinitionCard
 								key={definition.id}
 								definition={definition}
-								onDelete={setPendingDelete}
+								onDelete={deletion.request}
+								onShowVersions={setHistoryFor}
 							/>
 						))}
 					</SimpleGrid>
 				) : (
-					<WorkflowDefinitionTable definitions={result.items} onDelete={setPendingDelete} />
+					<WorkflowDefinitionTable
+						definitions={result.items}
+						onDelete={deletion.request}
+						onShowVersions={setHistoryFor}
+					/>
 				)}
 			</div>
 		);
@@ -205,12 +199,18 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 				)}
 			</Stack>
 
+			<WorkflowDefinitionVersionHistory
+				definition={historyFor}
+				onClose={() => setHistoryFor(null)}
+				onDelete={deletion.request}
+			/>
+
 			<WorkflowDefinitionDeleteModal
-				definition={pendingDelete}
-				loading={deleteState.isLoading}
-				error={deleteError}
-				onClose={closeDelete}
-				onConfirm={confirmDelete}
+				definition={deletion.pending}
+				loading={deletion.loading}
+				error={deletion.error}
+				onClose={deletion.close}
+				onConfirm={deletion.confirm}
 			/>
 		</ScrollArea>
 	);

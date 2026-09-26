@@ -7,15 +7,6 @@ $meta: 28px;
 	min-width: 0;
 	min-height: 0;
 	overflow-x: hidden;
-
-	&[data-fill] {
-		flex: 1;
-
-		.scroll {
-			flex: 1;
-			min-height: 0;
-		}
-	}
 }
 
 .axis {

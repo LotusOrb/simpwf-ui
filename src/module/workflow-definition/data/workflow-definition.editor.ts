@@ -45,8 +45,16 @@ export const shortId = () => Math.random().toString(36).slice(2, 10);
 
 export const supportsNext = (type: WorkflowDefinitionNodeType) => type !== 'conditions';
 export const supportsFailure = (type: WorkflowDefinitionNodeType) => type === 'external_call' || type === 'poller';
-export const supportsOutputProperty = (type: WorkflowDefinitionNodeType) =>
-	type !== 'conditions' && type !== 'group' && type !== 'input';
+export const supportsOutputProperty = (type: WorkflowDefinitionNodeType) => type !== 'conditions' && type !== 'group';
+export const toSnakeCase = (value: string) =>
+	value
+		.replace(/([a-z\d])([A-Z])/g, '$1_$2')
+		.toLowerCase()
+		.split(/[^a-z\d]+/)
+		.filter(Boolean)
+		.join('_');
+export const defaultOutputProperty = (config: WorkflowDefinitionNodeConfig) =>
+	supportsOutputProperty(config.type) ? toSnakeCase(config.name) || undefined : undefined;
 export const supportsTimeout = (type: WorkflowDefinitionNodeType) =>
 	type === 'script' || type === 'external_call' || type === 'output';
 export const supportsRetryOnRecovery = supportsFailure;
@@ -57,7 +65,7 @@ export const isInlineGroup = (node: WorkflowDefinitionEditorNode) =>
 const defaultConfigs: Record<WorkflowDefinitionNodeType, Partial<WorkflowDefinitionNodeConfig>> = {
 	script: { script: '' },
 	conditions: {},
-	input: { channel: 'http', context_path: '' },
+	input: { channel: 'http' },
 	output: { channel: 'redis', context_path: '' },
 	external_call: { http_config: { method: 'GET', url: '' } },
 	poller: { http: { method: 'GET', url: '', until: '' } },
@@ -340,6 +348,11 @@ export const toEditorDocument = (
 			const reference = config.node_definition_id ? references[config.node_definition_id] : undefined;
 			// References may omit `type`; it is implied by the referenced node definition.
 			if (!config.type && reference) config.type = reference.type;
+			if (config.type === 'input' && config.context_path !== undefined) {
+				// Input nodes used to write the payload at context_path; the engine now takes a bare output_property.
+				config.output_property ??= config.context_path.match(OUTPUT_KEY_PREFIX)?.[0];
+				delete config.context_path;
+			}
 			const inlineGroup = config.type === 'group' && !config.node_definition_id;
 
 			if (!inlineGroup && childKeys) (config as WorkflowDefinitionNodeConfig).keys = childKeys;
@@ -402,6 +415,8 @@ export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDo
 				},
 			};
 
+			config.output_property ||= defaultOutputProperty(config);
+
 			const node: WorkflowDefinitionNode = { id: editorNode.id, ...config };
 			const { type } = config;
 
@@ -448,9 +463,12 @@ export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDo
 };
 
 const CONTEXT_PATH = /^[A-Za-z_]\w*(\[\d+\])*(\.[A-Za-z_]\w*(\[\d+\])*)*$/;
+const OUTPUT_KEY = /^\w+$/;
+const OUTPUT_KEY_PREFIX = /^\w+/;
 const DURATION = /^(\d+(\.\d+)?(ns|us|µs|ms|s|m|h))+$/;
 
 export const isContextPath = (value: string) => CONTEXT_PATH.test(value);
+export const isOutputKey = (value: string) => OUTPUT_KEY.test(value);
 export const isDuration = (value: string) => DURATION.test(value) && !/^(0+(\.0+)?[a-zµ]+)+$/.test(value);
 
 const jsonFieldLabels: Record<WorkflowDefinitionJsonField, string> = {
@@ -538,11 +556,15 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 				}
 				break;
 			case 'input':
+				if (config.context_path !== undefined)
+					nodeIssue(node, 'Input nodes use output_property, not context_path');
+				if (config.output_property && !isOutputKey(config.output_property)) {
+					nodeIssue(node, 'Output property must be a bare key like payload');
+				}
+				if (config.validation) requireText(node, config.validation.script, 'Validation script');
+				break;
 			case 'output':
 				checkContextPath(node, config.context_path, 'Context path');
-				if (config.type === 'input' && config.validation) {
-					requireText(node, config.validation.script, 'Validation script');
-				}
 				break;
 			case 'external_call':
 				if (config.execution_config) {

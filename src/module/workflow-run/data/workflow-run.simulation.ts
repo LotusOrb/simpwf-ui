@@ -200,7 +200,7 @@ const pendingInputFor = (nodeId: string): WorkflowRunDetail['pending_input'] => 
 	return {
 		node_id: node.id,
 		channel: node.channel ?? 'http',
-		context_path: node.context_path ?? '',
+		output_property: node.output_property ?? '',
 		form: node.form,
 	};
 };
@@ -509,8 +509,11 @@ export const simulationReducer = (
 
 			const node = nodeIndex.get(nodeId);
 			cursor.clock = Math.max(cursor.clock, Date.now());
-			if (node?.context_path) {
-				cursor.context = { ...cursor.context, [node.context_path]: structuredClone(action.payload) };
+			if (node) {
+				cursor.context = {
+					...cursor.context,
+					[node.output_property || node.id]: structuredClone(action.payload),
+				};
 			}
 
 			settleNode(cursor, nodeId, 'succeeded', {

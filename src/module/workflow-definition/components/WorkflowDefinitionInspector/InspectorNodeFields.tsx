@@ -205,15 +205,6 @@ const InputFields: React.FC<FieldsProps> = ({ node }) => {
 				rightSection={selectIcon}
 				allowDeselect={false}
 			/>
-			<TextInput
-				label={<SectionLabel required>Context path</SectionLabel>}
-				description="Where the accepted payload is written"
-				inputWrapperOrder={['label', 'input', 'description', 'error']}
-				placeholder="request.payload"
-				value={config.context_path ?? ''}
-				onChange={(event) => patch({ context_path: event.currentTarget.value })}
-				error={contextPathError(config.context_path)}
-			/>
 
 			<Stack gap="xs">
 				<Group justify="space-between" wrap="nowrap" align="flex-start">

@@ -5,6 +5,7 @@ export {
 	connected,
 	contextModeChanged,
 	edgesChanged,
+	editorDiscarded,
 	editorLoaded,
 	editorReset,
 	editorSaved,

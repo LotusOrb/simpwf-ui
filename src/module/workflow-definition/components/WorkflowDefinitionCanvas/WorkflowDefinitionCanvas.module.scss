@@ -3,6 +3,25 @@
 	height: 100%;
 	background-color: var(--mantine-color-gray-0);
 
+	// Keep controls, minimap and overlays clear of the floating layout panels.
+	:global(.react-flow__panel) {
+		&:global(.top) {
+			top: var(--layout-inset-top, 0px);
+		}
+
+		&:global(.bottom) {
+			bottom: var(--layout-inset-bottom, 0px);
+		}
+
+		&:global(.left) {
+			left: var(--layout-inset-left, 0px);
+		}
+
+		&:global(.right) {
+			right: var(--layout-inset-right, 0px);
+		}
+	}
+
 	:global(.react-flow__controls) {
 		overflow: hidden;
 		border: 1px solid var(--mantine-color-gray-2);
@@ -46,8 +65,10 @@
 	box-shadow: var(--mantine-shadow-xs);
 }
 
-.emptyPanel {
-	top: 30%;
+.root .emptyPanel {
+	// Centre in the area the floating panels leave visible.
+	top: calc(var(--layout-inset-top, 0px) + 20%);
+	left: calc(50% + (var(--layout-inset-left, 0px) - var(--layout-inset-right, 0px)) / 2);
 	pointer-events: none;
 }
 
@@ -58,9 +79,30 @@
 	background-color: var(--mantine-color-white);
 }
 
+.stepNode {
+	position: relative;
+	isolation: isolate;
+	width: 220px;
+
+	&[data-outputs]:hover,
+	&[data-outputs][data-selected] {
+		.outputTray {
+			visibility: visible;
+			opacity: 1;
+			transform: translateY(0);
+			pointer-events: auto;
+		}
+
+		// The tray lists the failure output itself, so the floating label would collide with it.
+		.failureLabel {
+			opacity: 0;
+		}
+	}
+}
+
 .node {
 	position: relative;
-	width: 220px;
+	z-index: 1;
 	padding: 10px;
 	border: 1px solid var(--mantine-color-gray-3);
 	border-radius: var(--mantine-radius-md);
@@ -93,7 +135,7 @@
 .nodeHeader {
 	display: flex;
 	align-items: center;
-	gap: var(--mantine-spacing-xs);
+	gap: var(--mantine-spacing-sm);
 }
 
 .nodeTitle {
@@ -105,27 +147,6 @@
 .issue {
 	display: flex;
 	color: var(--mantine-color-red-6);
-}
-
-.reference {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	margin-top: 8px;
-	padding: 2px 6px;
-	border-radius: var(--mantine-radius-sm);
-	color: var(--mantine-color-violet-7);
-	background-color: var(--mantine-color-violet-0);
-}
-
-.summary {
-	margin-top: 8px;
-	padding: 4px 6px;
-	border-radius: var(--mantine-radius-sm);
-	font-family: var(--mantine-font-family-monospace);
-	font-size: 11px;
-	color: var(--mantine-color-dark-4);
-	background-color: var(--mantine-color-gray-0);
 }
 
 .branches {
@@ -151,6 +172,93 @@
 	font-weight: 500;
 	color: var(--mantine-color-red-6);
 	pointer-events: none;
+	transition: opacity 120ms ease;
+}
+
+.outputTray {
+	position: absolute;
+	z-index: 0;
+	top: calc(100% - var(--mantine-radius-md));
+	right: 8px;
+	left: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: calc(var(--mantine-radius-md) + 4px) 4px 4px;
+	border: 1px solid var(--mantine-color-gray-3);
+	border-top: 0;
+	border-radius: 0 0 var(--mantine-radius-md) var(--mantine-radius-md);
+	background-color: var(--mantine-color-gray-1);
+	visibility: hidden;
+	opacity: 0;
+	transform: translateY(-12px);
+	pointer-events: none;
+	transition:
+		transform 160ms ease,
+		opacity 120ms ease,
+		visibility 160ms;
+}
+
+.outputRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	padding: 2px 6px;
+	border-radius: var(--mantine-radius-sm);
+
+	&:hover {
+		background-color: var(--mantine-color-gray-2);
+
+		.outputCopy {
+			opacity: 1;
+		}
+	}
+}
+
+.outputLabel {
+	flex-shrink: 0;
+	font-size: 10px;
+	font-weight: 500;
+	color: var(--mantine-color-dimmed);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+
+	.outputRow[data-kind='failure'] & {
+		color: var(--mantine-color-red-6);
+	}
+}
+
+.outputProperty {
+	flex: 1;
+	min-width: 0;
+	font-family: var(--mantine-font-family-monospace);
+	font-size: 11px;
+	color: var(--mantine-color-dark-5);
+
+	.outputRow[data-default] & {
+		font-style: italic;
+		color: var(--mantine-color-dimmed);
+	}
+}
+
+.outputHint {
+	flex-shrink: 0;
+	font-size: 10px;
+	color: var(--mantine-color-dimmed);
+}
+
+.outputCopy {
+	display: flex;
+	flex-shrink: 0;
+	color: var(--mantine-color-gray-6);
+	opacity: 0;
+	transition: opacity 120ms ease;
+
+	&[data-copied] {
+		color: var(--mantine-color-teal-6);
+		opacity: 1;
+	}
 }
 
 .handle {

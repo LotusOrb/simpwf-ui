@@ -5,7 +5,6 @@ import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/t
 export type WorkflowDefinitionStepNodeData = {
 	node: WorkflowDefinitionEditorNode;
 	issueCount: number;
-	childCount: number;
 	branchTargets: Record<string, boolean>;
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import '@xyflow/react/dist/style.css';
 
@@ -6,19 +6,22 @@ import { Anchor, Breadcrumbs, Paper, Stack, Text, ThemeIcon } from '@mantine/cor
 import {
 	Background,
 	BackgroundVariant,
+	ControlButton,
 	Controls,
 	MarkerType,
 	MiniMap,
 	Panel,
 	ReactFlow,
-	useReactFlow,
 	type Edge,
 	type NodeTypes,
 } from '@xyflow/react';
-import { LuMousePointerClick } from 'react-icons/lu';
+import { LuMousePointerClick, LuScan } from 'react-icons/lu';
 
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
+import { useInsetFitView } from '@common/hooks/useInsetFitView';
+
+import { useAppLayoutInsets } from '@module/app/hooks';
 import {
 	HANDLE_FAILURE,
 	HANDLE_NEXT,
@@ -55,11 +58,10 @@ import { WorkflowDefinitionStepNode } from './WorkflowDefinitionStepNode';
 
 const nodeTypes: NodeTypes = { step: WorkflowDefinitionStepNode, start: WorkflowDefinitionStartNode };
 
-const FIT_VIEW_OPTIONS = { padding: 0.25, maxZoom: 1 };
+const FIT_VIEW_MARGIN = 48;
 
 export const WorkflowDefinitionCanvas: React.FC = () => {
 	const dispatch = useCoreDispatch();
-	const flow = useReactFlow();
 	const addNode = useWorkflowDefinitionEditorAddNode();
 
 	const nodes = useCoreSelector(selectEditorNodes);
@@ -69,10 +71,13 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 	const selectedId = useCoreSelector(selectEditorSelectedId);
 	const issues = useCoreSelector(selectEditorIssues);
 
-	useEffect(() => {
-		const frame = requestAnimationFrame(() => flow.fitView({ ...FIT_VIEW_OPTIONS, duration: 200 }));
-		return () => cancelAnimationFrame(frame);
-	}, [scope, flow]);
+	const insets = useAppLayoutInsets();
+	const { fitView, onMoveStart, onMoveEnd } = useInsetFitView({
+		insets,
+		margin: FIT_VIEW_MARGIN,
+		maxZoom: 1,
+		refitKey: scope,
+	});
 
 	const issueCounts = new Map<string, number>();
 	for (const issue of issues) {
@@ -103,7 +108,6 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 			data: {
 				node,
 				issueCount: issueCounts.get(node.id) ?? 0,
-				childCount: allNodes.filter((child) => child.parentId === node.id).length,
 				branchTargets: Object.fromEntries(
 					node.branches.map((branch) => [branch.id, !!outgoingTarget(edges, node.id, `branch:${branch.id}`)]),
 				),
@@ -165,15 +169,19 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 				}}
 				onDrop={onDrop}
 				deleteKeyCode={['Backspace', 'Delete']}
-				fitView
-				fitViewOptions={FIT_VIEW_OPTIONS}
+				onMoveStart={onMoveStart}
+				onMoveEnd={onMoveEnd}
 				minZoom={0.2}
 				snapToGrid
 				snapGrid={[8, 8]}
 				proOptions={{ hideAttribution: true }}
 			>
 				<Background variant={BackgroundVariant.Dots} gap={16} size={1.2} color="var(--mantine-color-gray-4)" />
-				<Controls showInteractive={false} position="bottom-left" />
+				<Controls showInteractive={false} showFitView={false} position="bottom-left">
+					<ControlButton title="Fit view" aria-label="Fit view" onClick={fitView}>
+						<LuScan />
+					</ControlButton>
+				</Controls>
 				<MiniMap
 					position="bottom-right"
 					pannable
