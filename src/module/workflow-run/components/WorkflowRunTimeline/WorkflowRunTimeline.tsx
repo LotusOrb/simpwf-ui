@@ -10,7 +10,7 @@ import { formatDuration, nodeRunStatusMeta, type WorkflowRunTimeline as Timeline
 import classes from './WorkflowRunTimeline.module.scss';
 
 const AXIS_TICKS = 5;
-const MAX_HEIGHT = 300;
+const MAX_HEIGHT = 240;
 
 /** Past this point a label after the bar would spill out of the track. */
 const LABEL_AFTER_LIMIT = 0.85;
@@ -33,18 +33,11 @@ const labelStyle = (placement: LabelPlacement, offset: number, width: number): R
 
 interface WorkflowRunTimelineProps {
 	timeline: Timeline;
-	/** Grow to fill the parent instead of capping at a fixed height. */
-	fill?: boolean;
 	selectedNodeId: string | null;
 	onSelect: (nodeId: string) => void;
 }
 
-export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({
-	timeline,
-	fill = false,
-	selectedNodeId,
-	onSelect,
-}) => {
+export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({ timeline, selectedNodeId, onSelect }) => {
 	if (timeline.entries.length === 0) {
 		return (
 			<Text fz="sm" c="dimmed" p="md">
@@ -148,7 +141,7 @@ export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({
 	);
 
 	return (
-		<div className={classes.root} data-fill={fill || undefined}>
+		<div className={classes.root}>
 			<div className={classes.axis}>
 				<div className={classes.gutter} />
 				<div className={classes.axisTrack}>
@@ -162,15 +155,9 @@ export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({
 				</div>
 			</div>
 
-			{fill ? (
-				<ScrollArea type="auto" scrollbars="y" className={classes.scroll}>
-					{rows}
-				</ScrollArea>
-			) : (
-				<ScrollArea.Autosize mah={MAX_HEIGHT} type="auto" scrollbars="y">
-					{rows}
-				</ScrollArea.Autosize>
-			)}
+			<ScrollArea.Autosize mah={MAX_HEIGHT} type="auto" scrollbars="y">
+				{rows}
+			</ScrollArea.Autosize>
 		</div>
 	);
 };

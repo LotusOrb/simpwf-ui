@@ -15,9 +15,17 @@ interface WorkflowRunSummaryProps {
 	progress: WorkflowRunProgress;
 	currentNode: WorkflowDefinitionNode | null;
 	elapsedMs: number;
+	/** A borderless single row, for a header. */
+	compact?: boolean;
 }
 
-export const WorkflowRunSummary: React.FC<WorkflowRunSummaryProps> = ({ detail, progress, currentNode, elapsedMs }) => {
+export const WorkflowRunSummary: React.FC<WorkflowRunSummaryProps> = ({
+	detail,
+	progress,
+	currentNode,
+	elapsedMs,
+	compact = false,
+}) => {
 	const currentTypeMeta = currentNode ? nodeTypeMeta[currentNode.type] : null;
 
 	const stats: { label: string; value: React.ReactNode; title?: string }[] = [
@@ -48,7 +56,7 @@ export const WorkflowRunSummary: React.FC<WorkflowRunSummaryProps> = ({ detail, 
 	];
 
 	return (
-		<div className={classes.root}>
+		<div className={classes.root} data-compact={compact || undefined}>
 			<div className={classes.progress}>
 				<Group justify="space-between" gap="xs" mb={6}>
 					<Text fz={10} c="dimmed" tt="uppercase" fw={600} lts={0.4}>

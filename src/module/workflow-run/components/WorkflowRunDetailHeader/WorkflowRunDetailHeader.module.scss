@@ -1,0 +1,26 @@
+.root {
+	display: flex;
+	flex-direction: column;
+	gap: var(--mantine-spacing-sm);
+	padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+}
+
+.headerTitle {
+	flex: 1;
+	min-width: 0;
+}
+
+.titleBlock {
+	min-width: 0;
+}
+
+.title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.mono {
+	font-family: var(--mantine-font-family-monospace);
+	word-break: break-word;
+}

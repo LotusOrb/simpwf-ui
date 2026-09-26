@@ -1,0 +1,6 @@
+@use 'sass:math';
+
+// Mirrors Mantine's rem() so SCSS modules scale with --mantine-scale.
+@function rem($value) {
+	@return calc(#{math.div(math.div($value, $value * 0 + 1), 16)}rem * var(--mantine-scale));
+}

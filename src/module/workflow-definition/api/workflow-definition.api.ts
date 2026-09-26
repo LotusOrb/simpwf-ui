@@ -9,6 +9,9 @@ import type { WorkflowDefinitionQuery } from '@module/workflow-definition/types/
 
 const RESOURCE = 'v1/workflow/definition';
 
+// Prefixed so it never collides with a definition id tag (a lineage id can equal its first version's id).
+const lineageTag = (lineageId: string) => ({ type: apiTagConfig.workflowDefinition, id: `lineage:${lineageId}` });
+
 export const workflowDefinitionApi = coreApi.injectEndpoints({
 	endpoints: (build) => ({
 		listWorkflowDefinitions: build.query<WorkflowDefinitionList, WorkflowDefinitionQuery>({
@@ -19,24 +22,38 @@ export const workflowDefinitionApi = coreApi.injectEndpoints({
 			],
 		}),
 
+		listWorkflowDefinitionVersions: build.query<WorkflowDefinitionList, string>({
+			query: (lineageId) => ({
+				method: 'get',
+				url: RESOURCE,
+				qParam: {
+					page: 1,
+					perPage: 100,
+					order: { by: 'version', direction: 'desc' },
+					filter: {
+						lineage_id: { op: '_eq', value: lineageId },
+						latest_only: { op: '_eq', value: 'false' },
+					},
+				} satisfies WorkflowDefinitionQuery,
+			}),
+			providesTags: (result, _error, lineageId) => [
+				lineageTag(lineageId),
+				...(result?.items ?? []).map((item) => ({ type: apiTagConfig.workflowDefinition, id: item.id })),
+			],
+		}),
+
 		getWorkflowDefinition: build.query<WorkflowDefinition, string>({
 			query: (id) => ({ method: 'get', url: `${RESOURCE}/${id}` }),
 			providesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowDefinition, id }],
 		}),
 
+		// Definitions are immutable: there is no update endpoint. Editing POSTs a new version with
+		// `previous_version_id` set, which lands in the same lineage.
 		createWorkflowDefinition: build.mutation<WorkflowDefinition, WorkflowDefinitionCreatePayload>({
 			query: (body) => ({ method: 'post', url: RESOURCE, body }),
-			invalidatesTags: [{ type: apiTagConfig.workflowDefinition, id: API_TAG_LIST_ID }],
-		}),
-
-		updateWorkflowDefinition: build.mutation<
-			WorkflowDefinition,
-			{ id: string } & Partial<Pick<WorkflowDefinition, 'name' | 'content'>>
-		>({
-			query: ({ id, ...body }) => ({ method: 'put', url: `${RESOURCE}/${id}`, body }),
-			invalidatesTags: (_result, _error, { id }) => [
-				{ type: apiTagConfig.workflowDefinition, id },
+			invalidatesTags: (result) => [
 				{ type: apiTagConfig.workflowDefinition, id: API_TAG_LIST_ID },
+				...(result ? [lineageTag(result.lineage_id)] : []),
 			],
 		}),
 

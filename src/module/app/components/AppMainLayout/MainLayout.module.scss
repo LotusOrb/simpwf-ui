@@ -15,7 +15,7 @@
 }
 
 .surface {
-	display: flex;
+	position: relative;
 	flex: 1;
 	min-width: 0;
 	margin: 0 var(--mantine-spacing-sm) var(--mantine-spacing-sm) 0;
@@ -29,22 +29,128 @@
 	}
 }
 
+// Full-bleed: floating panels sit on top of the page instead of beside it.
 .content {
-	flex: 1;
-	min-width: 0;
-	height: 100%;
+	position: absolute;
+	inset: 0;
+}
+
+// Transparent to the pointer so the page underneath (e.g. a canvas) still pans and accepts
+// drops; only the panels themselves take events.
+.overlay {
+	position: absolute;
+	inset: var(--layout-panel-gap);
+	display: grid;
+	grid-template:
+		'top top top' auto
+		'left . right' minmax(0, 1fr)
+		'bottom bottom bottom' auto
+		/ auto minmax(0, 1fr) auto;
+	pointer-events: none;
 }
 
 .slot {
 	display: flex;
-	flex-shrink: 0;
-	height: 100%;
+	min-width: 0;
+	min-height: 0;
+	pointer-events: auto;
 
 	&:empty {
 		display: none;
 	}
+
+	&[data-side='top'] {
+		grid-area: top;
+		margin-bottom: var(--layout-panel-gap);
+	}
+
+	&[data-side='bottom'] {
+		grid-area: bottom;
+		margin-top: var(--layout-panel-gap);
+	}
+
+	&[data-side='left'] {
+		grid-area: left;
+	}
+
+	&[data-side='right'] {
+		grid-area: right;
+	}
 }
 
 .panel {
+	display: flex;
+	flex-direction: column;
+	max-width: 100%;
+	min-height: 0;
+	overflow: hidden;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-lg);
+	background-color: var(--mantine-color-white);
+	box-shadow: var(--mantine-shadow-sm);
+
+	&[data-side='top'],
+	&[data-side='bottom'] {
+		flex: 1;
+		min-width: 0;
+	}
+
+	&[data-side='left'],
+	&[data-side='right'] {
+		height: 100%;
+	}
+
+	// Panel pages size themselves to `height: 100%`; let them fill the card.
+	> * {
+		flex: 1;
+		min-height: 0;
+	}
+}
+
+.drawerBody {
 	height: 100%;
+	padding: 0;
+}
+
+.bar {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.barHeader {
+	display: flex;
+	flex-shrink: 0;
+	gap: var(--mantine-spacing-xs);
+	align-items: center;
+	padding: 6px var(--mantine-spacing-xs) 6px var(--mantine-spacing-sm);
+	cursor: pointer;
+	user-select: none;
+
+	&:hover {
+		background-color: var(--mantine-color-gray-0);
+	}
+}
+
+.barTitle {
+	display: flex;
+	flex: 1;
+	gap: var(--mantine-spacing-xs);
+	align-items: center;
+	min-width: 0;
+}
+
+.barChevron {
+	display: inline-flex;
+	color: var(--mantine-color-gray-6);
+	transition: transform 150ms ease;
+
+	.bar[data-collapsed] & {
+		transform: rotate(-90deg);
+	}
+}
+
+.barBody {
+	min-height: 0;
+	border-top: 1px solid var(--mantine-color-gray-2);
 }

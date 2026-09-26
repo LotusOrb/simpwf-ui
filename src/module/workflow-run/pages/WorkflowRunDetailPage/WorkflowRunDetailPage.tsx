@@ -1,55 +1,22 @@
 import React, { useMemo, useState } from 'react';
 
-import {
-	ActionIcon,
-	Alert,
-	Badge,
-	Button,
-	Card,
-	Center,
-	Group,
-	Loader,
-	Modal,
-	Stack,
-	Switch,
-	Tabs,
-	Text,
-	Title,
-	Tooltip,
-} from '@mantine/core';
+import { Button, Center, Group, Loader, Modal, Stack, Text } from '@mantine/core';
 import { ReactFlowProvider } from '@xyflow/react';
-import {
-	LuArrowLeft,
-	LuChevronDown,
-	LuChevronUp,
-	LuCircleAlert,
-	LuHourglass,
-	LuMaximize2,
-	LuMinimize2,
-	LuPanelRight,
-	LuPause,
-	LuPlay,
-	LuRefreshCw,
-	LuSquare,
-	LuTriangleAlert,
-	LuUndo2,
-} from 'react-icons/lu';
+import { LuCircleAlert, LuRefreshCw } from 'react-icons/lu';
 import { Link, useParams } from 'react-router';
 
-import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
-import { useAppLayoutPanel } from '@module/app/hooks';
+import { MainLayoutPanel, MainLayoutPanelBar } from '@module/app/components/AppMainLayout';
+import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
-import { WorkflowRunContextPanel } from '@module/workflow-run/components/WorkflowRunContextPanel';
+import { WorkflowRunDetailHeader } from '@module/workflow-run/components/WorkflowRunDetailHeader';
 import { WorkflowRunGraph } from '@module/workflow-run/components/WorkflowRunGraph';
-import { WorkflowRunIdText } from '@module/workflow-run/components/WorkflowRunIdText';
 import { WorkflowRunInputModal } from '@module/workflow-run/components/WorkflowRunInputModal';
-import { WorkflowRunJsonView } from '@module/workflow-run/components/WorkflowRunJsonView';
 import { WorkflowRunNodeInspector } from '@module/workflow-run/components/WorkflowRunNodeInspector';
 import { WorkflowRunRollbackModal } from '@module/workflow-run/components/WorkflowRunRollbackModal';
-import { WorkflowRunStatusBadge } from '@module/workflow-run/components/WorkflowRunStatusBadge';
+import { WorkflowRunSidePanel } from '@module/workflow-run/components/WorkflowRunSidePanel';
 import { WorkflowRunSummary } from '@module/workflow-run/components/WorkflowRunSummary';
 import { WorkflowRunTimeline } from '@module/workflow-run/components/WorkflowRunTimeline';
-import { formatWaitingReason, getAllowedActions, indexDefinitionNodes } from '@module/workflow-run/data';
+import { indexDefinitionNodes } from '@module/workflow-run/data';
 import {
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
@@ -64,8 +31,6 @@ import classes from './WorkflowRunDetailPage.module.scss';
 
 const RUN_LIST_ROUTE = '/app/workflow-run';
 
-type TimelineMode = 'collapsed' | 'normal' | 'full';
-
 const errorMessage = (error: unknown, fallback: string): string => {
 	const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
 	return typeof message === 'string' && message ? message : fallback;
@@ -75,6 +40,12 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const { id = '' } = useParams<{ id: string }>();
 
 	const panel = useAppLayoutPanel();
+	useAppLayoutPanels({
+		top: { opened: true },
+		left: { opened: false },
+		right: { opened: false },
+		bottom: { opened: true, collapsed: false },
+	});
 	const run = useWorkflowRunDetail(id);
 
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -83,7 +54,6 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const [inputOpened, setInputOpened] = useState(false);
 	const [stopOpened, setStopOpened] = useState(false);
 	const [actionError, setActionError] = useState<string | null>(null);
-	const [timelineMode, setTimelineMode] = useState<TimelineMode>('normal');
 
 	const [pauseRun, pauseState] = usePauseWorkflowRunMutation();
 	const [resumeRun, resumeState] = useResumeWorkflowRunMutation();
@@ -141,8 +111,6 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		}
 	};
 
-	const busy = pauseState.isLoading || resumeState.isLoading || stopState.isLoading || rollbackState.isLoading;
-
 	const selectedNode = selectedNodeId ? (nodesById.get(selectedNodeId) ?? null) : null;
 	const selectedOccurrence = selectedNodeId ? (detail.nodes[selectedNodeId] ?? null) : null;
 	const selectedDebug = selectedOccurrence ? (debug[selectedOccurrence.occurrence_id] ?? null) : null;
@@ -151,7 +119,6 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const currentNodeId = detail.current_node_id ?? detail.pending_input?.node_id ?? null;
 	const currentNode = currentNodeId ? (nodesById.get(currentNodeId) ?? null) : null;
 	const pendingNode = detail.pending_input ? (nodesById.get(detail.pending_input.node_id) ?? null) : null;
-	const actions = getAllowedActions(detail);
 	const rollbackTargets = timeline.entries.filter((entry) => detail.nodes[entry.nodeId]?.rollbackable);
 	const canRollback = ['paused', 'failed', 'stopped'].includes(detail.status) && rollbackTargets.length > 0;
 
@@ -171,7 +138,53 @@ export const WorkflowRunDetailPage: React.FC = () => {
 
 	return (
 		<>
-			<MainLayoutPanel side="right" w={360} visibleFrom="md">
+			<MainLayoutPanel side="top">
+				<WorkflowRunDetailHeader
+					definition={definition}
+					detail={detail}
+					pendingNode={pendingNode}
+					backTo={RUN_LIST_ROUTE}
+					live={live}
+					onLiveChange={setLive}
+					summary={
+						<WorkflowRunSummary
+							compact
+							detail={detail}
+							progress={progress}
+							currentNode={currentNode}
+							elapsedMs={elapsedMs}
+						/>
+					}
+					pending={{
+						pause: pauseState.isLoading,
+						resume: resumeState.isLoading,
+						stop: stopState.isLoading,
+						rollback: rollbackState.isLoading,
+					}}
+					canRollback={canRollback}
+					actionError={actionError}
+					onDismissActionError={() => setActionError(null)}
+					onProvideInput={() => setInputOpened(true)}
+					onPause={() => perform('pause run', () => pauseRun(detail.id).unwrap())}
+					onResume={() => perform('resume run', () => resumeRun(detail.id).unwrap())}
+					onRollback={() => openRollback(null)}
+					onStop={() => setStopOpened(true)}
+				/>
+			</MainLayoutPanel>
+
+			<MainLayoutPanel side="left" w={360} drawerBelow="md">
+				<WorkflowRunSidePanel
+					detail={detail}
+					context={context}
+					onReplaceContext={(next, reason) =>
+						perform('replace context', () =>
+							replaceContext({ id: detail.id, context: next, reason }).unwrap(),
+						)
+					}
+				/>
+			</MainLayoutPanel>
+
+			<MainLayoutPanel side="right" w={360} drawerBelow="md">
 				<WorkflowRunNodeInspector
 					node={selectedNode}
 					occurrence={selectedOccurrence}
@@ -181,293 +194,29 @@ export const WorkflowRunDetailPage: React.FC = () => {
 				/>
 			</MainLayoutPanel>
 
+			<MainLayoutPanel side="bottom">
+				<MainLayoutPanelBar
+					title="Timeline"
+					meta={
+						<Text fz={11} c="dimmed">
+							{timeline.entries.length} occurrences
+						</Text>
+					}
+				>
+					<WorkflowRunTimeline timeline={timeline} selectedNodeId={selectedNodeId} onSelect={selectNode} />
+				</MainLayoutPanelBar>
+			</MainLayoutPanel>
+
 			<div className={classes.root}>
-				<div className={classes.header}>
-					<Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
-						<Group gap="sm" wrap="nowrap" className={classes.headerTitle}>
-							<Tooltip label="Back to runs">
-								<ActionIcon
-									component={Link}
-									to={RUN_LIST_ROUTE}
-									variant="subtle"
-									color="gray"
-									size={34}
-									aria-label="Back to runs"
-								>
-									<LuArrowLeft size={18} />
-								</ActionIcon>
-							</Tooltip>
-							<div className={classes.titleBlock}>
-								<Group gap={8} wrap="nowrap">
-									<Title order={2} fz={20} className={classes.title} title={definition.name}>
-										{definition.name}
-									</Title>
-									<Badge size="sm" color="gray">
-										v{definition.version}
-									</Badge>
-									<WorkflowRunStatusBadge run={detail} />
-								</Group>
-								<Group gap="sm" wrap="nowrap">
-									<WorkflowRunIdText id={detail.id} />
-									<Text fz="xs" c="dimmed">
-										started by {detail.created_by}
-									</Text>
-								</Group>
-							</div>
-						</Group>
-
-						<Group gap="xs" wrap="nowrap">
-							<Switch
-								label="Live"
-								size="sm"
-								checked={live}
-								onChange={(event) => setLive(event.currentTarget.checked)}
-							/>
-
-							{detail.pending_input && (
-								<Button
-									size="sm"
-									leftSection={<LuHourglass size={15} />}
-									onClick={() => setInputOpened(true)}
-								>
-									Provide input
-								</Button>
-							)}
-							{actions.includes('pause') && (
-								<Button
-									size="sm"
-									variant="default"
-									leftSection={<LuPause size={15} />}
-									loading={pauseState.isLoading}
-									disabled={busy}
-									onClick={() => perform('pause run', () => pauseRun(detail.id).unwrap())}
-								>
-									Pause
-								</Button>
-							)}
-							{actions.includes('resume') && (
-								<Button
-									size="sm"
-									variant="default"
-									leftSection={<LuPlay size={15} />}
-									loading={resumeState.isLoading}
-									disabled={busy}
-									onClick={() => perform('resume run', () => resumeRun(detail.id).unwrap())}
-								>
-									Resume
-								</Button>
-							)}
-							{canRollback && (
-								<Button
-									size="sm"
-									variant="default"
-									color="grape"
-									leftSection={<LuUndo2 size={15} />}
-									loading={rollbackState.isLoading}
-									disabled={busy}
-									onClick={() => openRollback(null)}
-								>
-									Roll back
-								</Button>
-							)}
-							{actions.includes('stop') && (
-								<Button
-									size="sm"
-									variant="light"
-									color="red"
-									leftSection={<LuSquare size={14} />}
-									loading={stopState.isLoading}
-									disabled={busy}
-									onClick={() => setStopOpened(true)}
-								>
-									Stop
-								</Button>
-							)}
-
-							<Tooltip label={panel.opened.right ? 'Hide node details' : 'Show node details'}>
-								<ActionIcon
-									variant="default"
-									size={30}
-									visibleFrom="md"
-									aria-label="Toggle node details panel"
-									aria-pressed={panel.opened.right}
-									onClick={() => panel.toggle('right')}
-								>
-									<LuPanelRight size={16} />
-								</ActionIcon>
-							</Tooltip>
-						</Group>
-					</Group>
-				</div>
-
-				<div className={classes.body}>
-					<Stack gap="md" className={classes.bodyInner}>
-						<WorkflowRunSummary
-							detail={detail}
-							progress={progress}
-							currentNode={currentNode}
-							elapsedMs={elapsedMs}
-						/>
-
-						{actionError && (
-							<Alert
-								color="red"
-								icon={<LuTriangleAlert size={16} />}
-								p="sm"
-								withCloseButton
-								onClose={() => setActionError(null)}
-							>
-								<Text fz="xs">{actionError}</Text>
-							</Alert>
-						)}
-
-						{detail.error && (
-							<Alert color="red" icon={<LuTriangleAlert size={16} />} title="Run failed" p="sm">
-								<Text fz="xs" className={classes.mono}>
-									{detail.error}
-								</Text>
-							</Alert>
-						)}
-						{!detail.error && detail.waiting_reason && (
-							<Alert color="yellow" icon={<LuHourglass size={16} />} p="sm">
-								{detail.pending_input ? (
-									<Text fz="xs">
-										Waiting for input on{' '}
-										<strong>{pendingNode?.name ?? detail.pending_input.node_id}</strong>
-										<Text span fz="xs" c="dimmed">
-											{' · '}
-											{detail.pending_input.channel} →{' '}
-											{detail.pending_input.context_path || '(root)'}
-										</Text>
-									</Text>
-								) : (
-									<Text fz="xs">{formatWaitingReason(detail.waiting_reason)}</Text>
-								)}
-							</Alert>
-						)}
-
-						<Card padding={0} withBorder className={classes.main}>
-							<Tabs defaultValue="graph" className={classes.tabs} keepMounted={false}>
-								<Tabs.List className={classes.tabsList}>
-									<Tabs.Tab value="graph">Execution</Tabs.Tab>
-									<Tabs.Tab value="context">Context</Tabs.Tab>
-									<Tabs.Tab value="raw">Raw status</Tabs.Tab>
-								</Tabs.List>
-
-								<Tabs.Panel value="graph" className={classes.tabPanel}>
-									{timelineMode !== 'full' && (
-										<div className={classes.canvas}>
-											<ReactFlowProvider>
-												<WorkflowRunGraph
-													definition={definition}
-													detail={detail}
-													debug={debug}
-													selectedNodeId={selectedNodeId}
-													onSelect={selectNode}
-												/>
-											</ReactFlowProvider>
-										</div>
-									)}
-									<div className={classes.timeline} data-mode={timelineMode}>
-										<Group justify="space-between" px="xs" py={4} wrap="nowrap">
-											<Group gap={6} wrap="nowrap">
-												<Tooltip
-													label={
-														timelineMode === 'collapsed'
-															? 'Expand timeline'
-															: 'Collapse timeline'
-													}
-												>
-													<ActionIcon
-														variant="subtle"
-														color="gray"
-														size="sm"
-														aria-label="Toggle timeline"
-														aria-expanded={timelineMode !== 'collapsed'}
-														onClick={() =>
-															setTimelineMode((mode) =>
-																mode === 'collapsed' ? 'normal' : 'collapsed',
-															)
-														}
-													>
-														{timelineMode === 'collapsed' ? (
-															<LuChevronUp size={14} />
-														) : (
-															<LuChevronDown size={14} />
-														)}
-													</ActionIcon>
-												</Tooltip>
-												<Text fz={11} fw={600} c="dimmed" tt="uppercase" lts={0.4}>
-													Timeline
-												</Text>
-											</Group>
-											<Group gap={6} wrap="nowrap">
-												<Text fz={11} c="dimmed">
-													{timeline.entries.length} occurrences
-												</Text>
-												<Tooltip
-													label={
-														timelineMode === 'full'
-															? 'Show node graph'
-															: 'Full height (hides node graph)'
-													}
-												>
-													<ActionIcon
-														variant="subtle"
-														color="gray"
-														size="sm"
-														aria-label="Toggle full-height timeline"
-														aria-pressed={timelineMode === 'full'}
-														onClick={() =>
-															setTimelineMode((mode) =>
-																mode === 'full' ? 'normal' : 'full',
-															)
-														}
-													>
-														{timelineMode === 'full' ? (
-															<LuMinimize2 size={13} />
-														) : (
-															<LuMaximize2 size={13} />
-														)}
-													</ActionIcon>
-												</Tooltip>
-											</Group>
-										</Group>
-										{timelineMode !== 'collapsed' && (
-											<WorkflowRunTimeline
-												timeline={timeline}
-												fill={timelineMode === 'full'}
-												selectedNodeId={selectedNodeId}
-												onSelect={selectNode}
-											/>
-										)}
-									</div>
-								</Tabs.Panel>
-
-								<Tabs.Panel value="context" className={classes.tabPanelScroll}>
-									<WorkflowRunContextPanel
-										context={context}
-										editable={detail.status === 'paused'}
-										onReplace={(next, reason) =>
-											perform('replace context', () =>
-												replaceContext({ id: detail.id, context: next, reason }).unwrap(),
-											)
-										}
-									/>
-								</Tabs.Panel>
-
-								<Tabs.Panel value="raw" className={classes.tabPanelScroll}>
-									<Stack gap="xs" p="md">
-										<Text fz="xs" c="dimmed">
-											GET /v1/workflow/instance/{detail.id}/status
-										</Text>
-										<WorkflowRunJsonView value={detail} maxHeight={480} />
-									</Stack>
-								</Tabs.Panel>
-							</Tabs>
-						</Card>
-					</Stack>
-				</div>
+				<ReactFlowProvider>
+					<WorkflowRunGraph
+						definition={definition}
+						detail={detail}
+						debug={debug}
+						selectedNodeId={selectedNodeId}
+						onSelect={selectNode}
+					/>
+				</ReactFlowProvider>
 
 				<WorkflowRunInputModal
 					pending={inputOpened ? detail.pending_input : null}

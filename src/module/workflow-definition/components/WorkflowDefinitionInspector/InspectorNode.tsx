@@ -23,7 +23,9 @@ import { useCoreDispatch, useCoreSelector } from '@core/store';
 import { CodeEditor } from '@common/component/CodeEditor';
 
 import {
+	defaultOutputProperty,
 	formatRawNode,
+	isOutputKey,
 	nodeTypeMeta,
 	parseRawNode,
 	supportsFailure,
@@ -35,12 +37,18 @@ import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definit
 import { nodeSelected, nodesRemoved, selectEditorIssues } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionHookScript } from '@module/workflow-definition/types/WorkflowDefinitionHookScript';
+import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
 import { DurationInput, JsonField, SectionLabel } from './InspectorControls';
 import { ConditionsFields, FailureFields, InspectorNodeFields } from './InspectorNodeFields';
 import classes from './WorkflowDefinitionInspector.module.scss';
 
 export type NodeTab = 'setup' | 'hooks' | 'advanced' | 'json';
+
+const outputPropertyDescription = (type: WorkflowDefinitionNodeType) =>
+	type === 'input'
+		? 'Top-level context key where the accepted payload is written. Defaults to the node name in snake_case.'
+		: "Top-level context key for this node's output. Defaults to the node name in snake_case.";
 
 interface InspectorNodeProps {
 	node: WorkflowDefinitionEditorNode;
@@ -171,6 +179,28 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({ node, tab, onTabCh
 								value={config.name}
 								onChange={(event) => patch({ name: event.currentTarget.value })}
 							/>
+							{supportsOutputProperty(config.type) && (
+								<TextInput
+									label={<SectionLabel>Output property</SectionLabel>}
+									description={outputPropertyDescription(config.type)}
+									inputWrapperOrder={['label', 'input', 'description', 'error']}
+									placeholder={
+										defaultOutputProperty(config) ??
+										(config.type === 'input' ? 'payload' : 'result')
+									}
+									value={config.output_property ?? ''}
+									onChange={(event) =>
+										patch({ output_property: event.currentTarget.value || undefined })
+									}
+									error={
+										config.type === 'input' &&
+										config.output_property &&
+										!isOutputKey(config.output_property)
+											? 'Use a bare key like payload'
+											: undefined
+									}
+								/>
+							)}
 
 							{isReference ? (
 								<>
@@ -219,18 +249,6 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({ node, tab, onTabCh
 
 					{tab === 'advanced' && (
 						<>
-							{supportsOutputProperty(config.type) && (
-								<TextInput
-									label={<SectionLabel>Output property</SectionLabel>}
-									description="Top-level context key for this node's output. Defaults to the node id."
-									inputWrapperOrder={['label', 'input', 'description']}
-									placeholder="result"
-									value={config.output_property ?? ''}
-									onChange={(event) =>
-										patch({ output_property: event.currentTarget.value || undefined })
-									}
-								/>
-							)}
 							{supportsTimeout(config.type) && !isReference && (
 								<DurationInput
 									label={<SectionLabel>Timeout</SectionLabel>}

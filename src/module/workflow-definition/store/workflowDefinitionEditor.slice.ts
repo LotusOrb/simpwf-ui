@@ -24,6 +24,8 @@ export interface WorkflowDefinitionEditorState extends WorkflowDefinitionEditorD
 	scope: string | null;
 	selectedId: string | null;
 	dirty: boolean;
+	/** The document as last loaded or saved; discarding restores it. */
+	baseline: WorkflowDefinitionEditorDocument;
 }
 
 const initialState: WorkflowDefinitionEditorState = {
@@ -32,6 +34,7 @@ const initialState: WorkflowDefinitionEditorState = {
 	scope: null,
 	selectedId: null,
 	dirty: false,
+	baseline: toEditorDocument(null, {}),
 };
 
 const removeNodes = (state: WorkflowDefinitionEditorState, ids: string[]) => {
@@ -62,11 +65,20 @@ export const workflowDefinitionEditorSlice = createSlice({
 			scope: null,
 			selectedId: null,
 			dirty: false,
+			baseline: action.payload.document,
 		}),
 		editorReset: () => initialState,
 		editorSaved: (state) => {
 			state.dirty = false;
 		},
+		editorDiscarded: (state) => ({
+			...state.baseline,
+			loadedKey: state.loadedKey,
+			scope: null,
+			selectedId: null,
+			dirty: false,
+			baseline: state.baseline,
+		}),
 		nameChanged: (state, action: PayloadAction<string>) => {
 			state.name = action.payload;
 			state.dirty = true;
@@ -238,6 +250,7 @@ export const {
 	connected,
 	contextModeChanged,
 	edgesChanged,
+	editorDiscarded,
 	editorLoaded,
 	editorReset,
 	editorSaved,

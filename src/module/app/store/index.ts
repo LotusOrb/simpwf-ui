@@ -1,10 +1,18 @@
 export {
 	appLayoutSlice,
+	selectPanelCollapsed,
+	selectPanelInsets,
 	selectPanelOpened,
+	selectPanelsCollapsed,
+	selectPanelsOpened,
 	selectSlotMounted,
+	setPanelCollapsed,
+	setPanelInset,
 	setPanelOpened,
 	setSlotMounted,
 	togglePanel,
+	togglePanelCollapsed,
+	type AppLayoutPanelRecord,
 	type AppLayoutPanelSide,
 	type AppLayoutState,
 } from './appLayout.slice';

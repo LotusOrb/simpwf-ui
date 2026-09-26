@@ -1,0 +1,17 @@
+.root {
+	display: flex;
+	flex-direction: column;
+	gap: var(--mantine-spacing-xs);
+	padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+}
+
+.title {
+	flex: 1;
+	// Keep the name readable; the actions wrap to a second row before it collapses.
+	min-width: min(220px, 100%);
+}
+
+// The name truncates first; version and status badges keep their full label.
+.badge {
+	flex-shrink: 0;
+}

@@ -1,0 +1,1 @@
+export { SecretDeleteModal } from './SecretDeleteModal';

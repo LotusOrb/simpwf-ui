@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 import '@xyflow/react/dist/style.css';
 
@@ -6,15 +6,19 @@ import { Group, Paper, Text } from '@mantine/core';
 import {
 	Background,
 	BackgroundVariant,
+	ControlButton,
 	Controls,
 	MarkerType,
 	Panel,
 	ReactFlow,
-	useReactFlow,
 	type Edge,
 	type NodeTypes,
 } from '@xyflow/react';
+import { LuScan } from 'react-icons/lu';
 
+import { useInsetFitView } from '@common/hooks/useInsetFitView';
+
+import { useAppLayoutInsets } from '@module/app/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import {
 	buildRunGraph,
@@ -34,7 +38,7 @@ import { WorkflowRunGraphNode } from './WorkflowRunGraphNode';
 
 const nodeTypes: NodeTypes = { run: WorkflowRunGraphNode, runGroup: WorkflowRunGraphGroup };
 
-const FIT_VIEW_OPTIONS = { padding: 0.18, maxZoom: 1 };
+const FIT_VIEW_MARGIN = 40;
 
 const LEGEND = ['succeeded', 'running', 'failed', 'pending'] as const;
 
@@ -53,14 +57,17 @@ export const WorkflowRunGraph: React.FC<WorkflowRunGraphProps> = ({
 	selectedNodeId,
 	onSelect,
 }) => {
-	const flow = useReactFlow();
 	const graph = useMemo(() => buildRunGraph(definition.content), [definition.content]);
 
 	// Recentre when the definition changes, not on every engine tick.
-	useEffect(() => {
-		const frame = requestAnimationFrame(() => flow.fitView({ ...FIT_VIEW_OPTIONS, duration: 250 }));
-		return () => cancelAnimationFrame(frame);
-	}, [flow, graph]);
+	const insets = useAppLayoutInsets();
+	const { fitView, onMoveStart, onMoveEnd } = useInsetFitView({
+		insets,
+		margin: FIT_VIEW_MARGIN,
+		maxZoom: 1,
+		duration: 250,
+		refitKey: graph,
+	});
 
 	const nodes: WorkflowRunGraphFlowNode[] = [
 		...graph.groups.map((group) => ({
@@ -132,14 +139,18 @@ export const WorkflowRunGraph: React.FC<WorkflowRunGraphProps> = ({
 				onPaneClick={() => onSelect(null)}
 				nodesConnectable={false}
 				edgesFocusable={false}
-				fitView
-				fitViewOptions={FIT_VIEW_OPTIONS}
+				onMoveStart={onMoveStart}
+				onMoveEnd={onMoveEnd}
 				minZoom={0.25}
 				maxZoom={1.6}
 				proOptions={{ hideAttribution: true }}
 			>
 				<Background variant={BackgroundVariant.Dots} gap={16} size={1.2} color="var(--mantine-color-gray-4)" />
-				<Controls showInteractive={false} position="bottom-left" />
+				<Controls showInteractive={false} showFitView={false} position="bottom-left">
+					<ControlButton title="Fit view" aria-label="Fit view" onClick={fitView}>
+						<LuScan />
+					</ControlButton>
+				</Controls>
 
 				<Panel position="top-right">
 					<Paper className={classes.legend} px="sm" py={6} withBorder>

@@ -29,7 +29,7 @@ export const mockRunDefinition: WorkflowRunMockDefinition = {
 				type: 'input',
 				name: 'Receive order',
 				channel: 'http',
-				context_path: 'order',
+				output_property: 'order',
 				next_node: 'validate-order',
 			},
 			{
@@ -109,7 +109,7 @@ export const mockRunDefinition: WorkflowRunMockDefinition = {
 				type: 'input',
 				name: 'Confirm shipment',
 				channel: 'http',
-				context_path: 'shipment',
+				output_property: 'shipment',
 				next_node: 'notify-customer',
 				form: {
 					schema: {

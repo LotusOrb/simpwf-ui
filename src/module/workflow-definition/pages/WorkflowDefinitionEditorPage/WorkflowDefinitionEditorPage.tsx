@@ -1,49 +1,49 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import {
-	ActionIcon,
-	Alert,
-	Badge,
-	Button,
-	Group,
-	Loader,
-	Modal,
-	rem,
-	Stack,
-	Text,
-	ThemeIcon,
-	Title,
-	Tooltip,
-} from '@mantine/core';
+import { Button, Group, Loader, Modal, Stack, Text, ThemeIcon } from '@mantine/core';
+import { skipToken } from '@reduxjs/toolkit/query';
 import { ReactFlowProvider } from '@xyflow/react';
-import { LuCircleAlert, LuPanelLeft, LuPanelRight, LuPlay, LuSave } from 'react-icons/lu';
-import { useBlocker, useNavigate, useParams } from 'react-router';
+import { LuCircleAlert } from 'react-icons/lu';
+import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { useCoreDispatch, useCoreSelector, useCoreStore } from '@core/store';
 
 import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
-import { useAppLayoutPanel } from '@module/app/hooks';
-import { selectPanelOpened } from '@module/app/store';
+import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useLazyGetNodeDefinitionQuery } from '@module/node-definition/hooks';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
+import { WorkflowDefinitionDeleteModal } from '@module/workflow-definition/components/WorkflowDefinitionDeleteModal';
+import { WorkflowDefinitionEditorHeader } from '@module/workflow-definition/components/WorkflowDefinitionEditorHeader';
 import { WorkflowDefinitionInspector } from '@module/workflow-definition/components/WorkflowDefinitionInspector';
+import { WorkflowDefinitionIssuesPanel } from '@module/workflow-definition/components/WorkflowDefinitionIssuesPanel';
 import { WorkflowDefinitionPalette } from '@module/workflow-definition/components/WorkflowDefinitionPalette';
-import { collectReferenceIds, getStartNode, toEditorDocument } from '@module/workflow-definition/data';
-import { useCreateWorkflowDefinitionMutation, useGetWorkflowDefinitionQuery } from '@module/workflow-definition/hooks';
+import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
 import {
+	collectReferenceIds,
+	describeSaveError,
+	getStartNode,
+	toEditorDocument,
+	type WorkflowDefinitionErrorCopy,
+} from '@module/workflow-definition/data';
+import {
+	useCreateWorkflowDefinitionMutation,
+	useFocusEditorIssue,
+	useGetWorkflowDefinitionQuery,
+	useListWorkflowDefinitionVersionsQuery,
+	useWorkflowDefinitionDelete,
+} from '@module/workflow-definition/hooks';
+import {
+	editorDiscarded,
 	editorLoaded,
 	editorReset,
 	editorSaved,
-	nodeSelected,
-	scopeEntered,
 	selectEditorContent,
 	selectEditorDirty,
 	selectEditorIssues,
 	selectEditorLoadedKey,
 	selectEditorName,
 	selectEditorSourceId,
-	selectEditorSourceVersion,
 } from '@module/workflow-definition/store';
 import { useStartWorkflowRunMutation } from '@module/workflow-run/hooks';
 
@@ -54,56 +54,71 @@ const RUN_ROUTE = '/app/workflow-run';
 
 export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
+	// `new?from=<id>` duplicates a definition into a fresh lineage.
+	const [searchParams] = useSearchParams();
+	const duplicateOf = id ? null : searchParams.get('from');
 	const navigate = useNavigate();
 	const dispatch = useCoreDispatch();
 	const store = useCoreStore();
 	const panel = useAppLayoutPanel();
+	const focusIssue = useFocusEditorIssue();
 
-	const definition = useGetWorkflowDefinitionQuery(id ?? '', { skip: !id, refetchOnFocus: false });
+	useAppLayoutPanels({
+		top: { opened: true },
+		left: { opened: true },
+		right: { opened: true },
+		bottom: { opened: true, collapsed: true },
+	});
+
+	const definitionId = id ?? duplicateOf;
+	const definition = useGetWorkflowDefinitionQuery(definitionId ?? skipToken, { refetchOnFocus: false });
+	const current = id && definition.data?.id === id ? definition.data : null;
+	const versions = useListWorkflowDefinitionVersionsQuery(current?.lineage_id ?? skipToken);
 	const [fetchNodeDefinition] = useLazyGetNodeDefinitionQuery();
 	const [createDefinition, createState] = useCreateWorkflowDefinitionMutation();
 	const [startRun, startState] = useStartWorkflowRunMutation();
 
-	const [saveError, setSaveError] = useState<string | null>(null);
+	const [saveError, setSaveError] = useState<WorkflowDefinitionErrorCopy | null>(null);
 	const [startError, setStartError] = useState<string | null>(null);
+	const [historyOpened, setHistoryOpened] = useState(false);
+	const [discardOpened, setDiscardOpened] = useState(false);
 	const allowLeave = useRef(false);
+
+	const leave = (to: string) => {
+		allowLeave.current = true;
+		navigate(to);
+		allowLeave.current = false;
+	};
+
+	const deletion = useWorkflowDefinitionDelete((deleted) => {
+		if (deleted.id === id) leave(DEFINITION_ROUTE);
+	});
 
 	const loadedKey = useCoreSelector(selectEditorLoadedKey);
 	const name = useCoreSelector(selectEditorName);
 	const dirty = useCoreSelector(selectEditorDirty);
 	const issues = useCoreSelector(selectEditorIssues);
 	const sourceId = useCoreSelector(selectEditorSourceId);
-	const sourceVersion = useCoreSelector(selectEditorSourceVersion);
 
-	const routeKey = id ?? 'new';
+	const routeKey = id ?? (duplicateOf ? `new:${duplicateOf}` : 'new');
 	const ready = loadedKey === routeKey;
-	const startsWithInput = !!definition.data && getStartNode(definition.data.content)?.type === 'input';
+	const startsWithInput = !!current && getStartNode(current.content)?.type === 'input';
 
-	const { setOpened: setPanelOpened } = panel;
-	useEffect(() => {
-		const previous = {
-			left: selectPanelOpened(store.getState(), 'left'),
-			right: selectPanelOpened(store.getState(), 'right'),
-		};
-		setPanelOpened('left', true);
-		setPanelOpened('right', true);
-		return () => {
-			setPanelOpened('left', previous.left);
-			setPanelOpened('right', previous.right);
-			dispatch(editorReset());
-		};
-	}, [setPanelOpened, store, dispatch]);
+	// Versions are listed newest first, so the head of the list is the lineage's latest.
+	const latest = versions.currentData?.items[0];
+
+	useEffect(() => () => void dispatch(editorReset()), [dispatch]);
 
 	useEffect(() => {
 		if (loadedKey === routeKey) return;
 
-		if (!id) {
+		if (!definitionId) {
 			dispatch(editorLoaded({ key: routeKey, document: toEditorDocument(null, {}) }));
 			return;
 		}
 
 		const source = definition.data;
-		if (!source || source.id !== id) return;
+		if (!source || source.id !== definitionId) return;
 
 		let cancelled = false;
 		const referenceIds = [...new Set(collectReferenceIds(source.content.nodes))];
@@ -113,13 +128,22 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			for (const result of results) {
 				if (result.status === 'fulfilled') references[result.value.id] = result.value;
 			}
-			dispatch(editorLoaded({ key: routeKey, document: toEditorDocument(source, references) }));
+			const document = toEditorDocument(source, references);
+			dispatch(
+				editorLoaded({
+					key: routeKey,
+					// A duplicate is a new lineage: no `previous_version_id` on save.
+					document: id
+						? document
+						: { ...document, sourceId: null, sourceVersion: null, name: `Copy of ${source.name}` },
+				}),
+			);
 		});
 
 		return () => {
 			cancelled = true;
 		};
-	}, [id, routeKey, loadedKey, definition.data, dispatch, fetchNodeDefinition]);
+	}, [id, definitionId, routeKey, loadedKey, definition.data, dispatch, fetchNodeDefinition]);
 
 	const blocker = useBlocker(
 		({ currentLocation, nextLocation }) =>
@@ -129,10 +153,8 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const save = async () => {
 		setSaveError(null);
 		if (issues.length > 0) {
-			const [first] = issues;
-			panel.open('right');
-			dispatch(nodeSelected(null));
-			dispatch(scopeEntered(first.scope));
+			panel.setCollapsed('bottom', false);
+			focusIssue(issues[0]);
 			return;
 		}
 
@@ -142,12 +164,12 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			...(sourceId ? { previous_version_id: sourceId } : {}),
 		});
 		if ('error' in result) {
-			const error = result.error as { message?: string; explain?: string };
-			setSaveError(error.explain || error.message || 'Something went wrong while saving');
+			setSaveError(describeSaveError(result.error));
 			return;
 		}
 
 		dispatch(editorSaved());
+		// Push when editing so "back" returns to the version this one was branched from.
 		allowLeave.current = true;
 		navigate(`${DEFINITION_ROUTE}/${result.data.id}`, { replace: !sourceId });
 		allowLeave.current = false;
@@ -167,7 +189,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 		navigate(`${RUN_ROUTE}?definition=${id}`);
 	};
 
-	if (id && definition.isError) {
+	if (definitionId && definition.isError) {
 		return (
 			<Stack align="center" justify="center" gap="xs" h="100%">
 				<ThemeIcon size={48} radius="xl" variant="light" color="red">
@@ -188,150 +210,104 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 
 	return (
 		<ReactFlowProvider>
+			<MainLayoutPanel side="top">
+				<WorkflowDefinitionEditorHeader
+					current={current}
+					latest={latest}
+					ready={ready}
+					startsWithInput={startsWithInput}
+					saving={createState.isLoading}
+					starting={startState.isLoading}
+					saveError={saveError}
+					startError={startError}
+					onSave={save}
+					onStart={start}
+					onBack={() => navigate(DEFINITION_ROUTE)}
+					onDiscard={() => setDiscardOpened(true)}
+					onOpenHistory={() => setHistoryOpened(true)}
+					onOpenVersion={(versionId) => navigate(`${DEFINITION_ROUTE}/${versionId}`)}
+					onDuplicate={(fromId) => navigate(`${DEFINITION_ROUTE}/new?from=${fromId}`)}
+					onDelete={deletion.request}
+					onDismissSaveError={() => setSaveError(null)}
+					onDismissStartError={() => setStartError(null)}
+				/>
+			</MainLayoutPanel>
 			{ready && (
 				<>
-					<MainLayoutPanel side="left" w={280} visibleFrom="md">
+					<MainLayoutPanel side="left" w={280} drawerBelow="md">
 						<WorkflowDefinitionPalette />
 					</MainLayoutPanel>
-					<MainLayoutPanel side="right" w={360} visibleFrom="md">
+					<MainLayoutPanel side="right" w={360} drawerBelow="md">
 						<WorkflowDefinitionInspector />
+					</MainLayoutPanel>
+					<MainLayoutPanel side="bottom">
+						<WorkflowDefinitionIssuesPanel />
 					</MainLayoutPanel>
 				</>
 			)}
 
 			<div className={classes.root}>
-				<Group justify="space-between" align="center" gap="sm" className={classes.header}>
-					<div className={classes.title}>
-						<Group gap="xs" wrap="nowrap">
-							<Title order={2} fz={rem(18)} lineClamp={1}>
-								{name.trim() || (sourceId ? 'Untitled workflow' : 'New workflow definition')}
-							</Title>
-							{sourceVersion && (
-								<Badge size="sm" color="gray">
-									v{sourceVersion}
-								</Badge>
-							)}
-							{dirty && (
-								<Badge size="sm" color="orange">
-									Unsaved
-								</Badge>
-							)}
-						</Group>
-						<Text fz={rem(12)} c="dimmed" truncate>
-							Drag nodes from the left, connect handles on the canvas, configure on the right
-						</Text>
-					</div>
-					<Group gap="xs">
-						<Tooltip label={panel.opened.left ? 'Hide nodes' : 'Show nodes'}>
-							<ActionIcon
-								variant="default"
-								size="lg"
-								visibleFrom="md"
-								aria-label="Toggle nodes panel"
-								aria-pressed={panel.opened.left}
-								onClick={() => panel.toggle('left')}
-							>
-								<LuPanelLeft size={16} />
-							</ActionIcon>
-						</Tooltip>
-						<Tooltip label={panel.opened.right ? 'Hide settings' : 'Show settings'}>
-							<ActionIcon
-								variant="default"
-								size="lg"
-								visibleFrom="md"
-								aria-label="Toggle settings panel"
-								aria-pressed={panel.opened.right}
-								onClick={() => panel.toggle('right')}
-							>
-								<LuPanelRight size={16} />
-							</ActionIcon>
-						</Tooltip>
-						<Button variant="default" onClick={() => navigate(DEFINITION_ROUTE)}>
-							Cancel
-						</Button>
-						{startsWithInput && (
-							<Tooltip label="Save your changes first" disabled={!dirty}>
-								<Button
-									variant="default"
-									leftSection={<LuPlay size={16} />}
-									loading={startState.isLoading}
-									disabled={!ready || dirty}
-									onClick={start}
-								>
-									Start workflow
-								</Button>
-							</Tooltip>
-						)}
-						<Tooltip
-							label={`${issues.length} ${issues.length === 1 ? 'issue' : 'issues'} to fix`}
-							disabled={issues.length === 0}
-						>
-							<Button
-								leftSection={<LuSave size={16} />}
-								loading={createState.isLoading}
-								disabled={!ready}
-								onClick={save}
-							>
-								{sourceVersion ? `Save as v${sourceVersion + 1}` : 'Save'}
-							</Button>
-						</Tooltip>
-					</Group>
-				</Group>
-
-				{saveError && (
-					<Alert
-						color="red"
-						variant="light"
-						mx="md"
-						mb="sm"
-						title="Couldn't save workflow definition"
-						withCloseButton
-						onClose={() => setSaveError(null)}
-					>
-						{saveError}
-					</Alert>
+				{ready ? (
+					<WorkflowDefinitionCanvas />
+				) : (
+					<Stack align="center" justify="center" h="100%">
+						<Loader size="sm" color="gray" />
+					</Stack>
 				)}
-
-				{startError && (
-					<Alert
-						color="red"
-						variant="light"
-						mx="md"
-						mb="sm"
-						title="Couldn't start workflow"
-						withCloseButton
-						onClose={() => setStartError(null)}
-					>
-						{startError}
-					</Alert>
-				)}
-
-				<div className={classes.canvas}>
-					{ready ? (
-						<WorkflowDefinitionCanvas />
-					) : (
-						<Stack align="center" justify="center" h="100%">
-							<Loader size="sm" color="gray" />
-						</Stack>
-					)}
-				</div>
 			</div>
+
+			<WorkflowDefinitionVersionHistory
+				definition={historyOpened ? current : null}
+				viewingId={id}
+				onClose={() => setHistoryOpened(false)}
+				onDelete={deletion.request}
+			/>
+
+			<WorkflowDefinitionDeleteModal
+				definition={deletion.pending}
+				loading={deletion.loading}
+				error={deletion.error}
+				onClose={deletion.close}
+				onConfirm={deletion.confirm}
+			/>
+
+			<Modal opened={discardOpened} onClose={() => setDiscardOpened(false)} title="Discard changes?" centered>
+				<Text fz="sm" c="dimmed">
+					{sourceId
+						? "Everything you've changed since the last save will be undone."
+						: "Everything you've changed in this new workflow will be undone."}
+				</Text>
+				<Group justify="flex-end" mt="lg" gap="xs">
+					<Button variant="default" onClick={() => setDiscardOpened(false)}>
+						Keep editing
+					</Button>
+					<Button
+						color="red"
+						onClick={() => {
+							dispatch(editorDiscarded());
+							setDiscardOpened(false);
+						}}
+					>
+						Discard changes
+					</Button>
+				</Group>
+			</Modal>
 
 			<Modal
 				opened={blocker.state === 'blocked'}
 				onClose={() => blocker.reset?.()}
-				title="Discard unsaved changes?"
+				title="Leave without saving?"
 				centered
 			>
 				<Text fz="sm" c="dimmed">
-					You have changes that haven't been saved. Leaving now will discard them.
+					You have unsaved changes. If you leave this page, they'll be lost.
 				</Text>
 				<Group justify="flex-end" mt="lg" gap="xs">
 					<Button variant="default" onClick={() => blocker.reset?.()}>
-						Keep editing
+						Stay
 					</Button>
 					<Button color="red" onClick={() => blocker.proceed?.()}>
-						Discard
+						Leave without saving
 					</Button>
 				</Group>
 			</Modal>

@@ -4,6 +4,6 @@ import type { WorkflowDefinitionInputForm } from '@module/workflow-definition/ty
 export interface WorkflowRunPendingInput {
 	node_id: string;
 	channel: WorkflowDefinitionInputChannel;
-	context_path: string;
+	output_property: string;
 	form?: WorkflowDefinitionInputForm;
 }

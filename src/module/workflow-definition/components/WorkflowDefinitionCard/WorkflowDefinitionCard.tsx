@@ -3,7 +3,7 @@ import React from 'react';
 import { ActionIcon, Badge, Card, Group, Menu, Skeleton, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { LuEllipsisVertical, LuTrash2 } from 'react-icons/lu';
+import { LuCopy, LuEllipsisVertical, LuHistory, LuTrash2 } from 'react-icons/lu';
 import { Link } from 'react-router';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
@@ -17,9 +17,14 @@ dayjs.extend(relativeTime);
 interface WorkflowDefinitionCardProps {
 	definition: WorkflowDefinition;
 	onDelete?: (definition: WorkflowDefinition) => void;
+	onShowVersions?: (definition: WorkflowDefinition) => void;
 }
 
-export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ definition, onDelete }) => {
+export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
+	definition,
+	onDelete,
+	onShowVersions,
+}) => {
 	const { content } = definition;
 	const complexity = complexityMeta[getComplexity(content)];
 	const nodeCount = countNodes(content);
@@ -45,29 +50,40 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({ 
 				<Badge color={complexity.color} variant="white" className={classes.complexity}>
 					{complexity.label}
 				</Badge>
-				{onDelete && (
-					<Menu position="bottom-end" shadow="md" withinPortal>
-						<Menu.Target>
-							<ActionIcon
-								size={26}
-								variant="default"
-								className={classes.menu}
-								aria-label={`Actions for ${definition.name}`}
-							>
-								<LuEllipsisVertical size={14} />
-							</ActionIcon>
-						</Menu.Target>
-						<Menu.Dropdown>
-							<Menu.Item
-								color="red"
-								leftSection={<LuTrash2 size={14} />}
-								onClick={() => onDelete(definition)}
-							>
-								Delete
+				<Menu position="bottom-end" shadow="md" withinPortal>
+					<Menu.Target>
+						<ActionIcon
+							size={26}
+							variant="default"
+							className={classes.menu}
+							aria-label={`Actions for ${definition.name}`}
+						>
+							<LuEllipsisVertical size={14} />
+						</ActionIcon>
+					</Menu.Target>
+					<Menu.Dropdown>
+						{onShowVersions && (
+							<Menu.Item leftSection={<LuHistory size={14} />} onClick={() => onShowVersions(definition)}>
+								Versions
 							</Menu.Item>
-						</Menu.Dropdown>
-					</Menu>
-				)}
+						)}
+						<Menu.Item component={Link} to={`new?from=${definition.id}`} leftSection={<LuCopy size={14} />}>
+							Duplicate
+						</Menu.Item>
+						{onDelete && (
+							<>
+								<Menu.Divider />
+								<Menu.Item
+									color="red"
+									leftSection={<LuTrash2 size={14} />}
+									onClick={() => onDelete(definition)}
+								>
+									Delete version
+								</Menu.Item>
+							</>
+						)}
+					</Menu.Dropdown>
+				</Menu>
 			</div>
 
 			<div className={classes.body}>
