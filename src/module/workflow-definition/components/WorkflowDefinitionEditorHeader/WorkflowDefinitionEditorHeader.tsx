@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import { ActionIcon, Alert, Badge, Button, Group, Loader, Menu, rem, Text, Title, Tooltip } from '@mantine/core';
 import {
+	LuActivity,
 	LuArrowLeft,
 	LuCopy,
 	LuEllipsisVertical,
@@ -44,6 +45,7 @@ interface WorkflowDefinitionEditorHeaderProps {
 	onBack: () => void;
 	onDiscard: () => void;
 	onOpenHistory: () => void;
+	onOpenRuns: () => void;
 	onOpenVersion: (id: string) => void;
 	onDuplicate: (id: string) => void;
 	onDelete: (definition: WorkflowDefinition) => void;
@@ -65,6 +67,7 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 	onBack,
 	onDiscard,
 	onOpenHistory,
+	onOpenRuns,
 	onOpenVersion,
 	onDuplicate,
 	onDelete,
@@ -190,6 +193,9 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								)}
 								<Menu.Item leftSection={<LuHistory size={14} />} onClick={onOpenHistory}>
 									Version history
+								</Menu.Item>
+								<Menu.Item leftSection={<LuActivity size={14} />} onClick={onOpenRuns}>
+									Workflow Run
 								</Menu.Item>
 								<Menu.Divider />
 								<Menu.Item leftSection={<LuCopy size={14} />} onClick={() => onDuplicate(current.id)}>

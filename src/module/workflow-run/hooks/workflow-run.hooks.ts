@@ -3,6 +3,7 @@ import { workflowRunApi } from '@module/workflow-run/api';
 export const {
 	useListWorkflowRunsQuery,
 	useLazyListWorkflowRunsQuery,
+	useListWorkflowRunPagesInfiniteQuery,
 	useGetWorkflowRunQuery,
 	useLazyGetWorkflowRunQuery,
 	useGetWorkflowRunNodeDebugsQuery,

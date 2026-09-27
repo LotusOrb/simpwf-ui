@@ -26,7 +26,8 @@ interface WorkflowRunCardProps {
 	run: WorkflowRun;
 	definition?: WorkflowRunDefinitionInfo;
 	busy?: boolean;
-	onAction: (run: WorkflowRun, action: WorkflowRunAction) => void;
+	/** Omit for a read-only card without the actions menu. */
+	onAction?: (run: WorkflowRun, action: WorkflowRunAction) => void;
 }
 
 export const WorkflowRunCard: React.FC<WorkflowRunCardProps> = ({ run, definition, busy, onAction }) => {
@@ -57,7 +58,9 @@ export const WorkflowRunCard: React.FC<WorkflowRunCardProps> = ({ run, definitio
 		>
 			<Group justify="space-between" wrap="nowrap">
 				<WorkflowRunStatusBadge run={run} />
-				<WorkflowRunActions run={run} busy={busy} withDetailLink={false} onAction={onAction} />
+				{onAction && (
+					<WorkflowRunActions run={run} busy={busy} withDetailLink={false} onAction={onAction} />
+				)}
 			</Group>
 
 			<Group gap={6} mt="sm" wrap="nowrap">

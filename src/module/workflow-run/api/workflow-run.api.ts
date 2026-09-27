@@ -33,6 +33,25 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			],
 		}),
 
+		/** Page-accumulating variant of the list for scroll-to-load views; `page` is driven by the cache. */
+		listWorkflowRunPages: build.infiniteQuery<WorkflowRunList, Omit<WorkflowRunQuery, 'page'>, number>({
+			infiniteQueryOptions: {
+				initialPageParam: 1,
+				getNextPageParam: (lastPage) => (lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined),
+			},
+			query: ({ queryArg, pageParam }) => ({
+				method: 'get',
+				url: RESOURCE,
+				qParam: { ...queryArg, page: pageParam },
+			}),
+			providesTags: (result) => [
+				{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID },
+				...(result?.pages ?? []).flatMap((page) =>
+					page.items.map((item) => ({ type: apiTagConfig.workflowRun, id: item.id })),
+				),
+			],
+		}),
+
 		getWorkflowRun: build.query<WorkflowRunDetail, string>({
 			query: (id) => ({ method: 'get', url: `${RESOURCE}/${id}/status` }),
 			transformResponse: (res: WorkflowRunStatusResponse) => toRunDetail(res),
