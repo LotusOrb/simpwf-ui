@@ -14,7 +14,7 @@ function App() {
 	return (
 		<Provider store={coreStore}>
 			<MantineProvider theme={themeOverride}>
-				<Notifications />
+				<Notifications position="top-right" />
 				<RouterProvider router={routesConfig} />
 			</MantineProvider>
 		</Provider>

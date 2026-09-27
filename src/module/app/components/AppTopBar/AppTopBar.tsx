@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { ActionIcon, Burger, Group, Indicator, ScrollArea, Tooltip, UnstyledButton } from '@mantine/core';
-import { LuBell } from 'react-icons/lu';
+import { Burger, Group, ScrollArea, Tooltip, UnstyledButton } from '@mantine/core';
 
 import { BrandMark } from '@common/component/BrandMark';
 
 import { useAppHealthStatus } from '@module/app/hooks';
 import type { AppHealthStatus } from '@module/app/types/AppHealthStatus';
+import { NotificationBell } from '@module/notification/components/NotificationBell';
 
 import { AppBreadcrumb } from '../AppBreadcrumb';
 import { AppProfileMenu } from '../AppProfileMenu';
@@ -57,13 +57,7 @@ export const AppTopBar: React.FC<AppTopBarProps> = ({ navOpened, onToggleNav }) 
 						<span className={classes.engineLabel}>{HEALTH_LABEL[health.status]}</span>
 					</UnstyledButton>
 				</Tooltip>
-				<Indicator color="red" size={8} offset={7} processing>
-					<Tooltip label="Notifications">
-						<ActionIcon size={32} aria-label="Notifications">
-							<LuBell size={18} />
-						</ActionIcon>
-					</Tooltip>
-				</Indicator>
+				<NotificationBell />
 				<AppProfileMenu />
 			</Group>
 		</Group>
