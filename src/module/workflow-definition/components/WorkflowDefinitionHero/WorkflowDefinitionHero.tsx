@@ -13,9 +13,6 @@ interface WorkflowDefinitionHeroProps {
 export const WorkflowDefinitionHero: React.FC<WorkflowDefinitionHeroProps> = ({ search, onSearchChange }) => {
 	return (
 		<div className={classes.root}>
-			<span className={classes.shapeStart} aria-hidden />
-			<span className={classes.shapeEnd} aria-hidden />
-
 			<div className={classes.content}>
 				<Title order={3} className={classes.title}>
 					Build Automations Faster with

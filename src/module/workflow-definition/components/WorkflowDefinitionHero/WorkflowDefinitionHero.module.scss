@@ -11,36 +11,6 @@
 	background-size: 44px 44px;
 }
 
-.shapeStart,
-.shapeEnd {
-	position: absolute;
-	border-radius: 50%;
-	background: repeating-radial-gradient(
-		circle,
-		var(--mantine-color-brand-3) 0 10px,
-		var(--mantine-color-brand-5) 10px 20px
-	);
-	opacity: 0.85;
-
-	@media (max-width: 48em) {
-		display: none;
-	}
-}
-
-.shapeStart {
-	bottom: -70px;
-	left: -40px;
-	width: 160px;
-	height: 160px;
-}
-
-.shapeEnd {
-	top: -60px;
-	right: -30px;
-	width: 150px;
-	height: 150px;
-}
-
 .content {
 	position: relative;
 	display: flex;
