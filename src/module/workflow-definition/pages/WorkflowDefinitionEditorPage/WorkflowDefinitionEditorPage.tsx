@@ -191,7 +191,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			return;
 		}
 
-		navigate(`${RUN_ROUTE}?definition=${id}`);
+		navigate(`${RUN_ROUTE}/${result.data.id}`);
 	};
 
 	if (definitionId && definition.isError) {
