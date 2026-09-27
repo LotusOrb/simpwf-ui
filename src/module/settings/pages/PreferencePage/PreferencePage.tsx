@@ -2,12 +2,12 @@ import React, { Fragment, useEffect } from 'react';
 
 import { Button, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
 
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
+import { useNotify } from '@module/notification/hooks';
 import { SettingsRow } from '@module/settings/components/SettingsRow';
 import { LIST_VIEW_OPTIONS } from '@module/settings/data';
 import { listViewSaved, selectListView } from '@module/settings/store';
@@ -15,6 +15,7 @@ import type { ListViewPreference } from '@module/settings/types/ListViewPreferen
 
 export const PreferencePage: React.FC = () => {
 	const dispatch = useCoreDispatch();
+	const notify = useNotify();
 	const saved = useCoreSelector(selectListView);
 	const form = useForm<ListViewPreference>({ initialValues: saved });
 	const dirty = form.isDirty();
@@ -31,7 +32,7 @@ export const PreferencePage: React.FC = () => {
 	const handleSubmit = (values: ListViewPreference) => {
 		dispatch(listViewSaved(values));
 		form.resetDirty(values);
-		notifications.show({ message: 'Preferences saved' });
+		notify.success({ message: 'Preferences saved', toastOnly: true });
 	};
 
 	return (

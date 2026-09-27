@@ -18,6 +18,13 @@
 						"regex": "^(\\.\\./){3,}",
 						"message": "Relative imports may not go deeper than '../../'. Use a path alias (@config, @core, @common, @module, @assets) instead."
 					}
+				],
+				"paths": [
+					{
+						"name": "@mantine/notifications",
+						"importNames": ["notifications"],
+						"message": "Use useNotify() from @module/notification instead."
+					}
 				]
 			}
 		],
@@ -36,5 +43,23 @@
 			}
 		],
 		"react/react-in-jsx-scope": "error"
-	}
+	},
+	"overrides": [
+		{
+			"files": ["src/module/notification/**"],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"regex": "^(\\.\\./){3,}",
+								"message": "Relative imports may not go deeper than '../../'. Use a path alias (@config, @core, @common, @module, @assets) instead."
+							}
+						]
+					}
+				]
+			}
+		}
+	]
 }
