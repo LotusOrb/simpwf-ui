@@ -8,6 +8,8 @@ import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-route
 
 import { useCoreDispatch, useCoreSelector, useCoreStore } from '@core/store';
 
+import { useNavigateBack } from '@common/hooks/useNavigateBack';
+
 import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useLazyGetNodeDefinitionQuery } from '@module/node-definition/hooks';
@@ -58,6 +60,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const [searchParams] = useSearchParams();
 	const duplicateOf = id ? null : searchParams.get('from');
 	const navigate = useNavigate();
+	const navigateBack = useNavigateBack(DEFINITION_ROUTE);
 	const dispatch = useCoreDispatch();
 	const store = useCoreStore();
 	const panel = useAppLayoutPanel();
@@ -197,7 +200,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 				</ThemeIcon>
 				<Text fw={600}>Couldn't load this workflow definition</Text>
 				<Group gap="xs" mt={4}>
-					<Button variant="default" size="xs" onClick={() => navigate(DEFINITION_ROUTE)}>
+					<Button variant="default" size="xs" onClick={navigateBack}>
 						Back to list
 					</Button>
 					<Button variant="default" size="xs" onClick={definition.refetch}>
@@ -222,7 +225,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 					startError={startError}
 					onSave={save}
 					onStart={start}
-					onBack={() => navigate(DEFINITION_ROUTE)}
+					onBack={navigateBack}
 					onDiscard={() => setDiscardOpened(true)}
 					onOpenHistory={() => setHistoryOpened(true)}
 					onOpenVersion={(versionId) => navigate(`${DEFINITION_ROUTE}/${versionId}`)}

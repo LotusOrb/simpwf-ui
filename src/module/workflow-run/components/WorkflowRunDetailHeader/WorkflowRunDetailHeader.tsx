@@ -12,7 +12,6 @@ import {
 	LuTriangleAlert,
 	LuUndo2,
 } from 'react-icons/lu';
-import { Link } from 'react-router';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
@@ -29,7 +28,7 @@ interface WorkflowRunDetailHeaderProps {
 	detail: WorkflowRunDetail;
 	/** The node a run parked on input is waiting at. */
 	pendingNode: WorkflowDefinitionNode | null;
-	backTo: string;
+	onBack: () => void;
 	live: boolean;
 	onLiveChange: (live: boolean) => void;
 	/** Rendered between the title row and the alerts. */
@@ -49,7 +48,7 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	definition,
 	detail,
 	pendingNode,
-	backTo,
+	onBack,
 	live,
 	onLiveChange,
 	summary,
@@ -72,14 +71,7 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 			<Group justify="space-between" align="flex-start" gap="sm" wrap="nowrap">
 				<Group gap="sm" wrap="nowrap" className={classes.headerTitle}>
 					<Tooltip label="Back to runs">
-						<ActionIcon
-							component={Link}
-							to={backTo}
-							variant="subtle"
-							color="gray"
-							size={34}
-							aria-label="Back to runs"
-						>
+						<ActionIcon variant="subtle" color="gray" size={34} aria-label="Back to runs" onClick={onBack}>
 							<LuArrowLeft size={18} />
 						</ActionIcon>
 					</Tooltip>

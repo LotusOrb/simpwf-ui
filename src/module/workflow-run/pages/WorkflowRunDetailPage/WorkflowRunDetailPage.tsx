@@ -3,7 +3,9 @@ import React, { useMemo, useState } from 'react';
 import { Button, Center, Group, Loader, Modal, Stack, Text } from '@mantine/core';
 import { ReactFlowProvider } from '@xyflow/react';
 import { LuCircleAlert, LuRefreshCw } from 'react-icons/lu';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
+
+import { useNavigateBack } from '@common/hooks/useNavigateBack';
 
 import { MainLayoutPanel, MainLayoutPanelBar } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
@@ -38,6 +40,7 @@ const errorMessage = (error: unknown, fallback: string): string => {
 
 export const WorkflowRunDetailPage: React.FC = () => {
 	const { id = '' } = useParams<{ id: string }>();
+	const navigateBack = useNavigateBack(RUN_LIST_ROUTE);
 
 	const panel = useAppLayoutPanel();
 	useAppLayoutPanels({
@@ -90,7 +93,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 						{errorMessage(run.error, 'The run or its workflow definition could not be found.')}
 					</Text>
 					<Group gap="xs" mt="xs">
-						<Button size="xs" variant="default" component={Link} to={RUN_LIST_ROUTE}>
+						<Button size="xs" variant="default" onClick={navigateBack}>
 							Back to runs
 						</Button>
 						<Button size="xs" leftSection={<LuRefreshCw size={13} />} onClick={() => run.refetch()}>
@@ -143,7 +146,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					definition={definition}
 					detail={detail}
 					pendingNode={pendingNode}
-					backTo={RUN_LIST_ROUTE}
+					onBack={navigateBack}
 					live={live}
 					onLiveChange={setLive}
 					summary={
