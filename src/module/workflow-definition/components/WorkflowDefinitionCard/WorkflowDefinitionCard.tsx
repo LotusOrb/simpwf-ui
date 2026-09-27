@@ -8,7 +8,7 @@ import { Link } from 'react-router';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
-import { complexityMeta, countNodes, getComplexity, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
+import { countNodes, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
 import { WorkflowDefinitionPreview } from '../WorkflowDefinitionPreview';
 import classes from './WorkflowDefinitionCard.module.scss';
 
@@ -26,7 +26,6 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 	onShowVersions,
 }) => {
 	const { content } = definition;
-	const complexity = complexityMeta[getComplexity(content)];
 	const nodeCount = countNodes(content);
 	const startNode = getStartNode(content);
 	const startMeta = startNode && nodeTypeMeta[startNode.type];
@@ -47,9 +46,6 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 						v{definition.version}
 					</Badge>
 				</Group>
-				<Badge color={complexity.color} variant="white" className={classes.complexity}>
-					{complexity.label}
-				</Badge>
 				<Menu position="bottom-end" shadow="md" withinPortal>
 					<Menu.Target>
 						<ActionIcon

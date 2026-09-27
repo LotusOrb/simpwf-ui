@@ -1,12 +1,9 @@
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
-import type { WorkflowDefinitionComplexity } from '@module/workflow-definition/types/WorkflowDefinitionComplexity';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionList } from '@module/workflow-definition/types/WorkflowDefinitionList';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 import type { WorkflowDefinitionQuery } from '@module/workflow-definition/types/WorkflowDefinitionQuery';
-
-import { getComplexity } from './workflow-definition.meta';
 
 type StepSpec = {
 	type: WorkflowDefinitionNodeType;
@@ -398,7 +395,6 @@ export const listWorkflowDefinitions = async (query: WorkflowDefinitionQuery = {
 
 	const latestOnly = filter?.latest_only ? filter.latest_only.value === 'true' : true;
 	const startType = (filter?.start_type?.value as WorkflowDefinitionNodeType | undefined) ?? null;
-	const complexity = (filter?.complexity?.value as WorkflowDefinitionComplexity | undefined) ?? null;
 
 	await new Promise((resolve) => setTimeout(resolve, 350));
 
@@ -418,7 +414,6 @@ export const listWorkflowDefinitions = async (query: WorkflowDefinitionQuery = {
 			const start = definition.content.nodes.find((node) => node.id === definition.content.start_node_id);
 			if (start?.type !== startType) return false;
 		}
-		if (complexity && getComplexity(definition.content) !== complexity) return false;
 		return true;
 	});
 

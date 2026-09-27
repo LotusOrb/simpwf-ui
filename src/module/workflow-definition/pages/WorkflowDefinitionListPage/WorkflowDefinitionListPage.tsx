@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Button, Group, ScrollArea, SegmentedControl, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core';
+import { Button, Group, ScrollArea, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { LuCircleAlert, LuPlus, LuSearchX } from 'react-icons/lu';
 import { Link } from 'react-router';
@@ -23,7 +23,6 @@ import {
 	useListWorkflowDefinitionsQuery,
 	useWorkflowDefinitionDelete,
 	useWorkflowDefinitionListParams,
-	type WorkflowDefinitionVersionScope,
 } from '@module/workflow-definition/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
@@ -33,9 +32,9 @@ import classes from './WorkflowDefinitionListPage.module.scss';
 export const WorkflowDefinitionListPage: React.FC = () => {
 	const [view, setView] = useState<ViewMode>('card');
 	const [params, setParams] = useWorkflowDefinitionListParams();
-	const { scope, search, sort, startType, complexity, page, perPage } = params;
+	const { search, sort, startType, page, perPage } = params;
 	const [debouncedSearch] = useDebouncedValue(search, 300);
-	const filters: WorkflowDefinitionFilterValues = { sort, startType, complexity };
+	const filters: WorkflowDefinitionFilterValues = { sort, startType };
 	const setPage = (next: number) => setParams({ page: next });
 
 	const [historyFor, setHistoryFor] = useState<WorkflowDefinition | null>(null);
@@ -52,9 +51,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		search: debouncedSearch,
 		order: { by, direction },
 		filter: {
-			latest_only: { op: '_eq', value: String(scope === 'latest') },
+			latest_only: { op: '_eq', value: 'true' },
 			...(startType ? { start_type: { op: '_eq' as const, value: startType } } : {}),
-			...(complexity ? { complexity: { op: '_eq' as const, value: complexity } } : {}),
 		},
 	});
 
@@ -63,8 +61,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		if (lastOnPage && page > 1) setPage(page - 1);
 	});
 
-	const hasActiveFilters = !!search || !!startType || !!complexity;
-	const clearFilters = () => setParams({ search: null, sort: null, startType: null, complexity: null, page: null });
+	const hasActiveFilters = !!search || !!startType;
+	const clearFilters = () => setParams({ search: null, sort: null, startType: null, page: null });
 
 	const renderResults = () => {
 		if (isError && !isFetching) {
@@ -152,18 +150,6 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 						New definition
 					</Button>
 				</Group>
-
-				<SegmentedControl
-					fullWidth={false}
-					size="sm"
-					className={classes.scope}
-					value={scope}
-					onChange={(value) => setParams({ scope: value as WorkflowDefinitionVersionScope, page: null })}
-					data={[
-						{ label: 'Latest versions', value: 'latest' },
-						{ label: 'All versions', value: 'all' },
-					]}
-				/>
 
 				<WorkflowDefinitionHero
 					search={search}
