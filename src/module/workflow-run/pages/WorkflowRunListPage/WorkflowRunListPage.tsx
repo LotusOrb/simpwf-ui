@@ -19,9 +19,9 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { LuCircleAlert, LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert, LuWorkflow } from 'react-icons/lu';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
 
-import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
+import { PaginationBar } from '@common/component/PaginationBar';
 import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
 
 import { useGetStatisticsQuery } from '@module/dashboard/hooks';
@@ -33,18 +33,17 @@ import {
 } from '@module/workflow-run/components/WorkflowRunCard';
 import { WorkflowRunFilters, type WorkflowRunFilterValues } from '@module/workflow-run/components/WorkflowRunFilters';
 import { WorkflowRunIdText } from '@module/workflow-run/components/WorkflowRunIdText';
-import {
-	WorkflowRunStatusTabs,
-	type WorkflowRunStatusTab,
-} from '@module/workflow-run/components/WorkflowRunStatusTabs';
+import { WorkflowRunStatusTabs } from '@module/workflow-run/components/WorkflowRunStatusTabs';
 import { WorkflowRunTable } from '@module/workflow-run/components/WorkflowRunTable';
 import { runSortOrders } from '@module/workflow-run/data';
 import {
+	SEARCH_URL_UPDATE,
 	useListWorkflowRunsQuery,
 	usePauseWorkflowRunMutation,
 	useResumeWorkflowRunMutation,
 	useStartWorkflowRunMutation,
 	useStopWorkflowRunMutation,
+	useWorkflowRunListParams,
 } from '@module/workflow-run/hooks';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
@@ -57,21 +56,12 @@ const SETTLE_REFRESH_MS = 3200;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const DEFINITION_PARAM = 'definition';
-
-const initialFilters: WorkflowRunFilterValues = { search: '', definitionId: null, sort: 'newest' };
-
 export const WorkflowRunListPage: React.FC = () => {
 	const [view, setView] = useState<ViewMode>('card');
-	const [statusTab, setStatusTab] = useState<WorkflowRunStatusTab>('all');
-	const [searchParams] = useSearchParams();
-	const [filters, setFilters] = useState(() => ({
-		...initialFilters,
-		definitionId: searchParams.get(DEFINITION_PARAM),
-	}));
-	const [debouncedSearch] = useDebouncedValue(filters.search, 300);
-	const [page, setPage] = useState(1);
-	const [perPage, setPerPage] = useState(PER_PAGE_OPTIONS[0]);
+	const [params, setParams] = useWorkflowRunListParams();
+	const { search, definitionId, status: statusTab, sort, page, perPage } = params;
+	const filters: WorkflowRunFilterValues = { search, definitionId, sort };
+	const [debouncedSearch] = useDebouncedValue(search, 300);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	const [busyIds, setBusyIds] = useState<string[]>([]);
 	const [pendingStop, setPendingStop] = useState<WorkflowRun | null>(null);
@@ -80,15 +70,17 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [startDefinitionId, setStartDefinitionId] = useState<string | null>(null);
 
 	const runId = debouncedSearch.trim();
-	const { by, direction } = runSortOrders[filters.sort];
+	const { by, direction } = runSortOrders[sort];
 	const query: WorkflowRunQuery = {
 		page,
 		perPage,
 		order: { by, direction },
 		filter: {
 			...(UUID_PATTERN.test(runId) ? { id: { op: '_eq' as const, value: [runId] } } : {}),
-			...(filters.definitionId
-				? { workflow_definition_id: { op: '_eq' as const, value: filters.definitionId } }
+			...(definitionId
+				? {
+						workflow_definition_id: { op: '_eq' as const, value: definitionId },
+					}
 				: {}),
 			...(statusTab === 'all' ? {} : { status: { op: '_eq' as const, value: [statusTab] } }),
 		},
@@ -99,7 +91,9 @@ export const WorkflowRunListPage: React.FC = () => {
 		isFetching,
 		isError,
 		refetch,
-	} = useListWorkflowRunsQuery(query, { pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0 });
+	} = useListWorkflowRunsQuery(query, {
+		pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0,
+	});
 	const { data: statistics, refetch: refetchStatistics } = useGetStatisticsQuery(
 		{},
 		{ pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0 },
@@ -170,13 +164,6 @@ export const WorkflowRunListPage: React.FC = () => {
 		.sort((a, b) => a.label.localeCompare(b.label))
 		.map(({ value, label }) => ({ value, label }));
 
-	const resetPage =
-		<T,>(setter: (value: T) => void) =>
-		(value: T) => {
-			setter(value);
-			setPage(1);
-		};
-
 	const runAction = async (run: WorkflowRun, action: WorkflowRunAction) => {
 		setActionError(null);
 		setBusyIds((current) => [...current, run.id]);
@@ -215,12 +202,17 @@ export const WorkflowRunListPage: React.FC = () => {
 		setPendingStop(null);
 	};
 
-	const hasActiveFilters = !!filters.search || !!filters.definitionId || statusTab !== 'all';
-	const clearFilters = () => {
-		setFilters(initialFilters);
-		setStatusTab('all');
-		setPage(1);
-	};
+	const hasActiveFilters = !!search || !!definitionId || statusTab !== 'all';
+	const clearFilters = () =>
+		setParams({
+			search: null,
+			definitionId: null,
+			status: null,
+			sort: null,
+			page: null,
+		});
+	const changeFilters = (value: WorkflowRunFilterValues) =>
+		setParams({ ...value, page: null }, value.search !== search ? SEARCH_URL_UPDATE : undefined);
 
 	const renderResults = () => {
 		if (isError && !isFetching) {
@@ -376,7 +368,7 @@ export const WorkflowRunListPage: React.FC = () => {
 				<WorkflowRunStatusTabs
 					value={statusTab}
 					counts={statusCounts ?? null}
-					onChange={resetPage(setStatusTab)}
+					onChange={(status) => setParams({ status, page: null })}
 				/>
 
 				{actionError && (
@@ -394,7 +386,7 @@ export const WorkflowRunListPage: React.FC = () => {
 					<WorkflowRunFilters
 						value={filters}
 						definitionOptions={definitionOptions}
-						onChange={resetPage(setFilters)}
+						onChange={changeFilters}
 					/>
 					<Group gap="sm">
 						{result && (
@@ -414,8 +406,8 @@ export const WorkflowRunListPage: React.FC = () => {
 						perPage={result.per_page}
 						total={result.total}
 						totalPages={result.total_pages}
-						onPageChange={setPage}
-						onPerPageChange={resetPage(setPerPage)}
+						onPageChange={(next) => setParams({ page: next })}
+						onPerPageChange={(value) => setParams({ perPage: value, page: null })}
 					/>
 				)}
 			</Stack>
