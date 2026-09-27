@@ -7,6 +7,7 @@ import type { CoreQueryError } from '@core/api/core.baseQuery';
 
 import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 
+import { useNotify } from '@module/notification/hooks';
 import { SecretDeleteModal } from '@module/secret/components/SecretDeleteModal';
 import { SecretFormModal, type SecretFormMode } from '@module/secret/components/SecretFormModal';
 import { SecretTable } from '@module/secret/components/SecretTable';
@@ -41,6 +42,7 @@ export const SecretListPage: React.FC = () => {
 	const [createSecret, createState] = useCreateSecretMutation();
 	const [rotateSecret, rotateState] = useRotateSecretMutation();
 	const [deleteSecret, deleteState] = useDeleteSecretMutation();
+	const notify = useNotify();
 
 	const openForm = (mode: SecretFormMode) => {
 		setFormError(null);
@@ -52,8 +54,10 @@ export const SecretListPage: React.FC = () => {
 		try {
 			if (formMode?.type === 'rotate') {
 				await rotateSecret(values).unwrap();
+				notify.success({ title: 'Secret rotated', message: `Secret ${values.key} rotated` });
 			} else {
 				await createSecret(values).unwrap();
+				notify.success({ title: 'Secret created', message: `Secret ${values.key} created` });
 			}
 			setFormMode(null);
 		} catch (error) {
