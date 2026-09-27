@@ -1,0 +1,15 @@
+.root {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--mantine-spacing-md);
+	padding-block: var(--mantine-spacing-sm);
+}
+
+.text {
+	min-width: 0;
+}
+
+.control {
+	flex-shrink: 0;
+}

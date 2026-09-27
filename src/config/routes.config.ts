@@ -11,6 +11,7 @@ import { NotFound } from '@common/component/NotFound';
 import { MainLayout } from '@module/app/components/AppMainLayout';
 import { dashboardRoutes } from '@module/dashboard/dashboard.routes';
 import { secretRoutes } from '@module/secret/secret.routes';
+import { settingsRoutes } from '@module/settings/settings.routes';
 import { workflowDefinitionRoutes } from '@module/workflow-definition/workflow-definition.routes';
 import { workflowRunRoutes } from '@module/workflow-run/workflow-run.routes';
 
@@ -38,6 +39,7 @@ export const routesConfig = createBrowserRouter([
 							workflowDefinitionRoutes,
 							workflowRunRoutes,
 							secretRoutes,
+							settingsRoutes,
 							{
 								path: '*',
 								Component: () => NotFound({ homePath: '/app/dashboard', fullHeight: false }),

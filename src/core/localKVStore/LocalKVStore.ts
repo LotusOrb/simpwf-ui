@@ -16,8 +16,12 @@ export class LocalKVStore {
 		if (item === undefined || item === null) {
 			return null;
 		}
-		const parsed = JSON.parse(item) as T;
-		return parsed;
+		// A corrupt or hand-edited value should read as missing rather than crash the caller.
+		try {
+			return JSON.parse(item) as T;
+		} catch {
+			return null;
+		}
 	}
 
 	public delete(k: string) {

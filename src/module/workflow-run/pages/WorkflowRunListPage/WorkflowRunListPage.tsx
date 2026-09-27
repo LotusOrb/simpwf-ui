@@ -22,9 +22,10 @@ import { LuCircleAlert, LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert, LuWorkf
 import { useNavigate } from 'react-router';
 
 import { PaginationBar } from '@common/component/PaginationBar';
-import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
+import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
 import { useGetStatisticsQuery } from '@module/dashboard/hooks';
+import { useListViewPreference } from '@module/settings/hooks';
 import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
 import {
 	WorkflowRunCard,
@@ -57,7 +58,7 @@ const SETTLE_REFRESH_MS = 3200;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const WorkflowRunListPage: React.FC = () => {
-	const [view, setView] = useState<ViewMode>('card');
+	const [view, setView] = useListViewPreference('workflowRun');
 	const [params, setParams] = useWorkflowRunListParams();
 	const { search, definitionId, status: statusTab, sort, page, perPage } = params;
 	const filters: WorkflowRunFilterValues = { search, definitionId, sort };
