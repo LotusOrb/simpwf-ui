@@ -1,7 +1,6 @@
 import type { IconType } from 'react-icons';
 import { LuBoxes, LuCode, LuGlobe, LuLogIn, LuRadar, LuSend, LuSplit } from 'react-icons/lu';
 
-import type { WorkflowDefinitionComplexity } from '@module/workflow-definition/types/WorkflowDefinitionComplexity';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionGraphLayout } from '@module/workflow-definition/types/WorkflowDefinitionGraphLayout';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
@@ -43,12 +42,6 @@ export const nodeTypeMeta: Record<
 
 export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowDefinitionNodeType[];
 
-export const complexityMeta: Record<WorkflowDefinitionComplexity, { label: string; color: string }> = {
-	simple: { label: 'Simple', color: 'teal' },
-	standard: { label: 'Standard', color: 'gray' },
-	complex: { label: 'Complex', color: 'pink' },
-};
-
 const flattenNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
 	nodes.flatMap((node) => [node, ...(node.nodes ? flattenNodes(node.nodes) : [])]);
 
@@ -61,15 +54,6 @@ export const getNodeTypes = (content: WorkflowDefinitionContent): WorkflowDefini
 
 export const getStartNode = (content: WorkflowDefinitionContent) =>
 	content.nodes.find((node) => node.id === content.start_node_id);
-
-export const getComplexity = (content: WorkflowDefinitionContent): WorkflowDefinitionComplexity => {
-	const nodes = flattenNodes(content.nodes);
-	const branches = nodes.reduce((sum, node) => sum + Math.max(0, (node.conditions?.length ?? 0) - 1), 0);
-	const score = nodes.length + branches * 2;
-	if (score <= 4) return 'simple';
-	if (score <= 9) return 'standard';
-	return 'complex';
-};
 
 const getTargets = (node: WorkflowDefinitionNode, content: WorkflowDefinitionContent): string[] => {
 	const targets = [node.next_node, node.on_failure?.next_node];

@@ -1,14 +1,13 @@
 import React from 'react';
 
 import { Group, Select } from '@mantine/core';
-import { LuArrowUpDown, LuGitBranch, LuZap } from 'react-icons/lu';
+import { LuArrowUpDown, LuZap } from 'react-icons/lu';
 
-import type { WorkflowDefinitionComplexity } from '@module/workflow-definition/types/WorkflowDefinitionComplexity';
 import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
-import { complexityMeta, nodeTypeMeta, nodeTypeOrder, sortOrders } from '../../data';
+import { nodeTypeMeta, nodeTypeOrder, sortOrders } from '../../data';
 import classes from './WorkflowDefinitionFilters.module.scss';
 
 interface WorkflowDefinitionFiltersProps {
@@ -44,20 +43,6 @@ export const WorkflowDefinitionFilters: React.FC<WorkflowDefinitionFiltersProps>
 				value={value.startType}
 				onChange={(startType) =>
 					onChange({ ...value, startType: startType as WorkflowDefinitionNodeType | null })
-				}
-			/>
-			<Select
-				size="sm"
-				w={150}
-				className={classes.select}
-				aria-label="Complexity"
-				placeholder="Complexity"
-				clearable
-				leftSection={<LuGitBranch size={14} />}
-				data={Object.entries(complexityMeta).map(([key, meta]) => ({ value: key, label: meta.label }))}
-				value={value.complexity}
-				onChange={(complexity) =>
-					onChange({ ...value, complexity: complexity as WorkflowDefinitionComplexity | null })
 				}
 			/>
 		</Group>

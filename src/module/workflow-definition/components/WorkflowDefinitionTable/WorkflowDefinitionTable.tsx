@@ -8,7 +8,7 @@ import { Link } from 'react-router';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
-import { complexityMeta, countNodes, getComplexity, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
+import { countNodes, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
 import classes from './WorkflowDefinitionTable.module.scss';
 
 dayjs.extend(relativeTime);
@@ -37,7 +37,6 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 							<Table.Th>Trigger</Table.Th>
 							<Table.Th ta="right">Nodes</Table.Th>
 							<Table.Th>Node types</Table.Th>
-							<Table.Th>Complexity</Table.Th>
 							<Table.Th>Updated</Table.Th>
 							<Table.Th />
 						</Table.Tr>
@@ -46,7 +45,7 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 						{skeletonRows
 							? Array.from({ length: skeletonRows }, (_, index) => (
 									<Table.Tr key={index}>
-										{Array.from({ length: 8 }, (_, cell) => (
+										{Array.from({ length: 7 }, (_, cell) => (
 											<Table.Td key={cell}>
 												<Skeleton height={10} width={cell === 0 ? '70%' : '50%'} />
 											</Table.Td>
@@ -57,7 +56,6 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 									const { content } = definition;
 									const startNode = getStartNode(content);
 									const StartIcon = startNode && nodeTypeMeta[startNode.type]?.icon;
-									const complexity = complexityMeta[getComplexity(content)];
 
 									return (
 										<Table.Tr key={definition.id} className={classes.row}>
@@ -120,9 +118,6 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 														);
 													})}
 												</Group>
-											</Table.Td>
-											<Table.Td>
-												<Badge color={complexity.color}>{complexity.label}</Badge>
 											</Table.Td>
 											<Table.Td>
 												<Text
