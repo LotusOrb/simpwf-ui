@@ -42,6 +42,37 @@ export const workflowDefinitionApi = coreApi.injectEndpoints({
 			],
 		}),
 
+		/** Page-accumulating variant of the version list for scroll-to-load views; `page` is driven by the cache. */
+		listWorkflowDefinitionVersionPages: build.infiniteQuery<
+			WorkflowDefinitionList,
+			{ lineageId: string; perPage: number },
+			number
+		>({
+			infiniteQueryOptions: {
+				initialPageParam: 1,
+				getNextPageParam: (lastPage) => (lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined),
+			},
+			query: ({ queryArg: { lineageId, perPage }, pageParam }) => ({
+				method: 'get',
+				url: RESOURCE,
+				qParam: {
+					page: pageParam,
+					perPage,
+					order: { by: 'version', direction: 'desc' },
+					filter: {
+						lineage_id: { op: '_eq', value: lineageId },
+						latest_only: { op: '_eq', value: 'false' },
+					},
+				} satisfies WorkflowDefinitionQuery,
+			}),
+			providesTags: (result, _error, { lineageId }) => [
+				lineageTag(lineageId),
+				...(result?.pages ?? []).flatMap((page) =>
+					page.items.map((item) => ({ type: apiTagConfig.workflowDefinition, id: item.id })),
+				),
+			],
+		}),
+
 		getWorkflowDefinition: build.query<WorkflowDefinition, string>({
 			query: (id) => ({ method: 'get', url: `${RESOURCE}/${id}` }),
 			providesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowDefinition, id }],

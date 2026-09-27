@@ -7,6 +7,8 @@ import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/W
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
+export const DEFINITION_ROUTE = '/app/workflow-definition';
+
 export const nodeTypeMeta: Record<
 	WorkflowDefinitionNodeType,
 	{ label: string; color: string; icon: IconType; description: string }

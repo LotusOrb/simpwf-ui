@@ -5,6 +5,7 @@ export {
 	useLazyGetWorkflowDefinitionQuery,
 	useLazyListWorkflowDefinitionsQuery,
 	useListWorkflowDefinitionsQuery,
+	useListWorkflowDefinitionVersionPagesInfiniteQuery,
 	useListWorkflowDefinitionVersionsQuery,
 } from './workflow-definition.hooks';
 export { useWorkflowDefinitionDelete } from './workflowDefinitionDelete.hooks';

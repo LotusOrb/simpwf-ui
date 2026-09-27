@@ -8,7 +8,7 @@ import { Link } from 'react-router';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
-import { countNodes, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
+import { countNodes, DEFINITION_ROUTE, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
 import { WorkflowDefinitionPreview } from '../WorkflowDefinitionPreview';
 import classes from './WorkflowDefinitionCard.module.scss';
 
@@ -18,12 +18,16 @@ interface WorkflowDefinitionCardProps {
 	definition: WorkflowDefinition;
 	onDelete?: (definition: WorkflowDefinition) => void;
 	onShowVersions?: (definition: WorkflowDefinition) => void;
+	onOpen?: () => void;
+	badge?: React.ReactNode;
 }
 
 export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 	definition,
 	onDelete,
 	onShowVersions,
+	onOpen,
+	badge,
 }) => {
 	const { content } = definition;
 	const nodeCount = countNodes(content);
@@ -45,6 +49,7 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 					<Badge color="gray" variant="white">
 						v{definition.version}
 					</Badge>
+					{badge}
 				</Group>
 				<Menu position="bottom-end" shadow="md" withinPortal>
 					<Menu.Target>
@@ -63,7 +68,11 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 								Versions
 							</Menu.Item>
 						)}
-						<Menu.Item component={Link} to={`new?from=${definition.id}`} leftSection={<LuCopy size={14} />}>
+						<Menu.Item
+							component={Link}
+							to={`${DEFINITION_ROUTE}/new?from=${definition.id}`}
+							leftSection={<LuCopy size={14} />}
+						>
 							Duplicate
 						</Menu.Item>
 						{onDelete && (
@@ -85,7 +94,8 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 			<div className={classes.body}>
 				<Text
 					component={Link}
-					to={definition.id}
+					to={`${DEFINITION_ROUTE}/${definition.id}`}
+					onClick={onOpen}
 					fz="sm"
 					fw={600}
 					lineClamp={2}
