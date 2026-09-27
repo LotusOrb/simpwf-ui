@@ -20,9 +20,11 @@ import { WorkflowDefinitionEditorHeader } from '@module/workflow-definition/comp
 import { WorkflowDefinitionInspector } from '@module/workflow-definition/components/WorkflowDefinitionInspector';
 import { WorkflowDefinitionIssuesPanel } from '@module/workflow-definition/components/WorkflowDefinitionIssuesPanel';
 import { WorkflowDefinitionPalette } from '@module/workflow-definition/components/WorkflowDefinitionPalette';
+import { WorkflowDefinitionRunHistory } from '@module/workflow-definition/components/WorkflowDefinitionRunHistory';
 import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
 import {
 	collectReferenceIds,
+	DEFINITION_ROUTE,
 	describeSaveError,
 	getStartNode,
 	toEditorDocument,
@@ -51,7 +53,6 @@ import { useStartWorkflowRunMutation } from '@module/workflow-run/hooks';
 
 import classes from './WorkflowDefinitionEditorPage.module.scss';
 
-const DEFINITION_ROUTE = '/app/workflow-definition';
 const RUN_ROUTE = '/app/workflow-run';
 
 export const WorkflowDefinitionEditorPage: React.FC = () => {
@@ -84,6 +85,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const [saveError, setSaveError] = useState<WorkflowDefinitionErrorCopy | null>(null);
 	const [startError, setStartError] = useState<string | null>(null);
 	const [historyOpened, setHistoryOpened] = useState(false);
+	const [runsOpened, setRunsOpened] = useState(false);
 	const [discardOpened, setDiscardOpened] = useState(false);
 	const allowLeave = useRef(false);
 
@@ -228,6 +230,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 					onBack={navigateBack}
 					onDiscard={() => setDiscardOpened(true)}
 					onOpenHistory={() => setHistoryOpened(true)}
+					onOpenRuns={() => setRunsOpened(true)}
 					onOpenVersion={(versionId) => navigate(`${DEFINITION_ROUTE}/${versionId}`)}
 					onDuplicate={(fromId) => navigate(`${DEFINITION_ROUTE}/new?from=${fromId}`)}
 					onDelete={deletion.request}
@@ -265,6 +268,8 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 				onClose={() => setHistoryOpened(false)}
 				onDelete={deletion.request}
 			/>
+
+			<WorkflowDefinitionRunHistory definition={runsOpened ? current : null} onClose={() => setRunsOpened(false)} />
 
 			<WorkflowDefinitionDeleteModal
 				definition={deletion.pending}

@@ -5,6 +5,7 @@ export {
 	useGetWorkflowRunQuery,
 	useLazyGetWorkflowRunQuery,
 	useLazyListWorkflowRunsQuery,
+	useListWorkflowRunPagesInfiniteQuery,
 	useListWorkflowRunsQuery,
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
