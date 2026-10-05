@@ -8,6 +8,7 @@ import { RequireAuth } from '@core/auth/components/AuthGuard';
 
 import { NotFound } from '@common/component/NotFound';
 
+import { AppIndexRedirect } from '@module/app/components/AppIndexRedirect';
 import { MainLayout } from '@module/app/components/AppMainLayout';
 import { dashboardRoutes } from '@module/dashboard/dashboard.routes';
 import { secretRoutes } from '@module/secret/secret.routes';
@@ -33,7 +34,7 @@ export const routesConfig = createBrowserRouter([
 						children: [
 							{
 								index: true,
-								Component: () => Navigate({ to: 'dashboard', replace: true }),
+								Component: AppIndexRedirect,
 							},
 							dashboardRoutes,
 							workflowDefinitionRoutes,
@@ -42,7 +43,7 @@ export const routesConfig = createBrowserRouter([
 							settingsRoutes,
 							{
 								path: '*',
-								Component: () => NotFound({ homePath: '/app/dashboard', fullHeight: false }),
+								Component: () => NotFound({ homePath: '/app', fullHeight: false }),
 							},
 						],
 					},

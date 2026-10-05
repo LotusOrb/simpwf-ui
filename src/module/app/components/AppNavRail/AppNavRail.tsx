@@ -4,9 +4,9 @@ import { Menu, Stack, Tooltip, UnstyledButton } from '@mantine/core';
 import { LuChevronRight } from 'react-icons/lu';
 import { matchPath, NavLink, useLocation, useNavigate } from 'react-router';
 
-import { menuConfig } from '@config/menu.config';
-
 import type { MenuItem } from '@common/types/MenuItem';
+
+import { useAllowedMenu } from '@module/app/hooks';
 
 import classes from './AppNavRail.module.scss';
 
@@ -89,15 +89,17 @@ const NavRailButton: React.FC<{ item: MenuItem }> = ({ item }) => {
 };
 
 export const AppNavRail: React.FC = () => {
+	const { menu } = useAllowedMenu();
+
 	return (
 		<Stack justify="space-between" align="center" h="100%" py="sm">
 			<Stack gap={6} align="center">
-				{menuConfig.top.map((item) => (
+				{menu.top.map((item) => (
 					<NavRailButton key={item.id} item={item} />
 				))}
 			</Stack>
 			<Stack gap={6} align="center">
-				{menuConfig.bottom.map((item) => (
+				{menu.bottom.map((item) => (
 					<NavRailButton key={item.id} item={item} />
 				))}
 			</Stack>

@@ -6,3 +6,4 @@ export {
 	useLazyGetHealthReadyQuery,
 } from './app.hooks';
 export { useAppLayoutInsets, useAppLayoutPanel, useAppLayoutPanels } from './appLayout.hooks';
+export { useAllowedMenu, type AllowedMenu } from './appMenu.hooks';
