@@ -4,6 +4,8 @@ import { ActionIcon, Loader, Menu } from '@mantine/core';
 import { LuEllipsisVertical, LuEye, LuPause, LuPlay, LuSquare } from 'react-icons/lu';
 import { Link } from 'react-router';
 
+import { Permission, useCan } from '@core/auth/authorization';
+
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 
@@ -23,7 +25,8 @@ export const WorkflowRunActions: React.FC<WorkflowRunActionsProps> = ({
 	withDetailLink = true,
 	onAction,
 }) => {
-	const allowed = getAllowedActions(run);
+	const canControl = useCan(Permission.InstancesControl);
+	const allowed = canControl ? getAllowedActions(run) : [];
 
 	if (busy) {
 		return (

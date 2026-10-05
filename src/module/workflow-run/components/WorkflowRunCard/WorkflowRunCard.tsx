@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 
-import { formatRunDuration, formatWaitingReason } from '../../data';
+import { definitionFallbackLabel, formatRunDuration, formatWaitingReason } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
 import { WorkflowRunStatusBadge } from '../WorkflowRunStatusBadge';
@@ -58,14 +58,12 @@ export const WorkflowRunCard: React.FC<WorkflowRunCardProps> = ({ run, definitio
 		>
 			<Group justify="space-between" wrap="nowrap">
 				<WorkflowRunStatusBadge run={run} />
-				{onAction && (
-					<WorkflowRunActions run={run} busy={busy} withDetailLink={false} onAction={onAction} />
-				)}
+				{onAction && <WorkflowRunActions run={run} busy={busy} withDetailLink={false} onAction={onAction} />}
 			</Group>
 
 			<Group gap={6} mt="sm" wrap="nowrap">
 				<Text fz="sm" fw={600} truncate title={definition?.name}>
-					{definition?.name ?? 'Unknown definition'}
+					{definition?.name ?? definitionFallbackLabel(run.workflow_definition_id)}
 				</Text>
 				{definition && (
 					<Badge size="xs" color="gray" className={classes.version}>

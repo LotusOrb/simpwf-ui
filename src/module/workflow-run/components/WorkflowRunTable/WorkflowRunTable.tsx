@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 
-import { formatRunDuration, formatWaitingReason } from '../../data';
+import { definitionFallbackLabel, formatRunDuration, formatWaitingReason } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import type { WorkflowRunDefinitionInfo } from '../WorkflowRunCard';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
@@ -73,7 +73,8 @@ export const WorkflowRunTable: React.FC<WorkflowRunTableProps> = ({
 											<Table.Td>
 												<Group gap={6} wrap="nowrap">
 													<Text fz="sm" fw={600} truncate maw={200} title={definition?.name}>
-														{definition?.name ?? 'Unknown definition'}
+														{definition?.name ??
+															definitionFallbackLabel(run.workflow_definition_id)}
 													</Text>
 													{definition && (
 														<Badge size="xs" color="gray">

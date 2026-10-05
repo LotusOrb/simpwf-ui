@@ -49,6 +49,18 @@ export const flattenDefinitionNodes = (nodes: WorkflowDefinitionNode[]): Workflo
 export const indexDefinitionNodes = (content: WorkflowDefinitionContent) =>
 	new Map(flattenDefinitionNodes(content.nodes).map((node) => [node.id, node]));
 
+/** Stands in for the definition index when the caller cannot read definitions: debug records carry name and type. */
+export const indexDebugNodes = (
+	detail: WorkflowRunDetail,
+	debug: Record<string, WorkflowRunNodeDebug>,
+): Map<string, WorkflowDefinitionNode> =>
+	new Map(
+		Object.entries(detail.nodes).flatMap(([nodeId, occurrence]) => {
+			const record = debug[occurrence.occurrence_id];
+			return record ? [[nodeId, { id: nodeId, name: record.name, type: record.type }] as const] : [];
+		}),
+	);
+
 export interface WorkflowRunProgress {
 	reached: number;
 	settled: number;
@@ -57,9 +69,15 @@ export interface WorkflowRunProgress {
 	percent: number;
 }
 
-export const getRunProgress = (detail: WorkflowRunDetail, content: WorkflowDefinitionContent): WorkflowRunProgress => {
-	const total = flattenDefinitionNodes(content.nodes).filter((node) => node.type !== 'group').length;
+/** Without the definition the total is unknown, so it falls back to the nodes the run has reached so far. */
+export const getRunProgress = (
+	detail: WorkflowRunDetail,
+	content: WorkflowDefinitionContent | null,
+): WorkflowRunProgress => {
 	const occurrences = Object.values(detail.nodes);
+	const total = content
+		? flattenDefinitionNodes(content.nodes).filter((node) => node.type !== 'group').length
+		: occurrences.length;
 	const reached = occurrences.filter((occurrence) => isNodeReached(occurrence.status)).length;
 	const settled = occurrences.filter((occurrence) => nodeRunStatusMeta[occurrence.status].settled).length;
 

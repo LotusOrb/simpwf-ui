@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { skipToken } from '@reduxjs/toolkit/query';
 
+import { Permission, useCan } from '@core/auth/authorization';
+
 import { useGetWorkflowDefinitionQuery } from '@module/workflow-definition/hooks';
 import { workflowRunApi } from '@module/workflow-run/api';
 import { buildRunTimeline, getRunProgress } from '@module/workflow-run/data';
@@ -35,7 +37,11 @@ export const useWorkflowRunDetail = (runId: string) => {
 	const status = useGetWorkflowRunQuery(runId, { pollingInterval });
 	const detail = status.data;
 
-	const definition = useGetWorkflowDefinitionQuery(detail?.workflow_definition_id ?? skipToken);
+	// Without definitions:read the screen degrades to what the run itself reports, rather than failing on a 403.
+	const canReadDefinition = useCan(Permission.DefinitionsRead);
+	const definition = useGetWorkflowDefinitionQuery(
+		canReadDefinition && detail ? detail.workflow_definition_id : skipToken,
+	);
 
 	const debugNodes = useMemo(
 		() =>
@@ -69,14 +75,16 @@ export const useWorkflowRunDetail = (runId: string) => {
 		[detail, debugById, clock],
 	);
 
-	const progress = useMemo(
-		() => (detail && definition.data ? getRunProgress(detail, definition.data.content) : null),
-		[detail, definition.data],
-	);
+	const progress = useMemo(() => {
+		if (!detail) return null;
+		if (canReadDefinition) return definition.data ? getRunProgress(detail, definition.data.content) : null;
+		return getRunProgress(detail, null);
+	}, [detail, definition.data, canReadDefinition]);
 
 	return {
 		detail,
 		definition: definition.data,
+		canReadDefinition,
 		debug: debugById,
 		context: context.data ?? EMPTY_CONTEXT,
 		clock,

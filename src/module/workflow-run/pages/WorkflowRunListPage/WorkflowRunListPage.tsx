@@ -21,6 +21,8 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { LuCircleAlert, LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert, LuWorkflow } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
 
+import { Permission, useCan } from '@core/auth/authorization';
+
 import { PaginationBar } from '@common/component/PaginationBar';
 import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
@@ -70,6 +72,10 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [startOpened, setStartOpened] = useState(false);
 	const [startDefinitionId, setStartDefinitionId] = useState<string | null>(null);
+	const canReadDefinitions = useCan(Permission.DefinitionsRead);
+	const canReadStatistics = useCan(Permission.StatisticsRead);
+	// Starting means picking a definition, so it needs both.
+	const canStart = useCan((auth) => auth.canAll(Permission.InstancesCreate, Permission.DefinitionsRead));
 
 	const runId = debouncedSearch.trim();
 	const { by, direction } = runSortOrders[sort];
@@ -98,7 +104,7 @@ export const WorkflowRunListPage: React.FC = () => {
 	});
 	const { data: statistics, refetch: refetchStatistics } = useGetStatisticsQuery(
 		{},
-		{ pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0 },
+		{ pollingInterval: autoRefresh ? AUTO_REFRESH_MS : 0, skip: !canReadStatistics },
 	);
 	const statusCounts = statistics && {
 		all: statistics.total_runs,
@@ -108,12 +114,15 @@ export const WorkflowRunListPage: React.FC = () => {
 	};
 	const refresh = () => {
 		refetch();
-		refetchStatistics();
+		if (canReadStatistics) refetchStatistics();
 	};
-	const { data: definitions } = useListWorkflowDefinitionsQuery({
-		perPage: 200,
-		filter: { latest_only: { op: '_eq', value: 'false' } },
-	});
+	const { data: definitions } = useListWorkflowDefinitionsQuery(
+		{
+			perPage: 200,
+			filter: { latest_only: { op: '_eq', value: 'false' } },
+		},
+		{ skip: !canReadDefinitions },
+	);
 
 	const [pauseRun] = usePauseWorkflowRunMutation();
 	const [resumeRun] = useResumeWorkflowRunMutation();
@@ -330,47 +339,52 @@ export const WorkflowRunListPage: React.FC = () => {
 								<LuRefreshCw size={16} />
 							</ActionIcon>
 						</Tooltip>
-						<Popover
-							opened={startOpened}
-							onChange={setStartOpened}
-							position="bottom-end"
-							width={300}
-							shadow="md"
-							withinPortal
-						>
-							<Popover.Target>
-								<Button leftSection={<LuPlay size={16} />} onClick={() => setStartOpened((o) => !o)}>
-									Start run
-								</Button>
-							</Popover.Target>
-							<Popover.Dropdown>
-								<Stack gap="sm">
-									<Select
-										size="sm"
-										label="Workflow definition"
-										placeholder="Select a workflow"
-										searchable
-										nothingFoundMessage="No workflow found"
-										leftSection={<LuWorkflow size={14} />}
-										comboboxProps={{ withinPortal: false }}
-										data={startOptions}
-										value={startDefinitionId}
-										onChange={setStartDefinitionId}
-									/>
-									<Group justify="flex-end">
-										<Button
-											size="xs"
-											leftSection={<LuPlay size={14} />}
-											disabled={!startDefinitionId}
-											loading={startState.isLoading}
-											onClick={handleStart}
-										>
-											Run
-										</Button>
-									</Group>
-								</Stack>
-							</Popover.Dropdown>
-						</Popover>
+						{canStart && (
+							<Popover
+								opened={startOpened}
+								onChange={setStartOpened}
+								position="bottom-end"
+								width={300}
+								shadow="md"
+								withinPortal
+							>
+								<Popover.Target>
+									<Button
+										leftSection={<LuPlay size={16} />}
+										onClick={() => setStartOpened((o) => !o)}
+									>
+										Start run
+									</Button>
+								</Popover.Target>
+								<Popover.Dropdown>
+									<Stack gap="sm">
+										<Select
+											size="sm"
+											label="Workflow definition"
+											placeholder="Select a workflow"
+											searchable
+											nothingFoundMessage="No workflow found"
+											leftSection={<LuWorkflow size={14} />}
+											comboboxProps={{ withinPortal: false }}
+											data={startOptions}
+											value={startDefinitionId}
+											onChange={setStartDefinitionId}
+										/>
+										<Group justify="flex-end">
+											<Button
+												size="xs"
+												leftSection={<LuPlay size={14} />}
+												disabled={!startDefinitionId}
+												loading={startState.isLoading}
+												onClick={handleStart}
+											>
+												Run
+											</Button>
+										</Group>
+									</Stack>
+								</Popover.Dropdown>
+							</Popover>
+						)}
 					</Group>
 				</Group>
 
