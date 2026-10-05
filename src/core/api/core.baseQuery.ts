@@ -1,9 +1,11 @@
-import type { BaseQueryFn } from '@reduxjs/toolkit/query';
+import type { BaseQueryApi, BaseQueryFn } from '@reduxjs/toolkit/query';
 
+import { apiTagConfig } from '@config/apiTag.config';
 import { config } from '@config/config';
 
-import { AUTH_TOKEN_HEADER } from '@core/auth/auth.constants';
-import { clearToken } from '@core/auth/store';
+import { AUTH_BEARER_HEADER, AUTH_TOKEN_HEADER } from '@core/auth/auth.constants';
+import { isOAuthTokenExpiring, refreshOAuthSession } from '@core/auth/oauth';
+import { clearSession, type AuthState } from '@core/auth/store';
 import { Http } from '@core/http';
 
 import { HTTPError } from '@common/exception/HTTPError';
@@ -11,6 +13,9 @@ import type { ComplexQueryParam } from '@common/types/ComplexQueryParam';
 import type { HTTPHeader } from '@common/types/HTTPHeader';
 import type { HTTPMethod } from '@common/types/HTTPMethod';
 import type { HTTPResponse } from '@common/types/HTTPResponse';
+
+// Circular with core.api, but only read at call time, after both modules have loaded.
+import { coreApi } from './core.api';
 
 export interface CoreQueryArgs {
 	method: HTTPMethod;
@@ -61,6 +66,15 @@ const toCoreQueryError = (err: unknown): CoreQueryError => {
 	};
 };
 
+const getAuth = (api: BaseQueryApi) => (api.getState() as { auth?: AuthState }).auth;
+
+const buildAuthHead = (auth?: AuthState): HTTPHeader => {
+	if (!auth?.token) return {};
+	return auth.method === 'oauth'
+		? { [AUTH_BEARER_HEADER]: `Bearer ${auth.token}` }
+		: { [AUTH_TOKEN_HEADER]: auth.token };
+};
+
 export const coreBaseQuery: BaseQueryFn<
 	CoreQueryArgs,
 	unknown,
@@ -68,23 +82,41 @@ export const coreBaseQuery: BaseQueryFn<
 	CoreQueryExtraOptions,
 	CoreQueryMeta
 > = async (args, api, extraOptions) => {
+	const anonymous = !!extraOptions?.anonymous;
+
 	try {
 		const http = await getHttp();
-		const head: HTTPHeader = {};
 
-		if (!extraOptions?.anonymous) {
-			const token = (api.getState() as { auth?: { token?: string | null } }).auth?.token;
-			if (token) head[AUTH_TOKEN_HEADER] = token;
+		// A failed early refresh is not fatal here: the request still goes out and the 401 path below decides.
+		if (!anonymous && isOAuthTokenExpiring(getAuth(api))) await refreshOAuthSession(api).catch(() => undefined);
+
+		// The header is rebuilt per attempt so a retry picks up the refreshed token.
+		const send = () =>
+			http.requestJSON(args.method, args.url, args.qParam, args.body, {
+				...(anonymous ? {} : buildAuthHead(getAuth(api))),
+				...args.head,
+			});
+
+		let res: HTTPResponse<unknown>;
+		try {
+			res = await send();
+		} catch (err) {
+			if (anonymous || !(err instanceof HTTPError) || err.code !== 401 || getAuth(api)?.method !== 'oauth')
+				throw err;
+
+			// The access token may have been revoked or expired early, so refresh once and retry before giving up.
+			await refreshOAuthSession(api).catch(() => {
+				throw err;
+			});
+			res = await send();
 		}
-
-		Object.assign(head, args.head);
-
-		const res: HTTPResponse<unknown> = await http.requestJSON(args.method, args.url, args.qParam, args.body, head);
 
 		return { data: res.data, meta: { code: res.code, explain: res.explain, param: res.param } };
 	} catch (err) {
 		const error = toCoreQueryError(err);
-		if (error.code === 401 && !extraOptions?.anonymous) api.dispatch(clearToken());
+		if (error.code === 401 && !anonymous) api.dispatch(clearSession());
+		// Roles can change mid-session, so a denial refreshes /auth/me and the gates follow it.
+		if (error.code === 403 && !anonymous) api.dispatch(coreApi.util.invalidateTags([{ type: apiTagConfig.me }]));
 
 		return { error };
 	}

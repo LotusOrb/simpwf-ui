@@ -6,6 +6,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuCopy, LuEllipsisVertical, LuHistory, LuTrash2 } from 'react-icons/lu';
 import { Link } from 'react-router';
 
+import { Can, Permission } from '@core/auth/authorization';
+
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
 import { countNodes, DEFINITION_ROUTE, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
@@ -68,13 +70,15 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 								Versions
 							</Menu.Item>
 						)}
-						<Menu.Item
-							component={Link}
-							to={`${DEFINITION_ROUTE}/new?from=${definition.id}`}
-							leftSection={<LuCopy size={14} />}
-						>
-							Duplicate
-						</Menu.Item>
+						<Can rule={Permission.DefinitionsWrite}>
+							<Menu.Item
+								component={Link}
+								to={`${DEFINITION_ROUTE}/new?from=${definition.id}`}
+								leftSection={<LuCopy size={14} />}
+							>
+								Duplicate
+							</Menu.Item>
+						</Can>
 						{onDelete && (
 							<>
 								<Menu.Divider />

@@ -4,6 +4,7 @@ import { ActionIcon, Button, Group, ScrollArea, Stack, Text, ThemeIcon, Title, T
 import { LuCircleAlert, LuKeyRound, LuPlus, LuRefreshCw } from 'react-icons/lu';
 
 import type { CoreQueryError } from '@core/api/core.baseQuery';
+import { Can, Permission } from '@core/auth/authorization';
 
 import { PaginationBar, PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 
@@ -124,14 +125,16 @@ export const SecretListPage: React.FC = () => {
 						</Text>
 						.
 					</Text>
-					<Button
-						size="xs"
-						mt={4}
-						leftSection={<LuPlus size={14} />}
-						onClick={() => openForm({ type: 'create' })}
-					>
-						New secret
-					</Button>
+					<Can rule={Permission.SecretsWrite}>
+						<Button
+							size="xs"
+							mt={4}
+							leftSection={<LuPlus size={14} />}
+							onClick={() => openForm({ type: 'create' })}
+						>
+							New secret
+						</Button>
+					</Can>
 				</Stack>
 			);
 		}
@@ -176,9 +179,11 @@ export const SecretListPage: React.FC = () => {
 								<LuRefreshCw size={16} />
 							</ActionIcon>
 						</Tooltip>
-						<Button leftSection={<LuPlus size={16} />} onClick={() => openForm({ type: 'create' })}>
-							New secret
-						</Button>
+						<Can rule={Permission.SecretsWrite}>
+							<Button leftSection={<LuPlus size={16} />} onClick={() => openForm({ type: 'create' })}>
+								New secret
+							</Button>
+						</Can>
 					</Group>
 				</Group>
 

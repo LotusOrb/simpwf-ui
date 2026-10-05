@@ -5,6 +5,8 @@ import dayjs from 'dayjs';
 import { LuPlus, LuTriangleAlert } from 'react-icons/lu';
 import { Link } from 'react-router';
 
+import { Can, Permission } from '@core/auth/authorization';
+
 import { DashboardDateRangePicker } from '@module/dashboard/components/DashboardDateRangePicker';
 import { DashboardExecutionList } from '@module/dashboard/components/DashboardExecutionList';
 import { DashboardRunsChart } from '@module/dashboard/components/DashboardRunsChart';
@@ -38,9 +40,15 @@ export const DashboardPage: React.FC = () => {
 					</div>
 					<Group gap="xs">
 						<DashboardDateRangePicker value={range} onChange={setRange} />
-						<Button component={Link} to="/app/workflow-definition/new" leftSection={<LuPlus size={16} />}>
-							New definition
-						</Button>
+						<Can rule={Permission.DefinitionsWrite}>
+							<Button
+								component={Link}
+								to="/app/workflow-definition/new"
+								leftSection={<LuPlus size={16} />}
+							>
+								New definition
+							</Button>
+						</Can>
 					</Group>
 				</Group>
 
@@ -70,7 +78,9 @@ export const DashboardPage: React.FC = () => {
 					rangeLabel={formatRangeLabel(range)}
 					loading={overview.isLoading}
 				/>
-				<DashboardExecutionList />
+				<Can rule={Permission.InstancesRead}>
+					<DashboardExecutionList />
+				</Can>
 			</Stack>
 		</ScrollArea>
 	);

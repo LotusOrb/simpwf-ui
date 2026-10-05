@@ -11,10 +11,16 @@ import classes from './WorkflowRunSidePanel.module.scss';
 interface WorkflowRunSidePanelProps {
 	detail: WorkflowRunDetail;
 	context: Record<string, unknown>;
+	canEditContext: boolean;
 	onReplaceContext: (context: Record<string, unknown>, reason: string) => void;
 }
 
-export const WorkflowRunSidePanel: React.FC<WorkflowRunSidePanelProps> = ({ detail, context, onReplaceContext }) => (
+export const WorkflowRunSidePanel: React.FC<WorkflowRunSidePanelProps> = ({
+	detail,
+	context,
+	canEditContext,
+	onReplaceContext,
+}) => (
 	<Tabs defaultValue="context" keepMounted={false} className={classes.root}>
 		<Tabs.List className={classes.list}>
 			<Tabs.Tab value="context">Context</Tabs.Tab>
@@ -24,7 +30,7 @@ export const WorkflowRunSidePanel: React.FC<WorkflowRunSidePanelProps> = ({ deta
 		<Tabs.Panel value="context" className={classes.panel}>
 			<WorkflowRunContextPanel
 				context={context}
-				editable={detail.status === 'paused'}
+				editable={canEditContext && detail.status === 'paused'}
 				onReplace={onReplaceContext}
 			/>
 		</Tabs.Panel>

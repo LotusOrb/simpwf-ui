@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
 
-import { Button, Center, Group, Loader, Modal, Stack, Text } from '@mantine/core';
+import { Button, Center, Group, Loader, Modal, Stack, Text, ThemeIcon } from '@mantine/core';
 import { ReactFlowProvider } from '@xyflow/react';
-import { LuCircleAlert, LuRefreshCw } from 'react-icons/lu';
+import { LuCircleAlert, LuEyeOff, LuRefreshCw } from 'react-icons/lu';
 import { useParams } from 'react-router';
+
+import { Permission, useCan } from '@core/auth/authorization';
 
 import { useNavigateBack } from '@common/hooks/useNavigateBack';
 
@@ -19,7 +21,7 @@ import { WorkflowRunRollbackModal } from '@module/workflow-run/components/Workfl
 import { WorkflowRunSidePanel } from '@module/workflow-run/components/WorkflowRunSidePanel';
 import { WorkflowRunSummary } from '@module/workflow-run/components/WorkflowRunSummary';
 import { WorkflowRunTimeline } from '@module/workflow-run/components/WorkflowRunTimeline';
-import { indexDefinitionNodes } from '@module/workflow-run/data';
+import { indexDebugNodes, indexDefinitionNodes } from '@module/workflow-run/data';
 import {
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
@@ -51,6 +53,9 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		bottom: { opened: true, collapsed: false },
 	});
 	const run = useWorkflowRunDetail(id);
+	const canControl = useCan(Permission.InstancesControl);
+	const canUpdateContext = useCan(Permission.InstancesUpdateContext);
+	const canDeliverInput = useCan(Permission.InputDeliver);
 
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const [rollbackFrom, setRollbackFrom] = useState<string | null>(null);
@@ -68,10 +73,12 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const notify = useNotify();
 
 	const content = run.definition?.content;
-	const nodesById = useMemo(
-		() => (content ? indexDefinitionNodes(content) : new Map<string, WorkflowDefinitionNode>()),
-		[content],
-	);
+	const { detail: runDetail, debug: runDebug, canReadDefinition } = run;
+	const nodesById = useMemo(() => {
+		if (content) return indexDefinitionNodes(content);
+		if (!canReadDefinition && runDetail) return indexDebugNodes(runDetail, runDebug);
+		return new Map<string, WorkflowDefinitionNode>();
+	}, [content, canReadDefinition, runDetail, runDebug]);
 
 	if (run.isLoading) {
 		return (
@@ -83,7 +90,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 
 	const { detail, definition, debug, context, clock, timeline, progress, live, setLive } = run;
 
-	if (!detail || !definition || !timeline || !progress) {
+	if (!detail || (canReadDefinition && !definition) || !timeline || !progress) {
 		return (
 			<Center h="100%" p="lg">
 				<Stack align="center" gap="xs" maw={360}>
@@ -125,7 +132,8 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const currentNode = currentNodeId ? (nodesById.get(currentNodeId) ?? null) : null;
 	const pendingNode = detail.pending_input ? (nodesById.get(detail.pending_input.node_id) ?? null) : null;
 	const rollbackTargets = timeline.entries.filter((entry) => detail.nodes[entry.nodeId]?.rollbackable);
-	const canRollback = ['paused', 'failed', 'stopped'].includes(detail.status) && rollbackTargets.length > 0;
+	const canRollback =
+		canControl && ['paused', 'failed', 'stopped'].includes(detail.status) && rollbackTargets.length > 0;
 
 	const elapsedMs = detail.started_at
 		? (detail.finished_at ? new Date(detail.finished_at).getTime() : clock) - new Date(detail.started_at).getTime()
@@ -145,7 +153,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		<>
 			<MainLayoutPanel side="top">
 				<WorkflowRunDetailHeader
-					definition={definition}
+					definition={definition ?? null}
 					detail={detail}
 					pendingNode={pendingNode}
 					onBack={navigateBack}
@@ -169,7 +177,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					canRollback={canRollback}
 					actionError={actionError}
 					onDismissActionError={() => setActionError(null)}
-					onProvideInput={() => setInputOpened(true)}
+					onProvideInput={canDeliverInput ? () => setInputOpened(true) : undefined}
 					onPause={() => perform('pause run', () => pauseRun(detail.id).unwrap())}
 					onResume={() => perform('resume run', () => resumeRun(detail.id).unwrap())}
 					onRollback={() => openRollback(null)}
@@ -181,6 +189,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 				<WorkflowRunSidePanel
 					detail={detail}
 					context={context}
+					canEditContext={canUpdateContext}
 					onReplaceContext={(next, reason) =>
 						perform('replace context', async () => {
 							await replaceContext({ id: detail.id, context: next, reason }).unwrap();
@@ -218,15 +227,32 @@ export const WorkflowRunDetailPage: React.FC = () => {
 			</MainLayoutPanel>
 
 			<div className={classes.root}>
-				<ReactFlowProvider>
-					<WorkflowRunGraph
-						definition={definition}
-						detail={detail}
-						debug={debug}
-						selectedNodeId={selectedNodeId}
-						onSelect={selectNode}
-					/>
-				</ReactFlowProvider>
+				{definition ? (
+					<ReactFlowProvider>
+						<WorkflowRunGraph
+							definition={definition}
+							detail={detail}
+							debug={debug}
+							selectedNodeId={selectedNodeId}
+							onSelect={selectNode}
+						/>
+					</ReactFlowProvider>
+				) : (
+					<Center h="100%" p="lg">
+						<Stack align="center" gap="xs" maw={340}>
+							<ThemeIcon size={44} radius="xl" variant="light" color="gray">
+								<LuEyeOff size={20} />
+							</ThemeIcon>
+							<Text fw={600} fz="sm">
+								Graph unavailable
+							</Text>
+							<Text fz="xs" c="dimmed" ta="center">
+								Your role can't read workflow definitions. The timeline below still lists every node
+								this run has reached.
+							</Text>
+						</Stack>
+					</Center>
+				)}
 
 				<WorkflowRunInputModal
 					pending={inputOpened ? detail.pending_input : null}
@@ -262,8 +288,8 @@ export const WorkflowRunDetailPage: React.FC = () => {
 				<Modal opened={stopOpened} onClose={() => setStopOpened(false)} title="Stop this run?" centered>
 					<Stack gap="md">
 						<Text fz="sm">
-							{definition.name} will be stopped and its active node cancelled. Stopped runs can't be
-							resumed.
+							{definition?.name ?? 'This run'} will be stopped and its active node cancelled. Stopped runs
+							can't be resumed.
 						</Text>
 						<Group justify="flex-end" gap="xs">
 							<Button variant="default" onClick={() => setStopOpened(false)}>

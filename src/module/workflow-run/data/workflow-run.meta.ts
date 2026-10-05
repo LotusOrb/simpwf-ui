@@ -44,6 +44,9 @@ export const formatWaitingReason = (reason: string): string => (reason === 'inpu
 
 export const shortRunId = (id: string) => id.slice(-8);
 
+/** Shown when the definition name is unknown: deleted, or the caller cannot read definitions. */
+export const definitionFallbackLabel = (definitionId: string) => `Definition #${definitionId.slice(-8)}`;
+
 export const runSortOrders: Record<WorkflowRunSort, { label: string; by: string; direction: 'asc' | 'desc' }> = {
 	newest: { label: 'Newest', by: 'created_at', direction: 'desc' },
 	oldest: { label: 'Oldest', by: 'created_at', direction: 'asc' },

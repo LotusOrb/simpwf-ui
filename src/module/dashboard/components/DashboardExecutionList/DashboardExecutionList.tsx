@@ -5,9 +5,11 @@ import dayjs from 'dayjs';
 import { LuClock, LuTimer } from 'react-icons/lu';
 import { Link } from 'react-router';
 
+import { Permission, useCan } from '@core/auth/authorization';
+
 import { DASHBOARD_RECENT_RUNS_LIMIT, DASHBOARD_RUN_TIME_FORMAT } from '@module/dashboard/constant/dashboard.constant';
 import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
-import { formatRunDuration, runStatusMeta, shortRunId } from '@module/workflow-run/data';
+import { definitionFallbackLabel, formatRunDuration, runStatusMeta, shortRunId } from '@module/workflow-run/data';
 import { useListWorkflowRunsQuery } from '@module/workflow-run/hooks';
 
 import classes from './DashboardExecutionList.module.scss';
@@ -20,10 +22,15 @@ export const DashboardExecutionList: React.FC = () => {
 		perPage: DASHBOARD_RECENT_RUNS_LIMIT,
 		order: { by: 'created_at', direction: 'desc' },
 	});
-	const { data: definitions } = useListWorkflowDefinitionsQuery({
-		perPage: 200,
-		filter: { latest_only: { op: '_eq', value: 'false' } },
-	});
+	// Names are a nicety: without definitions:read the rows fall back to a short definition id.
+	const canReadDefinitions = useCan(Permission.DefinitionsRead);
+	const { data: definitions } = useListWorkflowDefinitionsQuery(
+		{
+			perPage: 200,
+			filter: { latest_only: { op: '_eq', value: 'false' } },
+		},
+		{ skip: !canReadDefinitions },
+	);
 
 	const definitionNames = new Map(
 		(definitions?.items ?? []).map((definition) => [definition.id, `${definition.name} · v${definition.version}`]),
@@ -57,7 +64,9 @@ export const DashboardExecutionList: React.FC = () => {
 
 					{items.map((run) => {
 						const status = runStatusMeta[run.status];
-						const name = definitionNames.get(run.workflow_definition_id) ?? 'Unknown definition';
+						const name =
+							definitionNames.get(run.workflow_definition_id) ??
+							definitionFallbackLabel(run.workflow_definition_id);
 						return (
 							<Card
 								key={run.id}

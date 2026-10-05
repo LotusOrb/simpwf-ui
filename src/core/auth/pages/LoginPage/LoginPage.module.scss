@@ -16,3 +16,19 @@
 	width: 100%;
 	padding-block: var(--mantine-spacing-xl);
 }
+
+.title {
+	font-size: 32px;
+	font-weight: 700;
+	text-align: center;
+	color: var(--mantine-color-dark-8);
+}
+
+.subtitle {
+	text-align: center;
+	margin-top: var(--mantine-spacing-xs);
+}
+
+.body {
+	margin-top: 40px;
+}

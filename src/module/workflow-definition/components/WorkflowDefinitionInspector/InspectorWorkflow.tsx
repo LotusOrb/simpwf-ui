@@ -1,9 +1,10 @@
 import React from 'react';
 
-import { Button, Card, Group, Modal, ScrollArea, Select, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Card, Fieldset, Group, Modal, ScrollArea, Select, Stack, Text, TextInput } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { LuBraces, LuChevronsUpDown } from 'react-icons/lu';
 
+import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { CodeEditor } from '@common/component/CodeEditor';
@@ -26,6 +27,7 @@ const SERVER_DEFAULT = 'default';
 export const InspectorWorkflow: React.FC = () => {
 	const dispatch = useCoreDispatch();
 	const [jsonOpened, json] = useDisclosure(false);
+	const canEdit = useCan(Permission.DefinitionsWrite);
 
 	const name = useCoreSelector(selectEditorName);
 	const contextMode = useCoreSelector(selectEditorContextMode);
@@ -48,66 +50,69 @@ export const InspectorWorkflow: React.FC = () => {
 			</div>
 
 			<ScrollArea flex={1} type="hover">
-				<Stack gap="lg" p="md">
-					<TextInput
-						label={<SectionLabel required>Name</SectionLabel>}
-						placeholder="Order fulfillment"
-						value={name}
-						onChange={(event) => dispatch(nameChanged(event.currentTarget.value))}
-					/>
+				<Fieldset variant="unstyled" disabled={!canEdit}>
+					<Stack gap="lg" p="md">
+						<TextInput
+							label={<SectionLabel required>Name</SectionLabel>}
+							placeholder="Order fulfillment"
+							value={name}
+							onChange={(event) => dispatch(nameChanged(event.currentTarget.value))}
+						/>
 
-					<Select
-						label={<SectionLabel>Context mode</SectionLabel>}
-						description="Snapshotted when an instance starts. Lean keeps less history per node."
-						inputWrapperOrder={['label', 'input', 'description']}
-						data={[
-							{ value: SERVER_DEFAULT, label: 'Server default' },
-							{ value: 'full', label: 'Full' },
-							{ value: 'lean', label: 'Lean' },
-						]}
-						value={contextMode ?? SERVER_DEFAULT}
-						onChange={(value) =>
-							dispatch(
-								contextModeChanged(
-									value === SERVER_DEFAULT || !value ? null : (value as 'full' | 'lean'),
-								),
-							)
-						}
-						rightSection={<LuChevronsUpDown size={14} />}
-						allowDeselect={false}
-					/>
+						<Select
+							label={<SectionLabel>Context mode</SectionLabel>}
+							description="Snapshotted when an instance starts. Lean keeps less history per node."
+							inputWrapperOrder={['label', 'input', 'description']}
+							data={[
+								{ value: SERVER_DEFAULT, label: 'Server default' },
+								{ value: 'full', label: 'Full' },
+								{ value: 'lean', label: 'Lean' },
+							]}
+							value={contextMode ?? SERVER_DEFAULT}
+							onChange={(value) =>
+								dispatch(
+									contextModeChanged(
+										value === SERVER_DEFAULT || !value ? null : (value as 'full' | 'lean'),
+									),
+								)
+							}
+							rightSection={<LuChevronsUpDown size={14} />}
+							allowDeselect={false}
+						/>
 
-					<Stack gap="xs">
-						<SectionLabel>Summary</SectionLabel>
-						<Card shadow="none" padding="sm">
-							<Group grow>
-								<div className={classes.metric}>
-									<Text fw={600}>{nodeCount}</Text>
-									<Text fz="xs" c="dimmed">
-										Nodes
-									</Text>
-								</div>
-								<div className={classes.metric}>
-									<Text fw={600}>{groupCount}</Text>
-									<Text fz="xs" c="dimmed">
-										Groups
-									</Text>
-								</div>
-								<div className={classes.metric}>
-									<Text fw={600}>{sourceVersion ? `v${sourceVersion + 1}` : 'v1'}</Text>
-									<Text fz="xs" c="dimmed">
-										On save
-									</Text>
-								</div>
-							</Group>
-						</Card>
-						{sourceVersion && (
-							<Text fz="xs" c="dimmed">
-								Definitions are immutable. Saving creates v{sourceVersion + 1} from v{sourceVersion}.
-							</Text>
-						)}
+						<Stack gap="xs">
+							<SectionLabel>Summary</SectionLabel>
+							<Card shadow="none" padding="sm">
+								<Group grow>
+									<div className={classes.metric}>
+										<Text fw={600}>{nodeCount}</Text>
+										<Text fz="xs" c="dimmed">
+											Nodes
+										</Text>
+									</div>
+									<div className={classes.metric}>
+										<Text fw={600}>{groupCount}</Text>
+										<Text fz="xs" c="dimmed">
+											Groups
+										</Text>
+									</div>
+									<div className={classes.metric}>
+										<Text fw={600}>{sourceVersion ? `v${sourceVersion + 1}` : 'v1'}</Text>
+										<Text fz="xs" c="dimmed">
+											On save
+										</Text>
+									</div>
+								</Group>
+							</Card>
+							{sourceVersion && canEdit && (
+								<Text fz="xs" c="dimmed">
+									Definitions are immutable. Saving creates v{sourceVersion + 1} from v{sourceVersion}
+									.
+								</Text>
+							)}
+						</Stack>
 					</Stack>
-				</Stack>
+				</Fieldset>
 			</ScrollArea>
 
 			<div className={classes.footer}>

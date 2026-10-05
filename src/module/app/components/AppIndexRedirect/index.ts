@@ -1,0 +1,1 @@
+export { AppIndexRedirect } from './AppIndexRedirect';

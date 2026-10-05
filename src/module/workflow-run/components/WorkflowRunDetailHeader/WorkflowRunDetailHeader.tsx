@@ -13,6 +13,8 @@ import {
 	LuUndo2,
 } from 'react-icons/lu';
 
+import { Permission, useCan } from '@core/auth/authorization';
+
 import { useAppLayoutPanel } from '@module/app/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
@@ -24,7 +26,8 @@ import { WorkflowRunStatusBadge } from '../WorkflowRunStatusBadge';
 import classes from './WorkflowRunDetailHeader.module.scss';
 
 interface WorkflowRunDetailHeaderProps {
-	definition: Pick<WorkflowDefinition, 'name' | 'version'>;
+	/** Null when the caller cannot read definitions. */
+	definition: Pick<WorkflowDefinition, 'name' | 'version'> | null;
 	detail: WorkflowRunDetail;
 	/** The node a run parked on input is waiting at. */
 	pendingNode: WorkflowDefinitionNode | null;
@@ -37,7 +40,8 @@ interface WorkflowRunDetailHeaderProps {
 	canRollback: boolean;
 	actionError: string | null;
 	onDismissActionError: () => void;
-	onProvideInput: () => void;
+	/** Omitted when the caller cannot deliver input. */
+	onProvideInput?: () => void;
 	onPause: () => void;
 	onResume: () => void;
 	onRollback: () => void;
@@ -63,7 +67,9 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	onStop,
 }) => {
 	const panel = useAppLayoutPanel();
-	const actions = getAllowedActions(detail);
+	const canControl = useCan(Permission.InstancesControl);
+	const actions = canControl ? getAllowedActions(detail) : [];
+	const title = definition?.name ?? 'Workflow run';
 	const busy = pending.pause || pending.resume || pending.stop || pending.rollback;
 
 	return (
@@ -77,12 +83,14 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 					</Tooltip>
 					<div className={classes.titleBlock}>
 						<Group gap={8} wrap="nowrap">
-							<Title order={2} fz={20} className={classes.title} title={definition.name}>
-								{definition.name}
+							<Title order={2} fz={20} className={classes.title} title={title}>
+								{title}
 							</Title>
-							<Badge size="sm" color="gray">
-								v{definition.version}
-							</Badge>
+							{definition && (
+								<Badge size="sm" color="gray">
+									v{definition.version}
+								</Badge>
+							)}
 							<WorkflowRunStatusBadge run={detail} />
 						</Group>
 						<Group gap="sm" wrap="nowrap">
@@ -102,7 +110,7 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 						onChange={(event) => onLiveChange(event.currentTarget.checked)}
 					/>
 
-					{detail.pending_input && (
+					{detail.pending_input && onProvideInput && (
 						<Button size="sm" leftSection={<LuHourglass size={15} />} onClick={onProvideInput}>
 							Provide input
 						</Button>

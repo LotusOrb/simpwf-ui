@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useLayoutEffect, useRef, useState } from 'react';
 
 import { ActionIcon, Input, Loader, Modal, Tooltip } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
@@ -41,6 +41,13 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	required,
 }) => {
 	const [expanded, { open, close }] = useDisclosure(false);
+	// Monaco is not a form control, so it follows a disabled <fieldset> ancestor the way native inputs do.
+	const frameRef = useRef<HTMLDivElement>(null);
+	const [inDisabledFieldset, setInDisabledFieldset] = useState(false);
+	useLayoutEffect(() => {
+		setInDisabledFieldset(!!frameRef.current?.closest('fieldset:disabled'));
+	}, []);
+	const isReadOnly = readOnly || inDisabledFieldset;
 
 	// `nokey` stops canvas libraries like React Flow from treating keystrokes here as shortcuts (Space, Backspace).
 	const frameClassName = `${classes.frame} nokey`;
@@ -52,7 +59,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				onChange={onChange}
 				language={language}
 				height={editorHeight}
-				readOnly={readOnly}
+				readOnly={isReadOnly}
 				placeholder={placeholder}
 			/>
 		</Suspense>
@@ -66,7 +73,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			required={required}
 			inputWrapperOrder={['label', 'input', 'description', 'error']}
 		>
-			<div className={frameClassName} data-error={!!error || undefined}>
+			<div ref={frameRef} className={frameClassName} data-error={!!error || undefined}>
 				{!expanded && editor(height)}
 				<Tooltip label="Expand editor">
 					<ActionIcon size="sm" className={classes.expand} aria-label="Expand editor" onClick={open}>

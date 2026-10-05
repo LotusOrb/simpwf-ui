@@ -6,6 +6,7 @@ import { ReactFlowProvider } from '@xyflow/react';
 import { LuCircleAlert } from 'react-icons/lu';
 import { useBlocker, useNavigate, useParams, useSearchParams } from 'react-router';
 
+import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreDispatch, useCoreSelector, useCoreStore } from '@core/store';
 
 import { useNavigateBack } from '@common/hooks/useNavigateBack';
@@ -67,10 +68,12 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const store = useCoreStore();
 	const panel = useAppLayoutPanel();
 	const focusIssue = useFocusEditorIssue();
+	// Without definitions:write the editor is view-only: no palette, no save, no delete.
+	const canEdit = useCan(Permission.DefinitionsWrite);
 
 	useAppLayoutPanels({
 		top: { opened: true },
-		left: { opened: true },
+		left: { opened: canEdit },
 		right: { opened: true },
 		bottom: { opened: true, collapsed: true },
 	});
@@ -252,9 +255,11 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			</MainLayoutPanel>
 			{ready && (
 				<>
-					<MainLayoutPanel side="left" w={280} drawerBelow="md">
-						<WorkflowDefinitionPalette />
-					</MainLayoutPanel>
+					{canEdit && (
+						<MainLayoutPanel side="left" w={280} drawerBelow="md">
+							<WorkflowDefinitionPalette />
+						</MainLayoutPanel>
+					)}
 					<MainLayoutPanel side="right" w={360} drawerBelow="md">
 						<WorkflowDefinitionInspector />
 					</MainLayoutPanel>
@@ -278,10 +283,13 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 				definition={historyOpened ? current : null}
 				viewingId={id}
 				onClose={() => setHistoryOpened(false)}
-				onDelete={deletion.request}
+				onDelete={canEdit ? deletion.request : undefined}
 			/>
 
-			<WorkflowDefinitionRunHistory definition={runsOpened ? current : null} onClose={() => setRunsOpened(false)} />
+			<WorkflowDefinitionRunHistory
+				definition={runsOpened ? current : null}
+				onClose={() => setRunsOpened(false)}
+			/>
 
 			<WorkflowDefinitionDeleteModal
 				definition={deletion.pending}

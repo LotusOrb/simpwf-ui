@@ -14,6 +14,7 @@ import {
 	LuTrash2,
 } from 'react-icons/lu';
 
+import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreSelector } from '@core/store';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
@@ -75,6 +76,9 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 	onDismissStartError,
 }) => {
 	const panel = useAppLayoutPanel();
+	const canEdit = useCan(Permission.DefinitionsWrite);
+	const canStart = useCan(Permission.InstancesCreate);
+	const canViewRuns = useCan(Permission.InstancesRead);
 	// Keyed by version id so the notice comes back when another version is opened.
 	const [dismissedOutdated, setDismissedOutdated] = useState<string | null>(null);
 
@@ -112,6 +116,11 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								Latest
 							</Badge>
 						)}
+						{!canEdit && (
+							<Badge size="sm" className={classes.badge} color="gray" variant="outline">
+								View only
+							</Badge>
+						)}
 						{dirty && (
 							<Badge size="sm" className={classes.badge} color="orange">
 								Unsaved
@@ -119,21 +128,25 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 						)}
 					</Group>
 					<Text fz={rem(12)} c="dimmed" truncate>
-						Drag nodes from the left, connect handles on the canvas, configure on the right
+						{canEdit
+							? 'Drag nodes from the left, connect handles on the canvas, configure on the right'
+							: 'Your role can view this definition but not change it'}
 					</Text>
 				</div>
 				<Group gap="xs">
-					<Tooltip label={panel.opened.left ? 'Hide nodes' : 'Show nodes'}>
-						<ActionIcon
-							variant="default"
-							size="lg"
-							aria-label="Toggle nodes panel"
-							aria-pressed={panel.opened.left}
-							onClick={() => panel.toggle('left')}
-						>
-							<LuPanelLeft size={16} />
-						</ActionIcon>
-					</Tooltip>
+					{canEdit && (
+						<Tooltip label={panel.opened.left ? 'Hide nodes' : 'Show nodes'}>
+							<ActionIcon
+								variant="default"
+								size="lg"
+								aria-label="Toggle nodes panel"
+								aria-pressed={panel.opened.left}
+								onClick={() => panel.toggle('left')}
+							>
+								<LuPanelLeft size={16} />
+							</ActionIcon>
+						</Tooltip>
+					)}
 					<Tooltip label={panel.opened.right ? 'Hide settings' : 'Show settings'}>
 						<ActionIcon
 							variant="default"
@@ -145,30 +158,34 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 							<LuPanelRight size={16} />
 						</ActionIcon>
 					</Tooltip>
-					{dirty && (
-						<Button variant="default" onClick={onDiscard}>
-							Cancel
-						</Button>
+					{canEdit && (
+						<>
+							{dirty && (
+								<Button variant="default" onClick={onDiscard}>
+									Cancel
+								</Button>
+							)}
+							<Tooltip
+								label={
+									issues.length > 0
+										? `${issues.length} ${issues.length === 1 ? 'issue' : 'issues'} to fix`
+										: !isLatest
+											? `v${nextVersion} already exists — open the latest version to save changes`
+											: 'Definitions are immutable — saving publishes a new version.'
+								}
+								disabled={issues.length === 0 && !sourceId}
+							>
+								<Button
+									leftSection={<LuSave size={16} />}
+									loading={saving}
+									disabled={!ready || !isLatest}
+									onClick={onSave}
+								>
+									{sourceId ? `Save as v${nextVersion}` : 'Create'}
+								</Button>
+							</Tooltip>
+						</>
 					)}
-					<Tooltip
-						label={
-							issues.length > 0
-								? `${issues.length} ${issues.length === 1 ? 'issue' : 'issues'} to fix`
-								: !isLatest
-									? `v${nextVersion} already exists — open the latest version to save changes`
-									: 'Definitions are immutable — saving publishes a new version.'
-						}
-						disabled={issues.length === 0 && !sourceId}
-					>
-						<Button
-							leftSection={<LuSave size={16} />}
-							loading={saving}
-							disabled={!ready || !isLatest}
-							onClick={onSave}
-						>
-							{sourceId ? `Save as v${nextVersion}` : 'Create'}
-						</Button>
-					</Tooltip>
 					{current && (
 						<Menu position="bottom-end" shadow="md" withinPortal>
 							<Menu.Target>
@@ -177,7 +194,7 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								</ActionIcon>
 							</Menu.Target>
 							<Menu.Dropdown>
-								{startsWithInput && (
+								{startsWithInput && canStart && (
 									<Menu.Item
 										leftSection={starting ? <Loader size={14} /> : <LuPlay size={14} />}
 										disabled={!ready || dirty || starting}
@@ -194,21 +211,30 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								<Menu.Item leftSection={<LuHistory size={14} />} onClick={onOpenHistory}>
 									Version history
 								</Menu.Item>
-								<Menu.Item leftSection={<LuActivity size={14} />} onClick={onOpenRuns}>
-									Workflow Run
-								</Menu.Item>
-								<Menu.Divider />
-								<Menu.Item leftSection={<LuCopy size={14} />} onClick={() => onDuplicate(current.id)}>
-									Duplicate
-								</Menu.Item>
-								<Menu.Divider />
-								<Menu.Item
-									color="red"
-									leftSection={<LuTrash2 size={14} />}
-									onClick={() => onDelete(current)}
-								>
-									Delete this version
-								</Menu.Item>
+								{canViewRuns && (
+									<Menu.Item leftSection={<LuActivity size={14} />} onClick={onOpenRuns}>
+										Workflow Run
+									</Menu.Item>
+								)}
+								{canEdit && (
+									<>
+										<Menu.Divider />
+										<Menu.Item
+											leftSection={<LuCopy size={14} />}
+											onClick={() => onDuplicate(current.id)}
+										>
+											Duplicate
+										</Menu.Item>
+										<Menu.Divider />
+										<Menu.Item
+											color="red"
+											leftSection={<LuTrash2 size={14} />}
+											onClick={() => onDelete(current)}
+										>
+											Delete this version
+										</Menu.Item>
+									</>
+								)}
 							</Menu.Dropdown>
 						</Menu>
 					)}
@@ -229,14 +255,16 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 							saved from the latest; duplicate this one to start a separate workflow from it.
 						</Text>
 						<Group gap="xs">
-							<Button
-								size="xs"
-								variant="default"
-								leftSection={<LuCopy size={14} />}
-								onClick={() => onDuplicate(current.id)}
-							>
-								Duplicate
-							</Button>
+							{canEdit && (
+								<Button
+									size="xs"
+									variant="default"
+									leftSection={<LuCopy size={14} />}
+									onClick={() => onDuplicate(current.id)}
+								>
+									Duplicate
+								</Button>
+							)}
 							<Button size="xs" variant="default" onClick={() => onOpenVersion(latest.id)}>
 								Open latest
 							</Button>
