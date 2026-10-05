@@ -22,9 +22,11 @@ import { LuCircleAlert, LuPlay, LuRefreshCw, LuSearchX, LuTriangleAlert, LuWorkf
 import { useNavigate } from 'react-router';
 
 import { PaginationBar } from '@common/component/PaginationBar';
-import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
+import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
 import { useGetStatisticsQuery } from '@module/dashboard/hooks';
+import { useNotify } from '@module/notification/hooks';
+import { useListViewPreference } from '@module/settings/hooks';
 import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
 import {
 	WorkflowRunCard,
@@ -57,7 +59,7 @@ const SETTLE_REFRESH_MS = 3200;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const WorkflowRunListPage: React.FC = () => {
-	const [view, setView] = useState<ViewMode>('card');
+	const [view, setView] = useListViewPreference('workflowRun');
 	const [params, setParams] = useWorkflowRunListParams();
 	const { search, definitionId, status: statusTab, sort, page, perPage } = params;
 	const filters: WorkflowRunFilterValues = { search, definitionId, sort };
@@ -117,6 +119,7 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [resumeRun] = useResumeWorkflowRunMutation();
 	const [stopRun] = useStopWorkflowRunMutation();
 	const [startRun, startState] = useStartWorkflowRunMutation();
+	const notify = useNotify();
 	const navigate = useNavigate();
 	const actionRequests: Record<WorkflowRunAction, (id: string) => { unwrap: () => Promise<unknown> }> = {
 		pause: pauseRun,
@@ -183,6 +186,12 @@ export const WorkflowRunListPage: React.FC = () => {
 		setActionError(null);
 		try {
 			const run = await startRun(startDefinitionId).unwrap();
+			const definition = definitionInfo.get(startDefinitionId);
+			notify.success({
+				title: 'Run started',
+				message: definition ? `${definition.name} v${definition.version} started` : 'Workflow run started',
+				link: `/app/workflow-run/${run.id}`,
+			});
 			setStartOpened(false);
 			setStartDefinitionId(null);
 			navigate(`/app/workflow-run/${run.id}`);

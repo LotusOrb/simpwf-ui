@@ -1,0 +1,25 @@
+.item {
+	display: flex;
+	align-items: center;
+	gap: var(--mantine-spacing-sm);
+	padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+	border-radius: var(--mantine-radius-md);
+	color: var(--mantine-color-dark-7);
+	text-decoration: none;
+	transition:
+		background-color 120ms ease,
+		color 120ms ease;
+
+	&:hover {
+		background-color: var(--mantine-color-gray-1);
+	}
+
+	&[aria-current='page'] {
+		background-color: var(--mantine-primary-color-light);
+		color: var(--mantine-primary-color-light-color);
+	}
+}
+
+.icon {
+	flex-shrink: 0;
+}

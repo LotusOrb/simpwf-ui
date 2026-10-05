@@ -6,8 +6,9 @@ import { LuCircleAlert, LuPlus, LuSearchX } from 'react-icons/lu';
 import { Link } from 'react-router';
 
 import { PaginationBar } from '@common/component/PaginationBar';
-import { ViewModeToggle, type ViewMode } from '@common/component/ViewModeToggle';
+import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
+import { useListViewPreference } from '@module/settings/hooks';
 import {
 	WorkflowDefinitionCard,
 	WorkflowDefinitionCardSkeleton,
@@ -30,7 +31,7 @@ import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition
 import classes from './WorkflowDefinitionListPage.module.scss';
 
 export const WorkflowDefinitionListPage: React.FC = () => {
-	const [view, setView] = useState<ViewMode>('card');
+	const [view, setView] = useListViewPreference('workflowDefinition');
 	const [params, setParams] = useWorkflowDefinitionListParams();
 	const { search, sort, startType, page, perPage } = params;
 	const [debouncedSearch] = useDebouncedValue(search, 300);

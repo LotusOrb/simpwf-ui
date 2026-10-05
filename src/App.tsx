@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { Provider } from 'react-redux';
 import { RouterProvider } from 'react-router';
 
@@ -13,6 +14,7 @@ function App() {
 	return (
 		<Provider store={coreStore}>
 			<MantineProvider theme={themeOverride}>
+				<Notifications position="top-right" />
 				<RouterProvider router={routesConfig} />
 			</MantineProvider>
 		</Provider>

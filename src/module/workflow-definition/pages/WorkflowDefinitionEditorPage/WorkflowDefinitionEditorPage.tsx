@@ -14,6 +14,7 @@ import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useLazyGetNodeDefinitionQuery } from '@module/node-definition/hooks';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { useNotify } from '@module/notification/hooks';
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
 import { WorkflowDefinitionDeleteModal } from '@module/workflow-definition/components/WorkflowDefinitionDeleteModal';
 import { WorkflowDefinitionEditorHeader } from '@module/workflow-definition/components/WorkflowDefinitionEditorHeader';
@@ -81,6 +82,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const [fetchNodeDefinition] = useLazyGetNodeDefinitionQuery();
 	const [createDefinition, createState] = useCreateWorkflowDefinitionMutation();
 	const [startRun, startState] = useStartWorkflowRunMutation();
+	const notify = useNotify();
 
 	const [saveError, setSaveError] = useState<WorkflowDefinitionErrorCopy | null>(null);
 	const [startError, setStartError] = useState<string | null>(null);
@@ -174,6 +176,11 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 		}
 
 		dispatch(editorSaved());
+		notify.success({
+			title: 'Workflow saved',
+			message: `${result.data.name} v${result.data.version} saved`,
+			link: `${DEFINITION_ROUTE}/${result.data.id}`,
+		});
 		// Push when editing so "back" returns to the version this one was branched from.
 		allowLeave.current = true;
 		navigate(`${DEFINITION_ROUTE}/${result.data.id}`, { replace: !sourceId });
@@ -191,6 +198,11 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			return;
 		}
 
+		notify.success({
+			title: 'Run started',
+			message: current ? `${current.name} v${current.version} started` : 'Workflow run started',
+			link: `${RUN_ROUTE}/${result.data.id}`,
+		});
 		navigate(`${RUN_ROUTE}/${result.data.id}`);
 	};
 

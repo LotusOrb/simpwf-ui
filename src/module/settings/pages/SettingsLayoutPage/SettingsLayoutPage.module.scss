@@ -1,0 +1,19 @@
+.canvas {
+	background-color: var(--mantine-color-gray-0);
+}
+
+.body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--mantine-spacing-md);
+	align-items: start;
+
+	@media (min-width: 62em) {
+		grid-template-columns: 240px minmax(0, 1fr);
+		gap: var(--mantine-spacing-lg);
+	}
+}
+
+.content {
+	min-width: 0;
+}

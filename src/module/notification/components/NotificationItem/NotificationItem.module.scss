@@ -1,0 +1,46 @@
+.root {
+	position: relative;
+	border-radius: var(--mantine-radius-sm);
+
+	&:hover {
+		background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+
+		.dismiss {
+			opacity: 1;
+		}
+	}
+}
+
+.body {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--mantine-spacing-sm);
+	width: 100%;
+	padding: var(--mantine-spacing-xs) var(--mantine-spacing-xl) var(--mantine-spacing-xs) var(--mantine-spacing-xs);
+}
+
+.text {
+	flex: 1;
+	min-width: 0;
+}
+
+.unreadDot {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: var(--mantine-primary-color-filled);
+}
+
+.dismiss {
+	position: absolute;
+	right: 4px;
+	bottom: 4px;
+	opacity: 0;
+
+	&:focus-visible {
+		opacity: 1;
+	}
+}

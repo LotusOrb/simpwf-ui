@@ -9,6 +9,7 @@ import { useNavigateBack } from '@common/hooks/useNavigateBack';
 
 import { MainLayoutPanel, MainLayoutPanelBar } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
+import { useNotify } from '@module/notification/hooks';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { WorkflowRunDetailHeader } from '@module/workflow-run/components/WorkflowRunDetailHeader';
 import { WorkflowRunGraph } from '@module/workflow-run/components/WorkflowRunGraph';
@@ -64,6 +65,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const [rollbackRun, rollbackState] = useRollbackWorkflowRunMutation();
 	const [provideInput] = useProvideWorkflowRunInputMutation();
 	const [replaceContext] = useReplaceWorkflowRunContextMutation();
+	const notify = useNotify();
 
 	const content = run.definition?.content;
 	const nodesById = useMemo(
@@ -180,9 +182,14 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					detail={detail}
 					context={context}
 					onReplaceContext={(next, reason) =>
-						perform('replace context', () =>
-							replaceContext({ id: detail.id, context: next, reason }).unwrap(),
-						)
+						perform('replace context', async () => {
+							await replaceContext({ id: detail.id, context: next, reason }).unwrap();
+							notify.success({
+								title: 'Run context updated',
+								message: reason ? `Context updated: ${reason}` : 'Run context updated',
+								link: `${RUN_LIST_ROUTE}/${detail.id}`,
+							});
+						})
 					}
 				/>
 			</MainLayoutPanel>
