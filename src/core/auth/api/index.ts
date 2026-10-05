@@ -1,1 +1,1 @@
-export { authApi, useVerifyApiTokenMutation } from './auth.api';
+export { authApi } from './auth.api';
