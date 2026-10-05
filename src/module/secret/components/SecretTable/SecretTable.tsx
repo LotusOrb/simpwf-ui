@@ -5,6 +5,8 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuBraces, LuCheck, LuRefreshCcw, LuTrash2 } from 'react-icons/lu';
 
+import { Can, Permission } from '@core/auth/authorization';
+
 import { secretReference } from '@module/secret/data';
 import type { Secret } from '@module/secret/types/Secret';
 
@@ -98,26 +100,28 @@ export const SecretTable: React.FC<SecretTableProps> = ({ secrets, onRotate, onD
 														</Tooltip>
 													)}
 												</CopyButton>
-												<Tooltip label="Rotate value">
-													<ActionIcon
-														variant="subtle"
-														color="gray"
-														onClick={() => onRotate(secret)}
-														aria-label={`Rotate ${secret.key}`}
-													>
-														<LuRefreshCcw size={16} />
-													</ActionIcon>
-												</Tooltip>
-												<Tooltip label="Delete">
-													<ActionIcon
-														variant="subtle"
-														color="red"
-														onClick={() => onDelete(secret)}
-														aria-label={`Delete ${secret.key}`}
-													>
-														<LuTrash2 size={16} />
-													</ActionIcon>
-												</Tooltip>
+												<Can rule={Permission.SecretsWrite}>
+													<Tooltip label="Rotate value">
+														<ActionIcon
+															variant="subtle"
+															color="gray"
+															onClick={() => onRotate(secret)}
+															aria-label={`Rotate ${secret.key}`}
+														>
+															<LuRefreshCcw size={16} />
+														</ActionIcon>
+													</Tooltip>
+													<Tooltip label="Delete">
+														<ActionIcon
+															variant="subtle"
+															color="red"
+															onClick={() => onDelete(secret)}
+															aria-label={`Delete ${secret.key}`}
+														>
+															<LuTrash2 size={16} />
+														</ActionIcon>
+													</Tooltip>
+												</Can>
 											</Group>
 										</Table.Td>
 									</Table.Tr>
