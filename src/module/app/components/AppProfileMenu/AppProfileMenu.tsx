@@ -4,34 +4,34 @@ import { Avatar, Menu, Text, UnstyledButton } from '@mantine/core';
 import { LuChevronDown, LuLogOut, LuSettings } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
 
-import { coreApi } from '@core/api';
-import { clearToken } from '@core/auth/store';
-import { useCoreDispatch } from '@core/store';
+import { useGetMeQuery, useLogout } from '@core/auth/hooks';
+import { selectIsAnonymous } from '@core/auth/store';
+import type { AuthMe } from '@core/auth/types/AuthMe';
+import { useCoreSelector } from '@core/store';
 
 import classes from './AppProfileMenu.module.scss';
 
 const APP_VERSION_LABEL = __APP_VERSION__ === 'dev' ? 'dev' : `v${__APP_VERSION__}`;
 
-interface AppProfileMenuProps {
-	name?: string;
-	role?: string;
-}
+const describeRole = (me?: AuthMe) => {
+	if (!me) return '';
+	if (me.service) return 'Service account';
+	return me.roles?.length ? me.roles.join(', ') : 'No role';
+};
 
-export const AppProfileMenu: React.FC<AppProfileMenuProps> = ({ name = 'Admin', role = 'Workspace owner' }) => {
+export const AppProfileMenu: React.FC = () => {
 	const navigate = useNavigate();
-	const dispatch = useCoreDispatch();
+	const logout = useLogout();
+	const isAnonymous = useCoreSelector(selectIsAnonymous);
+	const { data: me } = useGetMeQuery(undefined, { skip: isAnonymous });
+	const name = isAnonymous ? 'Guest' : me?.name || me?.email || me?.subject || 'User';
+	const role = isAnonymous ? 'Open access' : describeRole(me);
 	const initials = name
 		.split(' ')
 		.map((part) => part.charAt(0))
 		.join('')
 		.slice(0, 2)
 		.toUpperCase();
-
-	const handleLogout = () => {
-		dispatch(clearToken());
-		dispatch(coreApi.util.resetApiState());
-		navigate('/auth/login', { replace: true });
-	};
 
 	return (
 		<Menu position="bottom-end" offset={6} width={220}>
@@ -65,7 +65,7 @@ export const AppProfileMenu: React.FC<AppProfileMenuProps> = ({ name = 'Admin', 
 				<Menu.Item leftSection={<LuSettings size={16} />} onClick={() => navigate('/app/settings')}>
 					Settings
 				</Menu.Item>
-				<Menu.Item color="red" leftSection={<LuLogOut size={16} />} onClick={handleLogout}>
+				<Menu.Item color="red" leftSection={<LuLogOut size={16} />} onClick={logout}>
 					Logout
 				</Menu.Item>
 				<Menu.Divider />
