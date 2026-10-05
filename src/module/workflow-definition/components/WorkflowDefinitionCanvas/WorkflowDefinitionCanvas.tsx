@@ -17,6 +17,7 @@ import {
 } from '@xyflow/react';
 import { LuMousePointerClick, LuScan } from 'react-icons/lu';
 
+import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { useInsetFitView } from '@common/hooks/useInsetFitView';
@@ -63,6 +64,7 @@ const FIT_VIEW_MARGIN = 48;
 export const WorkflowDefinitionCanvas: React.FC = () => {
 	const dispatch = useCoreDispatch();
 	const addNode = useWorkflowDefinitionEditorAddNode();
+	const canEdit = useCan(Permission.DefinitionsWrite);
 
 	const nodes = useCoreSelector(selectEditorNodes);
 	const starts = useCoreSelector(selectEditorStarts);
@@ -142,6 +144,7 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 	const trail = scopeTrail(nodes, scope);
 
 	const onDrop = (event: React.DragEvent) => {
+		if (!canEdit) return;
 		const raw = event.dataTransfer.getData(PALETTE_DRAG_TYPE);
 		if (!raw) return;
 		event.preventDefault();
@@ -157,18 +160,21 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 				onNodesChange={(changes) => dispatch(nodesChanged(changes))}
 				onEdgesChange={(changes) => dispatch(edgesChanged(changes))}
 				onConnect={(connection) => dispatch(connected(connection))}
+				// View-only keeps selection, panning and group navigation so the definition can still be inspected.
+				nodesDraggable={canEdit}
+				nodesConnectable={canEdit}
 				isValidConnection={(connection) => connection.source !== connection.target}
 				onNodeDoubleClick={(_event, node) => {
 					if (node.type === 'step' && isInlineGroup(node.data.node)) dispatch(scopeEntered(node.id));
 				}}
 				onPaneClick={() => dispatch(nodeSelected(null))}
 				onDragOver={(event) => {
-					if (!event.dataTransfer.types.includes(PALETTE_DRAG_TYPE)) return;
+					if (!canEdit || !event.dataTransfer.types.includes(PALETTE_DRAG_TYPE)) return;
 					event.preventDefault();
 					event.dataTransfer.dropEffect = 'move';
 				}}
 				onDrop={onDrop}
-				deleteKeyCode={['Backspace', 'Delete']}
+				deleteKeyCode={canEdit ? ['Backspace', 'Delete'] : null}
 				onMoveStart={onMoveStart}
 				onMoveEnd={onMoveEnd}
 				minZoom={0.2}
@@ -228,7 +234,7 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 					</Panel>
 				)}
 
-				{visibleNodes.length === 0 && (
+				{visibleNodes.length === 0 && canEdit && (
 					<Panel position="top-center" className={classes.emptyPanel}>
 						<Stack align="center" gap={6} className={classes.empty}>
 							<ThemeIcon size={40} radius="xl" variant="light" color="gray">

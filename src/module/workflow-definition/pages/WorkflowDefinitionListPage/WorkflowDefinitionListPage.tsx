@@ -5,6 +5,8 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { LuCircleAlert, LuPlus, LuSearchX } from 'react-icons/lu';
 import { Link } from 'react-router';
 
+import { Can, Permission, useCan } from '@core/auth/authorization';
+
 import { PaginationBar } from '@common/component/PaginationBar';
 import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
@@ -39,6 +41,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 	const setPage = (next: number) => setParams({ page: next });
 
 	const [historyFor, setHistoryFor] = useState<WorkflowDefinition | null>(null);
+	const canWrite = useCan(Permission.DefinitionsWrite);
 
 	const { by, direction } = sortOrders[sort];
 	const {
@@ -119,7 +122,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 							<WorkflowDefinitionCard
 								key={definition.id}
 								definition={definition}
-								onDelete={deletion.request}
+								onDelete={canWrite ? deletion.request : undefined}
 								onShowVersions={setHistoryFor}
 							/>
 						))}
@@ -127,7 +130,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 				) : (
 					<WorkflowDefinitionTable
 						definitions={result.items}
-						onDelete={deletion.request}
+						onDelete={canWrite ? deletion.request : undefined}
 						onShowVersions={setHistoryFor}
 					/>
 				)}
@@ -147,9 +150,11 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 							Immutable, versioned blueprints your workflow instances run from
 						</Text>
 					</div>
-					<Button component={Link} to="new" leftSection={<LuPlus size={16} />}>
-						New definition
-					</Button>
+					<Can rule={Permission.DefinitionsWrite}>
+						<Button component={Link} to="new" leftSection={<LuPlus size={16} />}>
+							New definition
+						</Button>
+					</Can>
 				</Group>
 
 				<WorkflowDefinitionHero
@@ -189,7 +194,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 			<WorkflowDefinitionVersionHistory
 				definition={historyFor}
 				onClose={() => setHistoryFor(null)}
-				onDelete={deletion.request}
+				onDelete={canWrite ? deletion.request : undefined}
 			/>
 
 			<WorkflowDefinitionDeleteModal
