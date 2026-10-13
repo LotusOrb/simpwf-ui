@@ -39,7 +39,7 @@ export const describeDeleteError = (error: unknown): WorkflowDefinitionErrorCopy
 
 	if (code === 409) {
 		return {
-			title: "This version is still referenced by workflow runs and can't be deleted.",
+			title: "This version is still referenced by workflow runs or schedules and can't be deleted.",
 			detail: joinDetail(message),
 		};
 	}

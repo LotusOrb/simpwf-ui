@@ -1,4 +1,4 @@
-import { LuHouse, LuKeyRound, LuPlay, LuSettings, LuWorkflow } from 'react-icons/lu';
+import { LuCalendarClock, LuHouse, LuKeyRound, LuPlay, LuSettings, LuWorkflow } from 'react-icons/lu';
 
 import { Permission } from '@core/auth/authorization/permission';
 
@@ -26,6 +26,13 @@ export const menuConfig: MenuConfig = {
 			icon: LuPlay,
 			to: '/app/workflow-run',
 			permission: Permission.InstancesRead,
+		},
+		{
+			id: 'schedule',
+			label: 'Schedules',
+			icon: LuCalendarClock,
+			to: '/app/schedule',
+			permission: Permission.SchedulesRead,
 		},
 		{ id: 'secret', label: 'Secrets', icon: LuKeyRound, to: '/app/secret', permission: Permission.SecretsRead },
 	],

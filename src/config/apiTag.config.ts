@@ -5,6 +5,7 @@ export const apiTagConfig = {
 	statistics: 'Statistics',
 	secret: 'Secret',
 	role: 'Role',
+	schedule: 'Schedule',
 	me: 'Me',
 } as const;
 
