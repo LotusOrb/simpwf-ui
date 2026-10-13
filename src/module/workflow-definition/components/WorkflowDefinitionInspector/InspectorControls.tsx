@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 
-import { ActionIcon, Button, Group, Stack, Text, TextInput, type TextInputProps } from '@mantine/core';
+import {
+	ActionIcon,
+	Autocomplete,
+	type AutocompleteProps,
+	Button,
+	type ComboboxItem,
+	Group,
+	Stack,
+	Text,
+	TextInput,
+	type TextInputProps,
+} from '@mantine/core';
 import { LuPlus, LuX } from 'react-icons/lu';
 
 import { CodeEditor } from '@common/component/CodeEditor';
@@ -9,6 +20,8 @@ import { formatJson, isDuration, parseJsonDraft, readJsonField } from '@module/w
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
+
+import { useContextPaths } from './InspectorContextTypes.context';
 
 export const SectionLabel: React.FC<{ children: React.ReactNode; required?: boolean }> = ({ children, required }) => (
 	<Text fz="sm" fw={600} c="dark.6">
@@ -34,6 +47,50 @@ export const DurationInput: React.FC<DurationInputProps> = ({ value, onChange, .
 		error={value && !isDuration(value) ? 'Use a duration like 30s or 5m' : undefined}
 	/>
 );
+
+// An unclosed `{{ partial.path` at the end of a template value.
+const OPEN_TEMPLATE = /\{\{\s*([\w.[\]]*)$/;
+const CONTEXT_OPTION_LIMIT = 50;
+
+interface ContextInputProps extends Omit<AutocompleteProps, 'data' | 'value' | 'onChange' | 'filter' | 'renderOption'> {
+	value: string;
+	onChange: (value: string) => void;
+	/** The value is free text with `{{ path }}` templates rather than a bare context path. */
+	template?: boolean;
+}
+
+/**
+ * Text input completing context paths from the loaded debug run (see `ContextTypesProvider`). A path field suggests
+ * the flattened paths; a template field suggests them after an unclosed `{{` at the end and closes the template.
+ */
+export const ContextInput: React.FC<ContextInputProps> = ({ value, onChange, template, ...props }) => {
+	const paths = useContextPaths();
+
+	if (!template) {
+		return <Autocomplete {...props} data={paths} limit={CONTEXT_OPTION_LIMIT} value={value} onChange={onChange} />;
+	}
+
+	// Autocomplete writes the submitted option's label into the input, so each label is the whole completed value.
+	const open = OPEN_TEMPLATE.exec(value);
+	const search = open?.[1].toLowerCase() ?? '';
+	const data: ComboboxItem[] = open
+		? paths
+				.filter((path) => path.toLowerCase().includes(search))
+				.slice(0, CONTEXT_OPTION_LIMIT)
+				.map((path) => ({ value: path, label: `${value.slice(0, open.index)}{{ ${path} }}` }))
+		: [];
+
+	return (
+		<Autocomplete
+			{...props}
+			data={data}
+			filter={({ options }) => options}
+			renderOption={({ option }) => option.value}
+			value={value}
+			onChange={onChange}
+		/>
+	);
+};
 
 interface JsonFieldProps {
 	node: WorkflowDefinitionEditorNode;
@@ -109,18 +166,15 @@ export const HeadersField: React.FC<HeadersFieldProps> = ({ value, onChange }) =
 							)
 						}
 					/>
-					<TextInput
+					<ContextInput
+						template
 						size="xs"
 						flex={1.4}
 						placeholder="Value or {{ path }}"
 						aria-label="Header value"
 						value={row.value}
-						onChange={(event) =>
-							commit(
-								rows.map((item, i) =>
-									i === index ? { ...item, value: event.currentTarget.value } : item,
-								),
-							)
+						onChange={(headerValue) =>
+							commit(rows.map((item, i) => (i === index ? { ...item, value: headerValue } : item)))
 						}
 					/>
 					<ActionIcon

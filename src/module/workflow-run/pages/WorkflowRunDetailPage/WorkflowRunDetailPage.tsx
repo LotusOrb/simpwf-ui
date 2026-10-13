@@ -16,6 +16,7 @@ import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/W
 import { WorkflowRunDetailHeader } from '@module/workflow-run/components/WorkflowRunDetailHeader';
 import { WorkflowRunGraph } from '@module/workflow-run/components/WorkflowRunGraph';
 import { WorkflowRunInputModal } from '@module/workflow-run/components/WorkflowRunInputModal';
+import { WorkflowRunMigrateModal } from '@module/workflow-run/components/WorkflowRunMigrateModal';
 import { WorkflowRunNodeInspector } from '@module/workflow-run/components/WorkflowRunNodeInspector';
 import { WorkflowRunRollbackModal } from '@module/workflow-run/components/WorkflowRunRollbackModal';
 import { WorkflowRunSidePanel } from '@module/workflow-run/components/WorkflowRunSidePanel';
@@ -56,12 +57,15 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const canControl = useCan(Permission.InstancesControl);
 	const canUpdateContext = useCan(Permission.InstancesUpdateContext);
 	const canDeliverInput = useCan(Permission.InputDeliver);
+	// Picking the target version and start node reads definitions too.
+	const canMigrate = useCan(Permission.InstancesMigrate) && run.canReadDefinition;
 
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 	const [rollbackFrom, setRollbackFrom] = useState<string | null>(null);
 	const [rollbackOpened, setRollbackOpened] = useState(false);
 	const [inputOpened, setInputOpened] = useState(false);
 	const [stopOpened, setStopOpened] = useState(false);
+	const [migrateOpened, setMigrateOpened] = useState(false);
 	const [actionError, setActionError] = useState<string | null>(null);
 
 	const [pauseRun, pauseState] = usePauseWorkflowRunMutation();
@@ -88,7 +92,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		);
 	}
 
-	const { detail, definition, debug, context, clock, timeline, progress, live, setLive } = run;
+	const { detail, definition, debug, context, debugCursor, clock, timeline, progress, live, setLive } = run;
 
 	if (!detail || (canReadDefinition && !definition) || !timeline || !progress) {
 		return (
@@ -130,6 +134,8 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	// A run parked on input reports no current node; the parked node is the one in flight.
 	const currentNodeId = detail.current_node_id ?? detail.pending_input?.node_id ?? null;
 	const currentNode = currentNodeId ? (nodesById.get(currentNodeId) ?? null) : null;
+	const debugCursorNodeId = debugCursor?.is_debug_paused ? debugCursor.node_id || null : null;
+	const debugNode = debugCursorNodeId ? (nodesById.get(debugCursorNodeId) ?? null) : null;
 	const pendingNode = detail.pending_input ? (nodesById.get(detail.pending_input.node_id) ?? null) : null;
 	const rollbackTargets = timeline.entries.filter((entry) => detail.nodes[entry.nodeId]?.rollbackable);
 	const canRollback =
@@ -156,6 +162,8 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					definition={definition ?? null}
 					detail={detail}
 					pendingNode={pendingNode}
+					debugCursor={debugCursor}
+					debugNode={debugNode}
 					onBack={navigateBack}
 					live={live}
 					onLiveChange={setLive}
@@ -182,6 +190,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					onResume={() => perform('resume run', () => resumeRun(detail.id).unwrap())}
 					onRollback={() => openRollback(null)}
 					onStop={() => setStopOpened(true)}
+					onMigrate={canMigrate ? () => setMigrateOpened(true) : undefined}
 				/>
 			</MainLayoutPanel>
 
@@ -210,6 +219,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					debug={selectedDebug}
 					canRollback={canRollback && !!selectedOccurrence?.rollbackable}
 					onRollback={openRollback}
+					debugRunId={debugCursor ? detail.id : null}
 				/>
 			</MainLayoutPanel>
 
@@ -234,6 +244,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 							detail={detail}
 							debug={debug}
 							selectedNodeId={selectedNodeId}
+							debugCursorNodeId={debugCursorNodeId}
 							onSelect={selectNode}
 						/>
 					</ReactFlowProvider>
@@ -283,6 +294,11 @@ export const WorkflowRunDetailPage: React.FC = () => {
 							}).unwrap(),
 						);
 					}}
+				/>
+
+				<WorkflowRunMigrateModal
+					runId={migrateOpened ? detail.id : null}
+					onClose={() => setMigrateOpened(false)}
 				/>
 
 				<Modal opened={stopOpened} onClose={() => setStopOpened(false)} title="Stop this run?" centered>

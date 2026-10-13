@@ -4,6 +4,8 @@ export const apiTagConfig = {
 	workflowRun: 'WorkflowRun',
 	statistics: 'Statistics',
 	secret: 'Secret',
+	role: 'Role',
+	schedule: 'Schedule',
 	me: 'Me',
 } as const;
 

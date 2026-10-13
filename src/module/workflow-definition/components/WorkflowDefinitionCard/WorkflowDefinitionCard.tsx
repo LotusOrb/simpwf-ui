@@ -3,11 +3,12 @@ import React from 'react';
 import { ActionIcon, Badge, Card, Group, Menu, Skeleton, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { LuCopy, LuEllipsisVertical, LuHistory, LuTrash2 } from 'react-icons/lu';
+import { LuCalendarClock, LuCopy, LuEllipsisVertical, LuHistory, LuTrash2 } from 'react-icons/lu';
 import { Link } from 'react-router';
 
 import { Can, Permission } from '@core/auth/authorization';
 
+import { scheduleCreateLink } from '@module/schedule/data';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
 import { countNodes, DEFINITION_ROUTE, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
@@ -77,6 +78,15 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 								leftSection={<LuCopy size={14} />}
 							>
 								Duplicate
+							</Menu.Item>
+						</Can>
+						<Can rule={Permission.SchedulesWrite}>
+							<Menu.Item
+								component={Link}
+								to={scheduleCreateLink(definition.id)}
+								leftSection={<LuCalendarClock size={14} />}
+							>
+								Create schedule
 							</Menu.Item>
 						</Can>
 						{onDelete && (

@@ -4,6 +4,7 @@ import { ActionIcon, Alert, Badge, Button, Group, Loader, Menu, rem, Text, Title
 import {
 	LuActivity,
 	LuArrowLeft,
+	LuCalendarClock,
 	LuCopy,
 	LuEllipsisVertical,
 	LuHistory,
@@ -13,11 +14,13 @@ import {
 	LuSave,
 	LuTrash2,
 } from 'react-icons/lu';
+import { Link } from 'react-router';
 
 import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreSelector } from '@core/store';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
+import { scheduleCreateLink } from '@module/schedule/data';
 import type { WorkflowDefinitionErrorCopy } from '@module/workflow-definition/data';
 import {
 	selectEditorDirty,
@@ -36,7 +39,6 @@ interface WorkflowDefinitionEditorHeaderProps {
 	/** The newest version of the lineage, when known. */
 	latest: WorkflowDefinition | undefined;
 	ready: boolean;
-	startsWithInput: boolean;
 	saving: boolean;
 	starting: boolean;
 	saveError: WorkflowDefinitionErrorCopy | null;
@@ -58,7 +60,6 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 	current,
 	latest,
 	ready,
-	startsWithInput,
 	saving,
 	starting,
 	saveError,
@@ -79,6 +80,7 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 	const canEdit = useCan(Permission.DefinitionsWrite);
 	const canStart = useCan(Permission.InstancesCreate);
 	const canViewRuns = useCan(Permission.InstancesRead);
+	const canSchedule = useCan(Permission.SchedulesWrite);
 	// Keyed by version id so the notice comes back when another version is opened.
 	const [dismissedOutdated, setDismissedOutdated] = useState<string | null>(null);
 
@@ -194,13 +196,13 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								</ActionIcon>
 							</Menu.Target>
 							<Menu.Dropdown>
-								{startsWithInput && canStart && (
+								{canStart && (
 									<Menu.Item
 										leftSection={starting ? <Loader size={14} /> : <LuPlay size={14} />}
 										disabled={!ready || dirty || starting}
 										onClick={onStart}
 									>
-										Start workflow
+										Start run…
 										{dirty && (
 											<Text fz="xs" c="dimmed">
 												Save your changes first
@@ -214,6 +216,21 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								{canViewRuns && (
 									<Menu.Item leftSection={<LuActivity size={14} />} onClick={onOpenRuns}>
 										Workflow Run
+									</Menu.Item>
+								)}
+								{canSchedule && (
+									<Menu.Item
+										component={Link}
+										to={scheduleCreateLink(current.id)}
+										leftSection={<LuCalendarClock size={14} />}
+										disabled={dirty}
+									>
+										Create schedule
+										{dirty && (
+											<Text fz="xs" c="dimmed">
+												Save your changes first
+											</Text>
+										)}
 									</Menu.Item>
 								)}
 								{canEdit && (

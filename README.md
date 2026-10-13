@@ -31,6 +31,7 @@ Env:
 
 - `SIMPWF_UI_NAME` - app name, default `Simpwf-ui`
 - `SIMPWF_UI_API` - SimpWF API url, default `http://localhost:9999`
+- `SIMPWF_UI_IDP_ADMIN_URL` - optional, identity provider admin page linked from Settings → Roles
 
 The backend doesn't send CORS headers, so you probably need to put both behind same reverse proxy.
 

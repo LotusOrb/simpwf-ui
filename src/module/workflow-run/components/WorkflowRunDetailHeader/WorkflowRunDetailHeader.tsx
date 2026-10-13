@@ -1,17 +1,21 @@
 import React from 'react';
 
-import { ActionIcon, Alert, Badge, Button, Group, Switch, Text, Title, Tooltip } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Badge, Button, Group, Switch, Text, Title, Tooltip } from '@mantine/core';
 import {
 	LuArrowLeft,
+	LuBug,
+	LuGitBranchPlus,
 	LuHourglass,
 	LuPanelLeft,
 	LuPanelRight,
 	LuPause,
 	LuPlay,
 	LuSquare,
+	LuStepForward,
 	LuTriangleAlert,
 	LuUndo2,
 } from 'react-icons/lu';
+import { Link } from 'react-router';
 
 import { Permission, useCan } from '@core/auth/authorization';
 
@@ -19,6 +23,7 @@ import { useAppLayoutPanel } from '@module/app/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatWaitingReason, getAllowedActions } from '@module/workflow-run/data';
+import type { WorkflowRunDebugContext } from '@module/workflow-run/types/WorkflowRunDebugContext';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
@@ -31,6 +36,10 @@ interface WorkflowRunDetailHeaderProps {
 	detail: WorkflowRunDetail;
 	/** The node a run parked on input is waiting at. */
 	pendingNode: WorkflowDefinitionNode | null;
+	/** Where a debug run is paused; null for regular runs or when the engine hides it. */
+	debugCursor: WorkflowRunDebugContext | null;
+	/** The node at the debug cursor, when it resolves. */
+	debugNode: WorkflowDefinitionNode | null;
 	onBack: () => void;
 	live: boolean;
 	onLiveChange: (live: boolean) => void;
@@ -46,12 +55,16 @@ interface WorkflowRunDetailHeaderProps {
 	onResume: () => void;
 	onRollback: () => void;
 	onStop: () => void;
+	/** Omitted when the caller cannot migrate runs. */
+	onMigrate?: () => void;
 }
 
 export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = ({
 	definition,
 	detail,
 	pendingNode,
+	debugCursor,
+	debugNode,
 	onBack,
 	live,
 	onLiveChange,
@@ -65,10 +78,11 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	onResume,
 	onRollback,
 	onStop,
+	onMigrate,
 }) => {
 	const panel = useAppLayoutPanel();
 	const canControl = useCan(Permission.InstancesControl);
-	const actions = canControl ? getAllowedActions(detail) : [];
+	const actions = getAllowedActions(detail).filter((action) => (action === 'migrate' ? !!onMigrate : canControl));
 	const title = definition?.name ?? 'Workflow run';
 	const busy = pending.pause || pending.resume || pending.stop || pending.rollback;
 
@@ -92,12 +106,39 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 								</Badge>
 							)}
 							<WorkflowRunStatusBadge run={detail} />
+							{detail.debug && (
+								<Badge size="sm" color="grape" variant="light" leftSection={<LuBug size={11} />}>
+									{debugCursor?.is_debug_paused
+										? `Debug · paused at ${debugNode?.name ?? (debugCursor.node_id || 'start')}`
+										: 'Debug'}
+								</Badge>
+							)}
 						</Group>
 						<Group gap="sm" wrap="nowrap">
 							<WorkflowRunIdText id={detail.id} />
 							<Text fz="xs" c="dimmed">
 								started by {detail.created_by}
 							</Text>
+							{detail.migrated_from && (
+								<Anchor
+									component={Link}
+									to={`/app/workflow-run/${detail.migrated_from}`}
+									fz="xs"
+									title={detail.migrated_from}
+								>
+									Migrated from {detail.migrated_from.slice(0, 8)}
+								</Anchor>
+							)}
+							{detail.superseded_by && (
+								<Anchor
+									component={Link}
+									to={`/app/workflow-run/${detail.superseded_by}`}
+									fz="xs"
+									title={detail.superseded_by}
+								>
+									Superseded by {detail.superseded_by.slice(0, 8)}
+								</Anchor>
+							)}
 						</Group>
 					</div>
 				</Group>
@@ -127,18 +168,34 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 							Pause
 						</Button>
 					)}
-					{actions.includes('resume') && (
-						<Button
-							size="sm"
-							variant="default"
-							leftSection={<LuPlay size={15} />}
-							loading={pending.resume}
-							disabled={busy}
-							onClick={onResume}
-						>
-							Resume
-						</Button>
-					)}
+					{actions.includes('resume') &&
+						(detail.debug ? (
+							// Every resume of a debug run executes exactly one node.
+							<Tooltip label="Run the next node, then pause again">
+								<Button
+									size="sm"
+									variant="light"
+									color="grape"
+									leftSection={<LuStepForward size={15} />}
+									loading={pending.resume}
+									disabled={busy}
+									onClick={onResume}
+								>
+									Step
+								</Button>
+							</Tooltip>
+						) : (
+							<Button
+								size="sm"
+								variant="default"
+								leftSection={<LuPlay size={15} />}
+								loading={pending.resume}
+								disabled={busy}
+								onClick={onResume}
+							>
+								Resume
+							</Button>
+						))}
 					{canRollback && (
 						<Button
 							size="sm"
@@ -150,6 +207,17 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 							onClick={onRollback}
 						>
 							Roll back
+						</Button>
+					)}
+					{actions.includes('migrate') && (
+						<Button
+							size="sm"
+							variant="default"
+							leftSection={<LuGitBranchPlus size={15} />}
+							disabled={busy}
+							onClick={onMigrate}
+						>
+							Migrate
 						</Button>
 					)}
 					{actions.includes('stop') && (

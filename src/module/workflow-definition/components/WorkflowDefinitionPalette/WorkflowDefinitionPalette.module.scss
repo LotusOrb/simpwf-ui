@@ -77,3 +77,20 @@
 	flex-shrink: 0;
 	color: var(--mantine-color-gray-5);
 }
+
+.entry {
+	position: relative;
+
+	&:hover .libraryLink,
+	.libraryLink:focus-visible {
+		opacity: 1;
+	}
+}
+
+.libraryLink {
+	position: absolute;
+	top: 6px;
+	right: 28px;
+	opacity: 0;
+	transition: opacity 120ms ease;
+}

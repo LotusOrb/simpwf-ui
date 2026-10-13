@@ -2,17 +2,18 @@ import React from 'react';
 
 import { Badge, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { LuRefreshCw } from 'react-icons/lu';
+import { LuBug, LuRefreshCw } from 'react-icons/lu';
 
-import { nodeTypeMeta } from '@module/workflow-definition/data';
+import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
 import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
 
 import classes from './WorkflowRunGraph.module.scss';
 import type { WorkflowRunStepFlowNode } from './WorkflowRunGraph.types';
 
 export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> = ({ data, selected }) => {
-	const { node, occurrence, debug, current } = data;
-	const typeMeta = nodeTypeMeta[node.type];
+	const { node, occurrence, debug, current, debugCursor } = data;
+	// Parallel and custom types have no editor meta yet; they get the library's generic look.
+	const typeMeta = nodeDefinitionTypeMeta(node.type);
 	const status = occurrence?.status ?? 'pending';
 	const statusMeta = nodeRunStatusMeta[status];
 	const retried = (debug?.attempt_count ?? 1) > 1;
@@ -22,6 +23,7 @@ export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> 
 			className={classes.node}
 			data-status={status}
 			data-current={current || undefined}
+			data-debug-cursor={debugCursor || undefined}
 			data-selected={selected || undefined}
 		>
 			<Handle type="target" position={Position.Left} className={classes.handle} />
@@ -56,6 +58,11 @@ export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> 
 							{debug?.attempt_count}
 						</span>
 					</Tooltip>
+				)}
+				{debugCursor && (
+					<Badge size="xs" variant="light" color="grape" leftSection={<LuBug size={9} />}>
+						Paused here
+					</Badge>
 				)}
 				<Text fz={11} c="dimmed" className={classes.duration}>
 					{formatDuration(debug?.duration_ms ?? null)}

@@ -9,6 +9,11 @@ export interface NodeDefinition {
 	lineage_id: string;
 	type: WorkflowDefinitionNodeType;
 	content: Omit<WorkflowDefinitionNode, 'id'>;
+	/**
+	 * JSON Schema (draft 2020-12) of the node object for this type, attached by the engine on read; null when the
+	 * type is unknown to the running build. It reflects the current engine, not the one the version was authored on.
+	 */
+	schema?: Record<string, unknown> | null;
 	created_by: string;
 	updated_by: string;
 	created_at: string;

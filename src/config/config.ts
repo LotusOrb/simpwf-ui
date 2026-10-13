@@ -1,6 +1,8 @@
 export type ConfigValue = {
 	SIMPWF_UI_NAME: string;
 	SIMPWF_UI_API: string;
+	/** Optional link to where role assignments are managed in the identity provider. */
+	SIMPWF_UI_IDP_ADMIN_URL: string;
 };
 
 export class Config {
@@ -11,6 +13,7 @@ export class Config {
 	private config: ConfigValue = {
 		SIMPWF_UI_NAME: '',
 		SIMPWF_UI_API: '',
+		SIMPWF_UI_IDP_ADMIN_URL: '',
 	};
 
 	public async fetchConfigFile() {

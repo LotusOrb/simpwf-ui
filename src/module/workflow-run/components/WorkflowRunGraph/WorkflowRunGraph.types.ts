@@ -9,6 +9,8 @@ export interface WorkflowRunGraphNodeData extends Record<string, unknown> {
 	occurrence: WorkflowRunNodeOccurrence | null;
 	debug: WorkflowRunNodeDebug | null;
 	current: boolean;
+	/** Where a debug run is paused. */
+	debugCursor: boolean;
 }
 
 export interface WorkflowRunGraphGroupData extends Record<string, unknown> {

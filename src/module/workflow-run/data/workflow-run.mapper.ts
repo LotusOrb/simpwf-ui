@@ -30,6 +30,8 @@ export interface WorkflowRunStatusResponse extends WorkflowRun {
 	counters: Record<string, number> | null;
 	nodes?: Record<string, ApiNodeOccurrence>;
 	pending_input?: WorkflowRunPendingInput | null;
+	migrated_from?: string | null;
+	superseded_by?: string | null;
 }
 
 export interface WorkflowRunNodeDebugResponse {
@@ -89,6 +91,8 @@ export const toRunDetail = (res: WorkflowRunStatusResponse): WorkflowRunDetail =
 		...res,
 		counters: res.counters ?? {},
 		pending_input: res.pending_input ?? null,
+		migrated_from: res.migrated_from ?? null,
+		superseded_by: res.superseded_by ?? null,
 		nodes,
 	};
 };

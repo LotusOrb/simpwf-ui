@@ -45,7 +45,8 @@ import type { WorkflowDefinitionPollerHTTPConfig } from '@module/workflow-defini
 import type { WorkflowDefinitionPollerRabbitMQConfig } from '@module/workflow-definition/types/WorkflowDefinitionPollerRabbitMQConfig';
 import type { WorkflowDefinitionPollerRedisConfig } from '@module/workflow-definition/types/WorkflowDefinitionPollerRedisConfig';
 
-import { DurationInput, HeadersField, JsonField, SectionLabel } from './InspectorControls';
+import { useContextTypes } from './InspectorContextTypes.context';
+import { ContextInput, DurationInput, HeadersField, JsonField, SectionLabel } from './InspectorControls';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 const selectIcon = <LuChevronsUpDown size={14} />;
@@ -59,11 +60,13 @@ const contextPathError = (value: string | undefined) =>
 
 const ScriptFields: React.FC<FieldsProps> = ({ node }) => {
 	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
+	const contextTypes = useContextTypes();
 	const { config } = node;
 
 	return (
 		<>
 			<CodeEditor
+				extraLib={contextTypes}
 				label={<SectionLabel required>Script</SectionLabel>}
 				description="Mutate context and return a value. The return value is stored at the output property."
 				height={200}
@@ -71,13 +74,13 @@ const ScriptFields: React.FC<FieldsProps> = ({ node }) => {
 				value={config.script ?? ''}
 				onChange={(script) => patch({ script })}
 			/>
-			<TextInput
+			<ContextInput
 				label={<SectionLabel>Input data</SectionLabel>}
 				description="Context path exposed to the script as `input`"
 				inputWrapperOrder={['label', 'input', 'description', 'error']}
 				placeholder="order.items"
 				value={config.input_data ?? ''}
-				onChange={(event) => patch({ input_data: event.currentTarget.value || undefined })}
+				onChange={(input_data) => patch({ input_data: input_data || undefined })}
 				error={contextPathError(config.input_data)}
 			/>
 		</>
@@ -89,6 +92,7 @@ const ConditionsFields: React.FC<FieldsProps> = ({ node }) => {
 	const nodes = useCoreSelector(selectEditorNodes);
 	const edges = useCoreSelector(selectEditorEdges);
 	const readOnly = !!node.config.node_definition_id;
+	const contextTypes = useContextTypes();
 
 	const addBranch = () => {
 		const [key] = nextBranchKeys(nodes, node.parentId, 1);
@@ -149,6 +153,7 @@ const ConditionsFields: React.FC<FieldsProps> = ({ node }) => {
 						</Group>
 						<CodeEditor
 							height={80}
+							extraLib={contextTypes}
 							readOnly={readOnly}
 							placeholder="return context.amount > 1000;"
 							value={branch.condition}
@@ -274,13 +279,13 @@ const OutputFields: React.FC<FieldsProps> = ({ node }) => {
 				rightSection={selectIcon}
 				allowDeselect={false}
 			/>
-			<TextInput
+			<ContextInput
 				label={<SectionLabel required>Context path</SectionLabel>}
 				description="The value at this path is published as-is"
 				inputWrapperOrder={['label', 'input', 'description', 'error']}
 				placeholder="result.summary"
 				value={config.context_path ?? ''}
-				onChange={(event) => patch({ context_path: event.currentTarget.value })}
+				onChange={(context_path) => patch({ context_path })}
 				error={contextPathError(config.context_path)}
 			/>
 		</>
@@ -302,12 +307,13 @@ const MethodUrlFields: React.FC<{
 			rightSection={selectIcon}
 			allowDeselect={false}
 		/>
-		<TextInput
+		<ContextInput
+			template
 			flex={1}
 			label={<SectionLabel required>URL</SectionLabel>}
 			placeholder="https://api.example.com/{{ order.id }}"
 			value={url}
-			onChange={(event) => onChange({ url: event.currentTarget.value })}
+			onChange={(value) => onChange({ url: value })}
 		/>
 	</Group>
 );
@@ -496,19 +502,21 @@ const PollerFields: React.FC<FieldsProps> = ({ node }) => {
 						]}
 					/>
 					{config.redis.method === 'SUB' ? (
-						<TextInput
+						<ContextInput
+							template
 							label={<SectionLabel required>Channel</SectionLabel>}
 							placeholder="events:{{ workflow_instance_id }}"
 							value={config.redis.channel ?? ''}
-							onChange={(event) => setRedis({ channel: event.currentTarget.value })}
+							onChange={(channel) => setRedis({ channel })}
 						/>
 					) : (
 						<>
-							<TextInput
+							<ContextInput
+								template
 								label={<SectionLabel required>Key</SectionLabel>}
 								placeholder="job:{{ job.id }}:status"
 								value={config.redis.key ?? ''}
-								onChange={(event) => setRedis({ key: event.currentTarget.value })}
+								onChange={(key) => setRedis({ key })}
 							/>
 							<Group grow gap="xs">
 								<DurationInput

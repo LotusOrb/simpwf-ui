@@ -9,8 +9,12 @@ import {
 	type WorkflowRunStatusResponse,
 } from '@module/workflow-run/data/workflow-run.mapper';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
+import type { WorkflowRunDebugContext } from '@module/workflow-run/types/WorkflowRunDebugContext';
+import type { WorkflowRunDebugContextQuery } from '@module/workflow-run/types/WorkflowRunDebugContextQuery';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 import type { WorkflowRunList } from '@module/workflow-run/types/WorkflowRunList';
+import type { WorkflowRunMigratePayload } from '@module/workflow-run/types/WorkflowRunMigratePayload';
+import type { WorkflowRunMigrateResult } from '@module/workflow-run/types/WorkflowRunMigrateResult';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
 import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
@@ -81,6 +85,21 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			providesTags: (_result, _error, { id }) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
 
+		/** Debug runs only: the engine answers 409 for a run started without `debug`. */
+		getWorkflowRunDebugContext: build.query<WorkflowRunDebugContext, WorkflowRunDebugContextQuery>({
+			query: ({ id, nodeId, attempt }) => ({
+				method: 'get',
+				url: `${RESOURCE}/${id}/debug/context`,
+				qParam: {
+					filter: {
+						...(nodeId ? { node_id: { op: '_eq', value: nodeId } } : {}),
+						...(attempt ? { attempt: { op: '_eq', value: attempt } } : {}),
+					},
+				},
+			}),
+			providesTags: (_result, _error, { id }) => [{ type: apiTagConfig.workflowRun, id }],
+		}),
+
 		getWorkflowRunContext: build.query<Record<string, unknown>, string>({
 			query: (id) => ({ method: 'get', url: `${RESOURCE}/${id}/context` }),
 			transformResponse: (res: { id: string; context: Record<string, unknown> | null }) => res.context ?? {},
@@ -124,6 +143,16 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			invalidatesTags: (_result, _error, { id }) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
 
+		/** Starts a replacement run on a newer definition and stops the source in the same transaction. */
+		migrateWorkflowRun: build.mutation<WorkflowRunMigrateResult, WorkflowRunMigratePayload>({
+			query: ({ id, ...body }) => ({ method: 'post', url: `${RESOURCE}/${id}/migrate`, body }),
+			invalidatesTags: (result, _error, { id }) => [
+				{ type: apiTagConfig.workflowRun, id },
+				{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID },
+				...(result ? [{ type: apiTagConfig.workflowRun, id: result.instance.id }] : []),
+			],
+		}),
+
 		countWorkflowRunsByStatus: build.query<Record<WorkflowRunStatus | 'all', number>, WorkflowRunQuery>({
 			query: (param) => ({ method: 'get', url: `${RESOURCE}/status-counts`, qParam: param }),
 			providesTags: [{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID }],
@@ -144,11 +173,14 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			invalidatesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
 
-		startWorkflowRun: build.mutation<Pick<WorkflowRun, 'id' | 'status'>, string>({
-			query: (workflowDefinitionId) => ({
+		startWorkflowRun: build.mutation<
+			Pick<WorkflowRun, 'id' | 'status'>,
+			{ workflowDefinitionId: string; debug?: boolean }
+		>({
+			query: ({ workflowDefinitionId, debug }) => ({
 				method: 'post',
 				url: RESOURCE,
-				body: { workflow_definition_id: workflowDefinitionId },
+				body: { workflow_definition_id: workflowDefinitionId, ...(debug ? { debug: true } : {}) },
 			}),
 			invalidatesTags: [{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID }],
 		}),
