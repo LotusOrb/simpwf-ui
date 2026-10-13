@@ -1,0 +1,1 @@
+export { MyAccessPage } from './MyAccessPage';

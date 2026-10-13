@@ -1,0 +1,37 @@
+.root {
+	overflow: hidden;
+}
+
+.head {
+	background-color: var(--mantine-color-gray-0);
+
+	th {
+		font-size: var(--mantine-font-size-xs);
+		font-weight: 600;
+		color: var(--mantine-color-gray-7);
+		white-space: nowrap;
+	}
+}
+
+.group td {
+	background-color: var(--mantine-color-gray-0);
+	font-size: var(--mantine-font-size-xs);
+	font-weight: 600;
+	color: var(--mantine-color-gray-7);
+	text-transform: uppercase;
+}
+
+.roleButton {
+	font-size: var(--mantine-font-size-xs);
+	font-weight: 600;
+	color: var(--mantine-primary-color-filled);
+	white-space: nowrap;
+
+	&:hover {
+		text-decoration: underline;
+	}
+}
+
+.cell {
+	text-align: center;
+}

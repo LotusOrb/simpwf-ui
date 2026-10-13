@@ -3,15 +3,20 @@ import React from 'react';
 import { Paper, Stack, Text } from '@mantine/core';
 import { NavLink } from 'react-router';
 
+import { useAuthorization } from '@core/auth/authorization';
+
 import { SETTINGS_MENU } from '@module/settings/data';
 
 import classes from './SettingsMenu.module.scss';
 
 export const SettingsMenu: React.FC = () => {
+	const { authorization } = useAuthorization();
+	const items = SETTINGS_MENU.filter((item) => !item.permission || authorization.evaluate(item.permission));
+
 	return (
 		<Paper component="nav" aria-label="Settings" withBorder radius="md" p={6}>
 			<Stack gap={2}>
-				{SETTINGS_MENU.map((item) => (
+				{items.map((item) => (
 					<NavLink key={item.id} to={item.to} className={classes.item}>
 						<item.icon size={18} className={classes.icon} aria-hidden />
 						<div>
