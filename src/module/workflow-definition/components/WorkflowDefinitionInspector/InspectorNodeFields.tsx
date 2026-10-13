@@ -46,7 +46,7 @@ import type { WorkflowDefinitionPollerRabbitMQConfig } from '@module/workflow-de
 import type { WorkflowDefinitionPollerRedisConfig } from '@module/workflow-definition/types/WorkflowDefinitionPollerRedisConfig';
 
 import { useContextTypes } from './InspectorContextTypes.context';
-import { DurationInput, HeadersField, JsonField, SectionLabel } from './InspectorControls';
+import { ContextInput, DurationInput, HeadersField, JsonField, SectionLabel } from './InspectorControls';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
 const selectIcon = <LuChevronsUpDown size={14} />;
@@ -74,13 +74,13 @@ const ScriptFields: React.FC<FieldsProps> = ({ node }) => {
 				value={config.script ?? ''}
 				onChange={(script) => patch({ script })}
 			/>
-			<TextInput
+			<ContextInput
 				label={<SectionLabel>Input data</SectionLabel>}
 				description="Context path exposed to the script as `input`"
 				inputWrapperOrder={['label', 'input', 'description', 'error']}
 				placeholder="order.items"
 				value={config.input_data ?? ''}
-				onChange={(event) => patch({ input_data: event.currentTarget.value || undefined })}
+				onChange={(input_data) => patch({ input_data: input_data || undefined })}
 				error={contextPathError(config.input_data)}
 			/>
 		</>
@@ -279,13 +279,13 @@ const OutputFields: React.FC<FieldsProps> = ({ node }) => {
 				rightSection={selectIcon}
 				allowDeselect={false}
 			/>
-			<TextInput
+			<ContextInput
 				label={<SectionLabel required>Context path</SectionLabel>}
 				description="The value at this path is published as-is"
 				inputWrapperOrder={['label', 'input', 'description', 'error']}
 				placeholder="result.summary"
 				value={config.context_path ?? ''}
-				onChange={(event) => patch({ context_path: event.currentTarget.value })}
+				onChange={(context_path) => patch({ context_path })}
 				error={contextPathError(config.context_path)}
 			/>
 		</>
@@ -307,12 +307,13 @@ const MethodUrlFields: React.FC<{
 			rightSection={selectIcon}
 			allowDeselect={false}
 		/>
-		<TextInput
+		<ContextInput
+			template
 			flex={1}
 			label={<SectionLabel required>URL</SectionLabel>}
 			placeholder="https://api.example.com/{{ order.id }}"
 			value={url}
-			onChange={(event) => onChange({ url: event.currentTarget.value })}
+			onChange={(value) => onChange({ url: value })}
 		/>
 	</Group>
 );
@@ -501,19 +502,21 @@ const PollerFields: React.FC<FieldsProps> = ({ node }) => {
 						]}
 					/>
 					{config.redis.method === 'SUB' ? (
-						<TextInput
+						<ContextInput
+							template
 							label={<SectionLabel required>Channel</SectionLabel>}
 							placeholder="events:{{ workflow_instance_id }}"
 							value={config.redis.channel ?? ''}
-							onChange={(event) => setRedis({ channel: event.currentTarget.value })}
+							onChange={(channel) => setRedis({ channel })}
 						/>
 					) : (
 						<>
-							<TextInput
+							<ContextInput
+								template
 								label={<SectionLabel required>Key</SectionLabel>}
 								placeholder="job:{{ job.id }}:status"
 								value={config.redis.key ?? ''}
-								onChange={(event) => setRedis({ key: event.currentTarget.value })}
+								onChange={(key) => setRedis({ key })}
 							/>
 							<Group grow gap="xs">
 								<DurationInput
