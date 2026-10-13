@@ -9,6 +9,7 @@ export const Permission = {
 	InstancesUpdateContext: 'instances:update-context',
 	InputDeliver: 'input:deliver',
 	InstancesControl: 'instances:control',
+	InstancesMigrate: 'instances:migrate',
 	StatisticsRead: 'statistics:read',
 	RolesRead: 'roles:read',
 	SchedulesRead: 'schedules:read',
