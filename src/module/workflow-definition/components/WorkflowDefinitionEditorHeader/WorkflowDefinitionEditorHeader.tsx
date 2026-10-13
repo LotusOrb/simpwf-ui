@@ -39,7 +39,6 @@ interface WorkflowDefinitionEditorHeaderProps {
 	/** The newest version of the lineage, when known. */
 	latest: WorkflowDefinition | undefined;
 	ready: boolean;
-	startsWithInput: boolean;
 	saving: boolean;
 	starting: boolean;
 	saveError: WorkflowDefinitionErrorCopy | null;
@@ -61,7 +60,6 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 	current,
 	latest,
 	ready,
-	startsWithInput,
 	saving,
 	starting,
 	saveError,
@@ -198,13 +196,13 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 								</ActionIcon>
 							</Menu.Target>
 							<Menu.Dropdown>
-								{startsWithInput && canStart && (
+								{canStart && (
 									<Menu.Item
 										leftSection={starting ? <Loader size={14} /> : <LuPlay size={14} />}
 										disabled={!ready || dirty || starting}
 										onClick={onStart}
 									>
-										Start workflow
+										Start run…
 										{dirty && (
 											<Text fz="xs" c="dimmed">
 												Save your changes first

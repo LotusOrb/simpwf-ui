@@ -45,6 +45,7 @@ import type { WorkflowDefinitionPollerHTTPConfig } from '@module/workflow-defini
 import type { WorkflowDefinitionPollerRabbitMQConfig } from '@module/workflow-definition/types/WorkflowDefinitionPollerRabbitMQConfig';
 import type { WorkflowDefinitionPollerRedisConfig } from '@module/workflow-definition/types/WorkflowDefinitionPollerRedisConfig';
 
+import { useContextTypes } from './InspectorContextTypes.context';
 import { DurationInput, HeadersField, JsonField, SectionLabel } from './InspectorControls';
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'];
@@ -59,11 +60,13 @@ const contextPathError = (value: string | undefined) =>
 
 const ScriptFields: React.FC<FieldsProps> = ({ node }) => {
 	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
+	const contextTypes = useContextTypes();
 	const { config } = node;
 
 	return (
 		<>
 			<CodeEditor
+				extraLib={contextTypes}
 				label={<SectionLabel required>Script</SectionLabel>}
 				description="Mutate context and return a value. The return value is stored at the output property."
 				height={200}
@@ -89,6 +92,7 @@ const ConditionsFields: React.FC<FieldsProps> = ({ node }) => {
 	const nodes = useCoreSelector(selectEditorNodes);
 	const edges = useCoreSelector(selectEditorEdges);
 	const readOnly = !!node.config.node_definition_id;
+	const contextTypes = useContextTypes();
 
 	const addBranch = () => {
 		const [key] = nextBranchKeys(nodes, node.parentId, 1);
@@ -149,6 +153,7 @@ const ConditionsFields: React.FC<FieldsProps> = ({ node }) => {
 						</Group>
 						<CodeEditor
 							height={80}
+							extraLib={contextTypes}
 							readOnly={readOnly}
 							placeholder="return context.amount > 1000;"
 							value={branch.condition}

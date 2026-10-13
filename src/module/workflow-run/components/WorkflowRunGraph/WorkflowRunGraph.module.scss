@@ -99,6 +99,11 @@
 		box-shadow: 0 0 0 3px var(--mantine-color-yellow-1);
 	}
 
+	&[data-debug-cursor] {
+		border-color: var(--mantine-color-grape-6);
+		box-shadow: 0 0 0 3px var(--mantine-color-grape-2);
+	}
+
 	&[data-selected] {
 		border-color: var(--mantine-color-blue-5);
 		box-shadow: 0 0 0 2px var(--mantine-color-blue-4);

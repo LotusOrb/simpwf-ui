@@ -8,6 +8,8 @@ export const {
 	useLazyGetWorkflowRunQuery,
 	useGetWorkflowRunNodeDebugsQuery,
 	useGetWorkflowRunContextQuery,
+	useGetWorkflowRunDebugContextQuery,
+	useLazyGetWorkflowRunDebugContextQuery,
 	useReplaceWorkflowRunContextMutation,
 	useProvideWorkflowRunInputMutation,
 	useRollbackWorkflowRunMutation,

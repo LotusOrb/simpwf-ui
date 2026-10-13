@@ -23,12 +23,12 @@ import { WorkflowDefinitionInspector } from '@module/workflow-definition/compone
 import { WorkflowDefinitionIssuesPanel } from '@module/workflow-definition/components/WorkflowDefinitionIssuesPanel';
 import { WorkflowDefinitionPalette } from '@module/workflow-definition/components/WorkflowDefinitionPalette';
 import { WorkflowDefinitionRunHistory } from '@module/workflow-definition/components/WorkflowDefinitionRunHistory';
+import { WorkflowDefinitionStartModal } from '@module/workflow-definition/components/WorkflowDefinitionStartModal';
 import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
 import {
 	collectReferenceIds,
 	DEFINITION_ROUTE,
 	describeSaveError,
-	getStartNode,
 	toEditorDocument,
 	type WorkflowDefinitionErrorCopy,
 } from '@module/workflow-definition/data';
@@ -92,6 +92,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const [historyOpened, setHistoryOpened] = useState(false);
 	const [runsOpened, setRunsOpened] = useState(false);
 	const [discardOpened, setDiscardOpened] = useState(false);
+	const [startOpened, setStartOpened] = useState(false);
 	const allowLeave = useRef(false);
 
 	const leave = (to: string) => {
@@ -112,7 +113,6 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 
 	const routeKey = id ?? (duplicateOf ? `new:${duplicateOf}` : 'new');
 	const ready = loadedKey === routeKey;
-	const startsWithInput = !!current && getStartNode(current.content)?.type === 'input';
 
 	// Versions are listed newest first, so the head of the list is the lineage's latest.
 	const latest = versions.currentData?.items[0];
@@ -190,11 +190,12 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 		allowLeave.current = false;
 	};
 
-	const start = async () => {
+	const start = async (debug: boolean) => {
 		if (!id) return;
 		setStartError(null);
 
-		const result = await startRun(id);
+		const result = await startRun({ workflowDefinitionId: id, debug });
+		setStartOpened(false);
 		if ('error' in result) {
 			const error = result.error as { message?: string; explain?: string };
 			setStartError(error.message || error.explain || 'Something went wrong while starting the workflow');
@@ -203,7 +204,9 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 
 		notify.success({
 			title: 'Run started',
-			message: current ? `${current.name} v${current.version} started` : 'Workflow run started',
+			message: current
+				? `${current.name} v${current.version} started${debug ? ' in debug mode' : ''}`
+				: 'Workflow run started',
 			link: `${RUN_ROUTE}/${result.data.id}`,
 		});
 		navigate(`${RUN_ROUTE}/${result.data.id}`);
@@ -235,13 +238,12 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 					current={current}
 					latest={latest}
 					ready={ready}
-					startsWithInput={startsWithInput}
 					saving={createState.isLoading}
 					starting={startState.isLoading}
 					saveError={saveError}
 					startError={startError}
 					onSave={save}
-					onStart={start}
+					onStart={() => setStartOpened(true)}
 					onBack={navigateBack}
 					onDiscard={() => setDiscardOpened(true)}
 					onOpenHistory={() => setHistoryOpened(true)}
@@ -289,6 +291,13 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			<WorkflowDefinitionRunHistory
 				definition={runsOpened ? current : null}
 				onClose={() => setRunsOpened(false)}
+			/>
+
+			<WorkflowDefinitionStartModal
+				definition={startOpened ? current : null}
+				starting={startState.isLoading}
+				onClose={() => setStartOpened(false)}
+				onStart={start}
 			/>
 
 			<WorkflowDefinitionDeleteModal

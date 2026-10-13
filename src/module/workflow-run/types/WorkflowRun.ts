@@ -7,6 +7,8 @@ export interface WorkflowRun {
 	waiting_reason: string | null;
 	pause_requested: boolean;
 	termination_pending: boolean;
+	/** Step-through run: re-pauses after every node. */
+	debug: boolean;
 	error: string | null;
 	started_at?: string | null;
 	finished_at?: string | null;

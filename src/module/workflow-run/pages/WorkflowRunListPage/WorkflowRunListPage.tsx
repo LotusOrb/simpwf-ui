@@ -74,6 +74,7 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [startOpened, setStartOpened] = useState(false);
 	const [startDefinitionId, setStartDefinitionId] = useState<string | null>(null);
+	const [startDebug, setStartDebug] = useState(false);
 	const canReadDefinitions = useCan(Permission.DefinitionsRead);
 	const canReadStatistics = useCan(Permission.StatisticsRead);
 	// Starting means picking a definition, so it needs both.
@@ -199,7 +200,7 @@ export const WorkflowRunListPage: React.FC = () => {
 		if (!startDefinitionId) return;
 		setActionError(null);
 		try {
-			const run = await startRun(startDefinitionId).unwrap();
+			const run = await startRun({ workflowDefinitionId: startDefinitionId, debug: startDebug }).unwrap();
 			const definition = definitionInfo.get(startDefinitionId);
 			notify.success({
 				title: 'Run started',
@@ -208,6 +209,7 @@ export const WorkflowRunListPage: React.FC = () => {
 			});
 			setStartOpened(false);
 			setStartDefinitionId(null);
+			setStartDebug(false);
 			navigate(`/app/workflow-run/${run.id}`);
 		} catch (error) {
 			const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
@@ -375,6 +377,13 @@ export const WorkflowRunListPage: React.FC = () => {
 											data={startOptions}
 											value={startDefinitionId}
 											onChange={setStartDefinitionId}
+										/>
+										<Switch
+											size="sm"
+											label="Debug (step-through)"
+											description="Pauses after every node; each resume runs one step"
+											checked={startDebug}
+											onChange={(event) => setStartDebug(event.currentTarget.checked)}
 										/>
 										<Group justify="flex-end">
 											<Button

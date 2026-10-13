@@ -1,8 +1,10 @@
 export {
 	useCountWorkflowRunsByStatusQuery,
 	useGetWorkflowRunContextQuery,
+	useGetWorkflowRunDebugContextQuery,
 	useGetWorkflowRunNodeDebugsQuery,
 	useGetWorkflowRunQuery,
+	useLazyGetWorkflowRunDebugContextQuery,
 	useLazyGetWorkflowRunQuery,
 	useLazyListWorkflowRunsQuery,
 	useListWorkflowRunPagesInfiniteQuery,

@@ -3,6 +3,7 @@ import React from 'react';
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Switch, Text, Title, Tooltip } from '@mantine/core';
 import {
 	LuArrowLeft,
+	LuBug,
 	LuGitBranchPlus,
 	LuHourglass,
 	LuPanelLeft,
@@ -10,6 +11,7 @@ import {
 	LuPause,
 	LuPlay,
 	LuSquare,
+	LuStepForward,
 	LuTriangleAlert,
 	LuUndo2,
 } from 'react-icons/lu';
@@ -21,6 +23,7 @@ import { useAppLayoutPanel } from '@module/app/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatWaitingReason, getAllowedActions } from '@module/workflow-run/data';
+import type { WorkflowRunDebugContext } from '@module/workflow-run/types/WorkflowRunDebugContext';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
@@ -33,6 +36,10 @@ interface WorkflowRunDetailHeaderProps {
 	detail: WorkflowRunDetail;
 	/** The node a run parked on input is waiting at. */
 	pendingNode: WorkflowDefinitionNode | null;
+	/** Where a debug run is paused; null for regular runs or when the engine hides it. */
+	debugCursor: WorkflowRunDebugContext | null;
+	/** The node at the debug cursor, when it resolves. */
+	debugNode: WorkflowDefinitionNode | null;
 	onBack: () => void;
 	live: boolean;
 	onLiveChange: (live: boolean) => void;
@@ -56,6 +63,8 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	definition,
 	detail,
 	pendingNode,
+	debugCursor,
+	debugNode,
 	onBack,
 	live,
 	onLiveChange,
@@ -97,6 +106,13 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 								</Badge>
 							)}
 							<WorkflowRunStatusBadge run={detail} />
+							{detail.debug && (
+								<Badge size="sm" color="grape" variant="light" leftSection={<LuBug size={11} />}>
+									{debugCursor?.is_debug_paused
+										? `Debug · paused at ${debugNode?.name ?? (debugCursor.node_id || 'start')}`
+										: 'Debug'}
+								</Badge>
+							)}
 						</Group>
 						<Group gap="sm" wrap="nowrap">
 							<WorkflowRunIdText id={detail.id} />
@@ -152,18 +168,34 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 							Pause
 						</Button>
 					)}
-					{actions.includes('resume') && (
-						<Button
-							size="sm"
-							variant="default"
-							leftSection={<LuPlay size={15} />}
-							loading={pending.resume}
-							disabled={busy}
-							onClick={onResume}
-						>
-							Resume
-						</Button>
-					)}
+					{actions.includes('resume') &&
+						(detail.debug ? (
+							// Every resume of a debug run executes exactly one node.
+							<Tooltip label="Run the next node, then pause again">
+								<Button
+									size="sm"
+									variant="light"
+									color="grape"
+									leftSection={<LuStepForward size={15} />}
+									loading={pending.resume}
+									disabled={busy}
+									onClick={onResume}
+								>
+									Step
+								</Button>
+							</Tooltip>
+						) : (
+							<Button
+								size="sm"
+								variant="default"
+								leftSection={<LuPlay size={15} />}
+								loading={pending.resume}
+								disabled={busy}
+								onClick={onResume}
+							>
+								Resume
+							</Button>
+						))}
 					{canRollback && (
 						<Button
 							size="sm"

@@ -92,7 +92,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		);
 	}
 
-	const { detail, definition, debug, context, clock, timeline, progress, live, setLive } = run;
+	const { detail, definition, debug, context, debugCursor, clock, timeline, progress, live, setLive } = run;
 
 	if (!detail || (canReadDefinition && !definition) || !timeline || !progress) {
 		return (
@@ -134,6 +134,8 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	// A run parked on input reports no current node; the parked node is the one in flight.
 	const currentNodeId = detail.current_node_id ?? detail.pending_input?.node_id ?? null;
 	const currentNode = currentNodeId ? (nodesById.get(currentNodeId) ?? null) : null;
+	const debugCursorNodeId = debugCursor?.is_debug_paused ? debugCursor.node_id || null : null;
+	const debugNode = debugCursorNodeId ? (nodesById.get(debugCursorNodeId) ?? null) : null;
 	const pendingNode = detail.pending_input ? (nodesById.get(detail.pending_input.node_id) ?? null) : null;
 	const rollbackTargets = timeline.entries.filter((entry) => detail.nodes[entry.nodeId]?.rollbackable);
 	const canRollback =
@@ -160,6 +162,8 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					definition={definition ?? null}
 					detail={detail}
 					pendingNode={pendingNode}
+					debugCursor={debugCursor}
+					debugNode={debugNode}
 					onBack={navigateBack}
 					live={live}
 					onLiveChange={setLive}
@@ -215,6 +219,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					debug={selectedDebug}
 					canRollback={canRollback && !!selectedOccurrence?.rollbackable}
 					onRollback={openRollback}
+					debugRunId={debugCursor ? detail.id : null}
 				/>
 			</MainLayoutPanel>
 
@@ -239,6 +244,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 							detail={detail}
 							debug={debug}
 							selectedNodeId={selectedNodeId}
+							debugCursorNodeId={debugCursorNodeId}
 							onSelect={selectNode}
 						/>
 					</ReactFlowProvider>

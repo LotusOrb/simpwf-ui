@@ -11,6 +11,7 @@ import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRu
 
 import {
 	useGetWorkflowRunContextQuery,
+	useGetWorkflowRunDebugContextQuery,
 	useGetWorkflowRunNodeDebugsQuery,
 	useGetWorkflowRunQuery,
 } from './workflow-run.hooks';
@@ -59,6 +60,12 @@ export const useWorkflowRunDetail = (runId: string) => {
 
 	const context = useGetWorkflowRunContextQuery(detail ? runId : skipToken, { pollingInterval });
 
+	// Only step-through runs have a debug cursor; a 409 means the engine disagrees, so the feature stays hidden.
+	const debugContext = useGetWorkflowRunDebugContextQuery(detail?.debug ? { id: runId } : skipToken, {
+		pollingInterval,
+	});
+	const debugCursor = detail?.debug && !debugContext.error ? (debugContext.data ?? null) : null;
+
 	// Keeps in-flight timeline bars and the elapsed counter moving between polls.
 	const [clock, setClock] = useState(() => Date.now());
 	const ticking = detail?.status === 'running' || detail?.status === 'waiting';
@@ -87,6 +94,8 @@ export const useWorkflowRunDetail = (runId: string) => {
 		canReadDefinition,
 		debug: debugById,
 		context: context.data ?? EMPTY_CONTEXT,
+		/** Where a debug run is paused; null for regular runs. */
+		debugCursor,
 		clock,
 		timeline,
 		progress,

@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Alert, Badge, Button, Group, ScrollArea, Stack, Tabs, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
-import { LuCircleAlert, LuMousePointerClick, LuShieldCheck, LuUndo2 } from 'react-icons/lu';
+import { LuCheck, LuCircleAlert, LuFileType, LuMousePointerClick, LuShieldCheck, LuUndo2 } from 'react-icons/lu';
 
-import { nodeTypeMeta } from '@module/workflow-definition/data';
+import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
+import { useNotify } from '@module/notification/hooks';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
+import { useLazyGetWorkflowRunDebugContextQuery } from '@module/workflow-run/hooks';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunNodeOccurrence } from '@module/workflow-run/types/WorkflowRunNodeOccurrence';
 
@@ -21,7 +23,48 @@ interface WorkflowRunNodeInspectorProps {
 	debug: WorkflowRunNodeDebug | null;
 	canRollback: boolean;
 	onRollback: (nodeId: string) => void;
+	/** Set for debug runs only: their context can be copied as TypeScript declarations. */
+	debugRunId?: string | null;
 }
+
+/** Copies the `declare const context` types the engine renders for this node's snapshot. */
+const CopyTypesButton: React.FC<{ runId: string; nodeId: string }> = ({ runId, nodeId }) => {
+	const [fetchTypes, state] = useLazyGetWorkflowRunDebugContextQuery();
+	const [copied, setCopied] = useState(false);
+	const notify = useNotify();
+
+	const copy = async () => {
+		try {
+			const { typescript } = await fetchTypes({ id: runId, nodeId }, true).unwrap();
+			await navigator.clipboard.writeText(typescript);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 1_500);
+		} catch (error) {
+			const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
+			notify.error({
+				title: "Couldn't copy context types",
+				message: typeof message === 'string' && message ? message : 'The debug context is not available',
+				toastOnly: true,
+			});
+		}
+	};
+
+	return (
+		<Tooltip label="Context at this node as TypeScript declarations, for script autocomplete">
+			<Button
+				size="xs"
+				variant="default"
+				mt="sm"
+				fullWidth
+				leftSection={copied ? <LuCheck size={14} /> : <LuFileType size={14} />}
+				loading={state.isFetching}
+				onClick={copy}
+			>
+				{copied ? 'Copied' : 'Copy TS types'}
+			</Button>
+		</Tooltip>
+	);
+};
 
 export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> = ({
 	node,
@@ -29,6 +72,7 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 	debug,
 	canRollback,
 	onRollback,
+	debugRunId,
 }) => {
 	if (!node) {
 		return (
@@ -47,7 +91,7 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 		);
 	}
 
-	const typeMeta = nodeTypeMeta[node.type];
+	const typeMeta = nodeDefinitionTypeMeta(node.type);
 	const status = occurrence?.status ?? 'pending';
 	const statusMeta = nodeRunStatusMeta[status];
 
@@ -79,6 +123,8 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 						{statusMeta.label}
 					</Badge>
 				</Group>
+
+				{debugRunId && occurrence && <CopyTypesButton runId={debugRunId} nodeId={node.id} />}
 
 				{canRollback && (
 					<Tooltip label="Rewind the run to just before this node and replay from here">

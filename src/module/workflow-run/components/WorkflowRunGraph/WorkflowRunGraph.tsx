@@ -47,6 +47,8 @@ interface WorkflowRunGraphProps {
 	detail: WorkflowRunDetail;
 	debug: Record<string, WorkflowRunNodeDebug>;
 	selectedNodeId: string | null;
+	/** Node a debug run is paused at, highlighted on the canvas. */
+	debugCursorNodeId?: string | null;
 	onSelect: (nodeId: string | null) => void;
 }
 
@@ -55,6 +57,7 @@ export const WorkflowRunGraph: React.FC<WorkflowRunGraphProps> = ({
 	detail,
 	debug,
 	selectedNodeId,
+	debugCursorNodeId,
 	onSelect,
 }) => {
 	const graph = useMemo(() => buildRunGraph(definition.content), [definition.content]);
@@ -102,6 +105,7 @@ export const WorkflowRunGraph: React.FC<WorkflowRunGraphProps> = ({
 					occurrence,
 					debug: occurrence ? (debug[occurrence.occurrence_id] ?? null) : null,
 					current: detail.current_node_id === item.node.id,
+					debugCursor: !!debugCursorNodeId && debugCursorNodeId === item.node.id,
 				},
 			};
 		}),
