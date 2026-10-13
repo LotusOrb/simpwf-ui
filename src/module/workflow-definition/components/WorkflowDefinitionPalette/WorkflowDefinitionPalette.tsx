@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
 
-import { Button, Collapse, Group, Loader, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core';
-import { LuChevronDown, LuChevronUp, LuGripVertical, LuLibrary, LuSearch } from 'react-icons/lu';
+import {
+	ActionIcon,
+	Button,
+	Collapse,
+	Group,
+	Loader,
+	ScrollArea,
+	Text,
+	TextInput,
+	Tooltip,
+	UnstyledButton,
+} from '@mantine/core';
+import { LuChevronDown, LuChevronUp, LuExternalLink, LuGripVertical, LuLibrary, LuSearch } from 'react-icons/lu';
+import { Link } from 'react-router';
 
 import { useCoreSelector } from '@core/store';
 
+import { NODE_LIBRARY_QUERY, nodeDefinitionLink, nodeDefinitionTypeMeta } from '@module/node-definition/data';
 import { useListNodeDefinitionsQuery } from '@module/node-definition/hooks';
 import { nodeTypeMeta, nodeTypeOrder, scopeTrail } from '@module/workflow-definition/data';
 import {
@@ -13,7 +26,6 @@ import {
 	type WorkflowDefinitionPaletteItem,
 } from '@module/workflow-definition/hooks';
 import { selectEditorNodes, selectEditorScope } from '@module/workflow-definition/store';
-import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
 import classes from './WorkflowDefinitionPalette.module.scss';
 
@@ -21,16 +33,19 @@ type SectionId = 'builtin' | 'library';
 
 interface PaletteEntryProps {
 	item: WorkflowDefinitionPaletteItem;
-	type: WorkflowDefinitionNodeType;
+	/** A builtin type, or a custom one from the node library. */
+	type: string;
 	title: string;
 	description: string;
+	/** Node library entries link to their definition page. */
+	libraryId?: string;
 	onAdd: (item: WorkflowDefinitionPaletteItem) => void;
 }
 
-const PaletteEntry: React.FC<PaletteEntryProps> = ({ item, type, title, description, onAdd }) => {
-	const meta = nodeTypeMeta[type];
+const PaletteEntry: React.FC<PaletteEntryProps> = ({ item, type, title, description, libraryId, onAdd }) => {
+	const meta = nodeDefinitionTypeMeta(type);
 
-	return (
+	const entry = (
 		<UnstyledButton
 			className={classes.item}
 			draggable
@@ -55,6 +70,29 @@ const PaletteEntry: React.FC<PaletteEntryProps> = ({ item, type, title, descript
 			<LuGripVertical size={14} className={classes.grip} aria-hidden />
 		</UnstyledButton>
 	);
+
+	if (!libraryId) return entry;
+
+	// A sibling of the button, not inside it: a link can't nest in a button. A new tab keeps the editor as it is.
+	return (
+		<div className={classes.entry}>
+			{entry}
+			<Tooltip label="Open in library">
+				<ActionIcon
+					component={Link}
+					to={nodeDefinitionLink(libraryId)}
+					target="_blank"
+					rel="noopener"
+					size="sm"
+					variant="default"
+					className={classes.libraryLink}
+					aria-label={`Open ${title} in library`}
+				>
+					<LuExternalLink size={12} />
+				</ActionIcon>
+			</Tooltip>
+		</div>
+	);
 };
 
 export const WorkflowDefinitionPalette: React.FC = () => {
@@ -66,18 +104,14 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 	const scope = useCoreSelector(selectEditorScope);
 	const scopeLabel = scopeTrail(nodes, scope).at(-1)?.config.name ?? 'Workflow';
 
-	const library = useListNodeDefinitionsQuery({
-		perPage: 200,
-		order: { by: 'name', direction: 'asc' },
-		filter: { latest_only: { op: '_eq', value: 'true' } },
-	});
+	const library = useListNodeDefinitionsQuery(NODE_LIBRARY_QUERY);
 
 	const term = query.trim().toLowerCase();
 	const matches = (...values: string[]) => !term || values.some((value) => value.toLowerCase().includes(term));
 
 	const builtins = nodeTypeOrder.filter((type) => matches(nodeTypeMeta[type].label, nodeTypeMeta[type].description));
 	const definitions = (library.data?.items ?? []).filter((definition) =>
-		matches(definition.name, nodeTypeMeta[definition.type].label),
+		matches(definition.name, nodeDefinitionTypeMeta(definition.type).label),
 	);
 
 	const toggleSection = (id: SectionId) =>
@@ -144,7 +178,8 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 				item={{ definition }}
 				type={definition.type}
 				title={definition.name}
-				description={`v${definition.version} · ${nodeTypeMeta[definition.type].label}`}
+				description={`v${definition.version} · ${nodeDefinitionTypeMeta(definition.type).label}`}
+				libraryId={definition.id}
 				onAdd={addNode}
 			/>
 		));

@@ -1,4 +1,4 @@
-import { LuCalendarClock, LuHouse, LuKeyRound, LuPlay, LuSettings, LuWorkflow } from 'react-icons/lu';
+import { LuBoxes, LuCalendarClock, LuHouse, LuKeyRound, LuPlay, LuSettings, LuWorkflow } from 'react-icons/lu';
 
 import { Permission } from '@core/auth/authorization/permission';
 
@@ -18,6 +18,13 @@ export const menuConfig: MenuConfig = {
 			label: 'Workflow Definition',
 			icon: LuWorkflow,
 			to: '/app/workflow-definition',
+			permission: Permission.DefinitionsRead,
+		},
+		{
+			id: 'node-definition',
+			label: 'Node Library',
+			icon: LuBoxes,
+			to: '/app/node-definition',
 			permission: Permission.DefinitionsRead,
 		},
 		{

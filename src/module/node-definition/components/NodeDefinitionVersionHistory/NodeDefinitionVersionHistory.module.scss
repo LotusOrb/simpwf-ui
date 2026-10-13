@@ -1,0 +1,22 @@
+.row {
+	display: flex;
+	align-items: center;
+	gap: var(--mantine-spacing-xs);
+	padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+	border-radius: var(--mantine-radius-md);
+	color: inherit;
+	text-decoration: none;
+
+	&:hover {
+		background-color: var(--mantine-color-gray-0);
+	}
+
+	&[data-viewing] {
+		background-color: var(--mantine-primary-color-light);
+	}
+}
+
+.body {
+	flex: 1;
+	min-width: 0;
+}

@@ -20,6 +20,8 @@ interface CodeEditorProps {
 	description?: React.ReactNode;
 	error?: React.ReactNode;
 	required?: boolean;
+	/** JSON Schema validating (and completing) this editor's content; JSON only. */
+	jsonSchema?: object;
 }
 
 const EditorFallback: React.FC<{ height: number | string }> = ({ height }) => (
@@ -39,6 +41,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	description,
 	error,
 	required,
+	jsonSchema,
 }) => {
 	const [expanded, { open, close }] = useDisclosure(false);
 	// Monaco is not a form control, so it follows a disabled <fieldset> ancestor the way native inputs do.
@@ -61,6 +64,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				height={editorHeight}
 				readOnly={isReadOnly}
 				placeholder={placeholder}
+				jsonSchema={jsonSchema}
 			/>
 		</Suspense>
 	);
