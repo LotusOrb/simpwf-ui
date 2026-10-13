@@ -41,6 +41,13 @@ export interface WorkflowDefinitionNode {
 	redis?: WorkflowDefinitionPollerRedisConfig;
 	rabbitmq?: WorkflowDefinitionPollerRabbitMQConfig;
 
+	/** parallel_start: branch name to the node it forks into. */
+	branches?: Record<string, string>;
+	/** parallel_start: the join node closing the region. */
+	parallel_end_node_id?: string;
+	/** parallel_end: merges the branch contexts. */
+	combining_script?: string;
+
 	start_node_id?: string;
 	keys?: Record<string, string | null>;
 	nodes?: WorkflowDefinitionNode[];

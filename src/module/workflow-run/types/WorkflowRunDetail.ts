@@ -10,6 +10,10 @@ export interface WorkflowRunDetail extends WorkflowRun {
 	current_group_id: string | null;
 	counters: Record<string, number>;
 	pending_input: WorkflowRunPendingInput | null;
+	/** Source run when this one was created by a definition migration. */
+	migrated_from: string | null;
+	/** Replacement run after this one was migrated away. */
+	superseded_by: string | null;
 	/** Keyed by workflow definition node id. */
 	nodes: Record<string, WorkflowRunNodeOccurrence>;
 }

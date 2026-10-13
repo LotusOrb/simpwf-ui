@@ -1,8 +1,9 @@
 import React from 'react';
 
-import { ActionIcon, Alert, Badge, Button, Group, Switch, Text, Title, Tooltip } from '@mantine/core';
+import { ActionIcon, Alert, Anchor, Badge, Button, Group, Switch, Text, Title, Tooltip } from '@mantine/core';
 import {
 	LuArrowLeft,
+	LuGitBranchPlus,
 	LuHourglass,
 	LuPanelLeft,
 	LuPanelRight,
@@ -12,6 +13,7 @@ import {
 	LuTriangleAlert,
 	LuUndo2,
 } from 'react-icons/lu';
+import { Link } from 'react-router';
 
 import { Permission, useCan } from '@core/auth/authorization';
 
@@ -46,6 +48,8 @@ interface WorkflowRunDetailHeaderProps {
 	onResume: () => void;
 	onRollback: () => void;
 	onStop: () => void;
+	/** Omitted when the caller cannot migrate runs. */
+	onMigrate?: () => void;
 }
 
 export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = ({
@@ -65,10 +69,11 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	onResume,
 	onRollback,
 	onStop,
+	onMigrate,
 }) => {
 	const panel = useAppLayoutPanel();
 	const canControl = useCan(Permission.InstancesControl);
-	const actions = canControl ? getAllowedActions(detail) : [];
+	const actions = getAllowedActions(detail).filter((action) => (action === 'migrate' ? !!onMigrate : canControl));
 	const title = definition?.name ?? 'Workflow run';
 	const busy = pending.pause || pending.resume || pending.stop || pending.rollback;
 
@@ -98,6 +103,26 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 							<Text fz="xs" c="dimmed">
 								started by {detail.created_by}
 							</Text>
+							{detail.migrated_from && (
+								<Anchor
+									component={Link}
+									to={`/app/workflow-run/${detail.migrated_from}`}
+									fz="xs"
+									title={detail.migrated_from}
+								>
+									Migrated from {detail.migrated_from.slice(0, 8)}
+								</Anchor>
+							)}
+							{detail.superseded_by && (
+								<Anchor
+									component={Link}
+									to={`/app/workflow-run/${detail.superseded_by}`}
+									fz="xs"
+									title={detail.superseded_by}
+								>
+									Superseded by {detail.superseded_by.slice(0, 8)}
+								</Anchor>
+							)}
 						</Group>
 					</div>
 				</Group>
@@ -150,6 +175,17 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 							onClick={onRollback}
 						>
 							Roll back
+						</Button>
+					)}
+					{actions.includes('migrate') && (
+						<Button
+							size="sm"
+							variant="default"
+							leftSection={<LuGitBranchPlus size={15} />}
+							disabled={busy}
+							onClick={onMigrate}
+						>
+							Migrate
 						</Button>
 					)}
 					{actions.includes('stop') && (

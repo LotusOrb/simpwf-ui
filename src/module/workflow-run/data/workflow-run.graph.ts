@@ -95,6 +95,20 @@ export const buildRunGraph = (content: WorkflowDefinitionContent): WorkflowRunGr
 					});
 				}
 			}
+		} else if ((node.type as string) === 'parallel_start') {
+			// A fork continues past its join, so its only outgoing edges are the branches.
+			for (const [name, branchTarget] of Object.entries(node.branches ?? {})) {
+				const target = resolve(branchTarget);
+				if (target) {
+					edges.push({
+						id: `${node.id}->${target}:${name}`,
+						source: node.id,
+						target,
+						kind: 'branch',
+						label: name,
+					});
+				}
+			}
 		} else if (next) {
 			edges.push({ id: `${node.id}->${next}`, source: node.id, target: next, kind: 'next' });
 		}

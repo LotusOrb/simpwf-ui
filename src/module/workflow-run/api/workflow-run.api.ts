@@ -11,6 +11,8 @@ import {
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 import type { WorkflowRunList } from '@module/workflow-run/types/WorkflowRunList';
+import type { WorkflowRunMigratePayload } from '@module/workflow-run/types/WorkflowRunMigratePayload';
+import type { WorkflowRunMigrateResult } from '@module/workflow-run/types/WorkflowRunMigrateResult';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
 import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
@@ -122,6 +124,16 @@ export const workflowRunApi = coreApi.injectEndpoints({
 				body: { target_occurrence_id: targetOccurrenceId, reason: reason || undefined },
 			}),
 			invalidatesTags: (_result, _error, { id }) => [{ type: apiTagConfig.workflowRun, id }],
+		}),
+
+		/** Starts a replacement run on a newer definition and stops the source in the same transaction. */
+		migrateWorkflowRun: build.mutation<WorkflowRunMigrateResult, WorkflowRunMigratePayload>({
+			query: ({ id, ...body }) => ({ method: 'post', url: `${RESOURCE}/${id}/migrate`, body }),
+			invalidatesTags: (result, _error, { id }) => [
+				{ type: apiTagConfig.workflowRun, id },
+				{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID },
+				...(result ? [{ type: apiTagConfig.workflowRun, id: result.instance.id }] : []),
+			],
 		}),
 
 		countWorkflowRunsByStatus: build.query<Record<WorkflowRunStatus | 'all', number>, WorkflowRunQuery>({

@@ -11,6 +11,7 @@ export const {
 	useReplaceWorkflowRunContextMutation,
 	useProvideWorkflowRunInputMutation,
 	useRollbackWorkflowRunMutation,
+	useMigrateWorkflowRunMutation,
 	useCountWorkflowRunsByStatusQuery,
 	usePauseWorkflowRunMutation,
 	useResumeWorkflowRunMutation,

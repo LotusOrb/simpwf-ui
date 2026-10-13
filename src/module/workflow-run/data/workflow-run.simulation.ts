@@ -273,6 +273,8 @@ export const createSimulation = (runId: string, forced?: WorkflowRunMockScenario
 			current_group_id: null,
 			counters: {},
 			pending_input: null,
+			migrated_from: null,
+			superseded_by: null,
 			nodes: {},
 		},
 	};

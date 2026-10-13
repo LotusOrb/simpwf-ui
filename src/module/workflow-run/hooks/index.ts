@@ -7,6 +7,7 @@ export {
 	useLazyListWorkflowRunsQuery,
 	useListWorkflowRunPagesInfiniteQuery,
 	useListWorkflowRunsQuery,
+	useMigrateWorkflowRunMutation,
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
 	useReplaceWorkflowRunContextMutation,

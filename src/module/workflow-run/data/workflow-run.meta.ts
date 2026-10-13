@@ -23,6 +23,13 @@ export const getAllowedActions = (run: WorkflowRun): WorkflowRunAction[] => {
 	if ((run.status === 'running' || run.status === 'waiting') && !run.pause_requested) actions.push('pause');
 	if (run.status === 'paused') actions.push('resume');
 	if (run.status === 'running' || run.status === 'waiting' || run.status === 'paused') actions.push('stop');
+	// The engine migrates paused, failed and input-parked runs only.
+	if (
+		run.status === 'paused' ||
+		run.status === 'failed' ||
+		(run.status === 'waiting' && run.waiting_reason === 'input')
+	)
+		actions.push('migrate');
 	return actions;
 };
 

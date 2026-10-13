@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { ActionIcon, Loader, Menu } from '@mantine/core';
-import { LuEllipsisVertical, LuEye, LuPause, LuPlay, LuSquare } from 'react-icons/lu';
+import { LuEllipsisVertical, LuEye, LuGitBranchPlus, LuPause, LuPlay, LuSquare } from 'react-icons/lu';
 import { Link } from 'react-router';
 
 import { Permission, useCan } from '@core/auth/authorization';
@@ -26,7 +26,11 @@ export const WorkflowRunActions: React.FC<WorkflowRunActionsProps> = ({
 	onAction,
 }) => {
 	const canControl = useCan(Permission.InstancesControl);
-	const allowed = canControl ? getAllowedActions(run) : [];
+	// Picking the target version and start node reads definitions too.
+	const canMigrateRuns = useCan(Permission.InstancesMigrate);
+	const canReadDefinitions = useCan(Permission.DefinitionsRead);
+	const canMigrate = canMigrateRuns && canReadDefinitions;
+	const allowed = getAllowedActions(run).filter((action) => (action === 'migrate' ? canMigrate : canControl));
 
 	if (busy) {
 		return (
@@ -60,6 +64,11 @@ export const WorkflowRunActions: React.FC<WorkflowRunActionsProps> = ({
 				{allowed.includes('resume') && (
 					<Menu.Item leftSection={<LuPlay size={14} />} onClick={() => onAction(run, 'resume')}>
 						Resume
+					</Menu.Item>
+				)}
+				{allowed.includes('migrate') && (
+					<Menu.Item leftSection={<LuGitBranchPlus size={14} />} onClick={() => onAction(run, 'migrate')}>
+						Migrate to newer version
 					</Menu.Item>
 				)}
 				{allowed.includes('stop') && (
