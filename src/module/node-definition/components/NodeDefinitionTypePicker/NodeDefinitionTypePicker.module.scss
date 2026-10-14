@@ -1,0 +1,29 @@
+.root {
+	height: 100%;
+	overflow-y: auto;
+	background-color: var(--mantine-color-gray-0);
+}
+
+.option {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--mantine-spacing-sm);
+	height: 100%;
+	padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+	border: 1px solid var(--mantine-color-gray-3);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-body);
+	transition:
+		border-color 120ms ease,
+		box-shadow 120ms ease;
+
+	&:hover {
+		border-color: var(--mantine-primary-color-filled);
+		box-shadow: var(--mantine-shadow-xs);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--mantine-primary-color-filled);
+		outline-offset: 2px;
+	}
+}

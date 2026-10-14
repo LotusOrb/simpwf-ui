@@ -1,24 +1,4 @@
-.canvas {
+.root {
+	height: 100%;
 	background-color: var(--mantine-color-gray-0);
-}
-
-.results {
-	transition: opacity 150ms ease;
-
-	&[data-loading] {
-		opacity: 0.55;
-		pointer-events: none;
-	}
-}
-
-.body {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr);
-	gap: var(--mantine-spacing-md);
-	align-items: start;
-
-	@media (min-width: 62em) {
-		grid-template-columns: minmax(0, 1fr) 320px;
-		gap: var(--mantine-spacing-lg);
-	}
 }
