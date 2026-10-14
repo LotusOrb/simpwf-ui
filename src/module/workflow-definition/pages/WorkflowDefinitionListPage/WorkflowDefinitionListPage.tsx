@@ -22,7 +22,7 @@ import { WorkflowDefinitionTable } from '@module/workflow-definition/components/
 import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
 import { sortOrders } from '@module/workflow-definition/data';
 import {
-	SEARCH_URL_UPDATE,
+	NAME_URL_UPDATE,
 	useListWorkflowDefinitionsQuery,
 	useWorkflowDefinitionDelete,
 	useWorkflowDefinitionListParams,
@@ -35,9 +35,9 @@ import classes from './WorkflowDefinitionListPage.module.scss';
 export const WorkflowDefinitionListPage: React.FC = () => {
 	const [view, setView] = useListViewPreference('workflowDefinition');
 	const [params, setParams] = useWorkflowDefinitionListParams();
-	const { search, sort, startType, page, perPage } = params;
-	const [debouncedSearch] = useDebouncedValue(search, 300);
-	const filters: WorkflowDefinitionFilterValues = { sort, startType };
+	const { name, sort, page, perPage } = params;
+	const [debouncedName] = useDebouncedValue(name.trim(), 300);
+	const filters: WorkflowDefinitionFilterValues = { sort };
 	const setPage = (next: number) => setParams({ page: next });
 
 	const [historyFor, setHistoryFor] = useState<WorkflowDefinition | null>(null);
@@ -52,11 +52,10 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 	} = useListWorkflowDefinitionsQuery({
 		page,
 		perPage,
-		search: debouncedSearch,
 		order: { by, direction },
 		filter: {
 			latest_only: { op: '_eq', value: 'true' },
-			...(startType ? { start_type: { op: '_eq' as const, value: startType } } : {}),
+			...(debouncedName ? { name: { op: '_eq' as const, value: debouncedName } } : {}),
 		},
 	});
 
@@ -65,8 +64,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 		if (lastOnPage && page > 1) setPage(page - 1);
 	});
 
-	const hasActiveFilters = !!search || !!startType;
-	const clearFilters = () => setParams({ search: null, sort: null, startType: null, page: null });
+	const hasActiveFilters = !!name;
+	const clearFilters = () => setParams({ name: null, sort: null, page: null });
 
 	const renderResults = () => {
 		if (isError && !isFetching) {
@@ -103,7 +102,7 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 					</ThemeIcon>
 					<Text fw={600}>No workflow definitions found</Text>
 					<Text fz="sm" c="dimmed">
-						Try a different name or loosen the filters.
+						The name filter matches whole names only, and is case-sensitive.
 					</Text>
 					{hasActiveFilters && (
 						<Button variant="default" size="xs" mt={4} onClick={clearFilters}>
@@ -158,8 +157,8 @@ export const WorkflowDefinitionListPage: React.FC = () => {
 				</Group>
 
 				<WorkflowDefinitionHero
-					search={search}
-					onSearchChange={(value) => setParams({ search: value, page: null }, SEARCH_URL_UPDATE)}
+					name={name}
+					onNameChange={(value) => setParams({ name: value, page: null }, NAME_URL_UPDATE)}
 				/>
 
 				<Group justify="space-between" gap="sm">

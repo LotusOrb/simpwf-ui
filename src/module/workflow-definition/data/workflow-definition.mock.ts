@@ -391,10 +391,10 @@ const sortableFields = ['name', 'version', 'created_at', 'updated_at'] as const;
 type SortableField = (typeof sortableFields)[number];
 
 export const listWorkflowDefinitions = async (query: WorkflowDefinitionQuery = {}): Promise<WorkflowDefinitionList> => {
-	const { page = 1, perPage = 8, search, order, filter } = query;
+	const { page = 1, perPage = 8, order, filter } = query;
 
 	const latestOnly = filter?.latest_only ? filter.latest_only.value === 'true' : true;
-	const startType = (filter?.start_type?.value as WorkflowDefinitionNodeType | undefined) ?? null;
+	const name = filter?.name?.value as string | undefined;
 
 	await new Promise((resolve) => setTimeout(resolve, 350));
 
@@ -406,14 +406,9 @@ export const listWorkflowDefinitions = async (query: WorkflowDefinitionQuery = {
 		);
 	}
 
-	const term = search?.trim().toLowerCase();
 	const filtered = workflowDefinitions.filter((definition) => {
 		if (latestOnly && latestByLineage.get(definition.lineage_id) !== definition.version) return false;
-		if (term && !definition.name.toLowerCase().includes(term)) return false;
-		if (startType) {
-			const start = definition.content.nodes.find((node) => node.id === definition.content.start_node_id);
-			if (start?.type !== startType) return false;
-		}
+		if (name && definition.name !== name) return false;
 		return true;
 	});
 

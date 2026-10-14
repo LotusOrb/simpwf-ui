@@ -1,1 +1,1 @@
-export type WorkflowDefinitionFilterKey = 'latest_only' | 'lineage_id' | 'ids' | 'version' | 'start_type';
+export type WorkflowDefinitionFilterKey = 'id' | 'name' | 'lineage_id' | 'version' | 'latest_only';
