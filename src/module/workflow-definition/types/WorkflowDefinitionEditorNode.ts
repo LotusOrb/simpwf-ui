@@ -14,4 +14,6 @@ export interface WorkflowDefinitionEditorNode {
 	failureOutputProperty: string;
 	jsonDrafts: Partial<Record<WorkflowDefinitionJsonField, string>>;
 	reference?: WorkflowDefinitionEditorReference;
+	/** parallel_start and parallel_end: the other half of the block. Set on both nodes. */
+	pairId?: string;
 }

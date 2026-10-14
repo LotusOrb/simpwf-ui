@@ -5,4 +5,7 @@ export type WorkflowDefinitionNodeType =
 	| 'output'
 	| 'group'
 	| 'external_call'
-	| 'poller';
+	| 'poller'
+	| 'parallel_start'
+	| 'parallel_end'
+	| 'delay';

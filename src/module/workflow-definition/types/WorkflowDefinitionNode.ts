@@ -19,6 +19,8 @@ export interface WorkflowDefinitionNode {
 	on_failure?: WorkflowDefinitionFailureRoute | null;
 	output_property?: string;
 	timeout?: string | null;
+	/** Waits this long on arrival before the node runs. Null only on references: disables the definition's delay. */
+	start_delay?: string | null;
 	retry_on_recovery?: boolean;
 	metadata?: Record<string, unknown>;
 	pre_script?: WorkflowDefinitionHookScript | null;
@@ -47,6 +49,9 @@ export interface WorkflowDefinitionNode {
 	parallel_end_node_id?: string;
 	/** parallel_end: merges the branch contexts. */
 	combining_script?: string;
+
+	/** delay: how long the node waits before continuing at next_node. */
+	delay?: string;
 
 	start_node_id?: string;
 	keys?: Record<string, string | null>;
