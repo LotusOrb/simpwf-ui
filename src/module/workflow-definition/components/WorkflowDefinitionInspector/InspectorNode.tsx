@@ -30,13 +30,15 @@ import {
 	isOutputKey,
 	nodeTypeMeta,
 	parseRawNode,
+	retryOnRecoveryDefault,
 	supportsFailure,
 	supportsOutputProperty,
 	supportsRetryOnRecovery,
+	supportsStartDelay,
 	supportsTimeout,
 } from '@module/workflow-definition/data';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
-import { nodeSelected, nodesRemoved, selectEditorIssues } from '@module/workflow-definition/store';
+import { nodeSelected, nodesRemoved, selectEditorEdges, selectEditorIssues } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionHookScript } from '@module/workflow-definition/types/WorkflowDefinitionHookScript';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
@@ -44,7 +46,7 @@ import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/typ
 import { ContextTypesProvider, InspectorContextTypesPicker } from './InspectorContextTypes';
 import { useContextTypes } from './InspectorContextTypes.context';
 import { DurationInput, JsonField, SectionLabel } from './InspectorControls';
-import { ConditionsFields, FailureFields, InspectorNodeFields } from './InspectorNodeFields';
+import { ConditionsFields, FailureFields, InspectorNodeFields, ParallelStartFields } from './InspectorNodeFields';
 import classes from './WorkflowDefinitionInspector.module.scss';
 
 export type NodeTab = 'setup' | 'hooks' | 'advanced' | 'json';
@@ -105,14 +107,89 @@ const HookField: React.FC<{
 	);
 };
 
+const START_DELAY_DESCRIPTION =
+	"Wait this long on arrival before the node runs. Repeats on every visit. Doesn't hold a worker.";
+
+type StartDelayMode = 'inherit' | 'override' | 'disable';
+
+/**
+ * Inline nodes only set or clear a delay. References have three states, matching the engine: omitted inherits the
+ * library's delay, a string overrides it and null disables it.
+ */
+const StartDelayField: React.FC<{ node: WorkflowDefinitionEditorNode }> = ({ node }) => {
+	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
+	const value = node.config.start_delay;
+	// Override with an empty input has nothing to store yet, so the choice is remembered here until a value is typed.
+	const [overriding, setOverriding] = useState(typeof value === 'string');
+
+	if (!node.config.node_definition_id) {
+		return (
+			<DurationInput
+				label={<SectionLabel>Start delay</SectionLabel>}
+				description={START_DELAY_DESCRIPTION}
+				inputWrapperOrder={['label', 'input', 'description', 'error']}
+				placeholder="None"
+				value={value}
+				onChange={(start_delay) => patch({ start_delay })}
+			/>
+		);
+	}
+
+	const mode: StartDelayMode =
+		typeof value === 'string' ? 'override' : value === null ? 'disable' : overriding ? 'override' : 'inherit';
+	const changeMode = (next: StartDelayMode) => {
+		setOverriding(next === 'override');
+		if (next === 'inherit') patch({ start_delay: undefined });
+		else if (next === 'disable') patch({ start_delay: null });
+		else if (typeof value !== 'string') patch({ start_delay: undefined });
+	};
+
+	return (
+		<Stack gap={6}>
+			<div>
+				<SectionLabel>Start delay</SectionLabel>
+				<Text fz="xs" c="dimmed">
+					{START_DELAY_DESCRIPTION}
+				</Text>
+			</div>
+			<SegmentedControl
+				size="xs"
+				value={mode}
+				onChange={(next) => changeMode(next as StartDelayMode)}
+				data={[
+					{ label: 'Inherit', value: 'inherit' },
+					{ label: 'Override', value: 'override' },
+					{ label: 'Disable', value: 'disable' },
+				]}
+			/>
+			{mode === 'override' && (
+				<DurationInput
+					aria-label="Start delay"
+					description="Leave empty to inherit the library's delay"
+					inputWrapperOrder={['input', 'description', 'error']}
+					placeholder="15s"
+					value={value}
+					onChange={(start_delay) => patch({ start_delay })}
+				/>
+			)}
+			{mode === 'disable' && (
+				<Text fz="xs" c="dimmed">
+					Runs immediately, even if the library definition sets a delay.
+				</Text>
+			)}
+		</Stack>
+	);
+};
+
 const RawJsonField: React.FC<{ node: WorkflowDefinitionEditorNode }> = ({ node }) => {
 	const { replaceRaw } = useWorkflowDefinitionEditorNodeActions(node.id);
-	const [text, setText] = useState(() => formatRawNode(node));
+	const edges = useCoreSelector(selectEditorEdges);
+	const [text, setText] = useState(() => formatRawNode(node, edges));
 	const [error, setError] = useState<string>();
 
 	const onChange = (next: string) => {
 		setText(next);
-		const parsed = parseRawNode(node, next);
+		const parsed = parseRawNode(node, edges, next);
 		if (!parsed.ok) return setError(parsed.error);
 		setError(undefined);
 		replaceRaw(parsed.config, parsed.branches);
@@ -122,7 +199,7 @@ const RawJsonField: React.FC<{ node: WorkflowDefinitionEditorNode }> = ({ node }
 		<CodeEditor
 			language="json"
 			label={<SectionLabel>Node JSON</SectionLabel>}
-			description="Valid changes apply as you type. Routing (next node, failure, branch targets) stays on the canvas."
+			description="Valid changes apply as you type. Routing (next node, failure, branch targets, join) stays on the canvas."
 			height={420}
 			value={text}
 			onChange={onChange}
@@ -140,14 +217,19 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 }) => {
 	const dispatch = useCoreDispatch();
 	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
-	const issues = useCoreSelector(selectEditorIssues).filter((issue) => issue.nodeId === node.id);
+	const nodeIssues = useCoreSelector(selectEditorIssues).filter((issue) => issue.nodeId === node.id);
+	const issues = nodeIssues.filter((issue) => issue.severity !== 'warning');
+	const warnings = nodeIssues.filter((issue) => issue.severity === 'warning');
 	const canEdit = useCan(Permission.DefinitionsWrite);
 
 	const { config } = node;
 	const meta = nodeTypeMeta[config.type];
 	const isReference = !!config.node_definition_id;
 	// Tabs whose script editors see `context`.
-	const scripted = tab === 'hooks' || (tab === 'setup' && (config.type === 'script' || config.type === 'conditions'));
+	const scripted =
+		tab === 'hooks' ||
+		(tab === 'setup' &&
+			(config.type === 'script' || config.type === 'conditions' || config.type === 'parallel_end'));
 
 	return (
 		<div className={classes.root}>
@@ -210,6 +292,15 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 									</List>
 								</Alert>
 							)}
+							{warnings.length > 0 && (
+								<Alert color="yellow" variant="light" p="xs" title="Worth a look">
+									<List size="xs" spacing={2}>
+										{warnings.map((issue) => (
+											<List.Item key={issue.message}>{issue.message}</List.Item>
+										))}
+									</List>
+								</Alert>
+							)}
 
 							{tab === 'setup' && (
 								<>
@@ -258,6 +349,9 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 												</div>
 											</Group>
 											{config.type === 'conditions' && <ConditionsFields node={node} />}
+											{config.type === 'parallel_start' && node.branches.length > 0 && (
+												<ParallelStartFields node={node} />
+											)}
 										</>
 									) : (
 										<InspectorNodeFields node={node} />
@@ -298,6 +392,7 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 											onChange={(timeout) => patch({ timeout })}
 										/>
 									)}
+									{supportsStartDelay(config.type) && <StartDelayField node={node} />}
 									{supportsRetryOnRecovery(config.type) && (
 										<Group justify="space-between" wrap="nowrap" align="flex-start">
 											<div>
@@ -308,7 +403,9 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 											</div>
 											<Switch
 												aria-label="Retry on recovery"
-												checked={config.retry_on_recovery ?? config.type === 'poller'}
+												checked={
+													config.retry_on_recovery ?? retryOnRecoveryDefault(config.type)
+												}
 												onChange={(event) =>
 													patch({ retry_on_recovery: event.currentTarget.checked })
 												}

@@ -2,16 +2,21 @@ import React from 'react';
 
 import { CopyButton, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/core';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { LuCheck, LuCircleAlert, LuCopy } from 'react-icons/lu';
+import { LuCheck, LuCircleAlert, LuCopy, LuTimer } from 'react-icons/lu';
 
 import {
 	branchHandle,
 	defaultOutputProperty,
 	HANDLE_FAILURE,
 	HANDLE_NEXT,
+	HANDLE_PAIR,
+	hasBranches,
 	isInlineGroup,
+	nodeSubtitle,
 	nodeTypeMeta,
+	shownStartDelay,
 	supportsFailure,
+	supportsNext,
 } from '@module/workflow-definition/data';
 
 import classes from './WorkflowDefinitionCanvas.module.scss';
@@ -56,11 +61,12 @@ const OutputRow: React.FC<OutputRowProps> = ({ label, property, isDefault, kind 
 };
 
 export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionStepFlowNode>> = ({ data, selected }) => {
-	const { node, issueCount, branchTargets } = data;
+	const { node, issueCount, branchTargets, pairedStart, pairedSelected } = data;
 	const { config } = node;
 	const meta = nodeTypeMeta[config.type];
-	const isConditions = config.type === 'conditions';
+	const isParallel = config.type === 'parallel_start';
 	const hasFailure = supportsFailure(config.type);
+	const startDelay = shownStartDelay(config);
 
 	const outputProperty = config.output_property || defaultOutputProperty(config);
 	const failureOutputProperty = hasFailure ? node.failureOutputProperty.trim() : '';
@@ -73,6 +79,7 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 				data-selected={selected || undefined}
 				data-invalid={issueCount > 0 || undefined}
 				data-group={isInlineGroup(node) || undefined}
+				data-paired-selected={(pairedSelected && !selected) || undefined}
 			>
 				<Handle type="target" position={Position.Left} className={classes.handle} />
 
@@ -85,9 +92,17 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 							{config.name || 'Untitled'}
 						</Text>
 						<Text fz="xs" c="dimmed" truncate>
-							{meta.label}
+							{nodeSubtitle(config, meta.label)}
 						</Text>
 					</div>
+					{startDelay && (
+						<Tooltip label={`Waits ${startDelay} on arrival`}>
+							<span className={classes.startDelay}>
+								<LuTimer size={11} aria-hidden />
+								{startDelay}
+							</span>
+						</Tooltip>
+					)}
 					{issueCount > 0 && (
 						<Tooltip label={`${issueCount} ${issueCount === 1 ? 'issue' : 'issues'} to fix`}>
 							<span className={classes.issue}>
@@ -97,25 +112,59 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 					)}
 				</div>
 
-				{isConditions ? (
+				{pairedStart && (
+					<Text className={classes.pairBadge} truncate title={pairedStart.name}>
+						{pairedStart.name || 'Untitled'} · waits for {pairedStart.branchCount}{' '}
+						{pairedStart.branchCount === 1 ? 'branch' : 'branches'}
+					</Text>
+				)}
+
+				{hasBranches(config.type) && node.branches.length > 0 && (
 					<div className={classes.branches}>
 						{node.branches.map((branch, index) => (
-							<div key={branch.id} className={classes.branch}>
+							<div
+								key={branch.id}
+								className={classes.branch}
+								data-kind={isParallel ? 'parallel' : undefined}
+							>
 								<Text fz={11} fw={500} truncate c={branchTargets[branch.id] ? 'dark.5' : 'dimmed'}>
-									{branch.key || `Branch ${index + 1} (exit)`}
+									{isParallel
+										? branch.key.trim() || 'Unnamed branch'
+										: branch.key || `Branch ${index + 1} (exit)`}
 								</Text>
 								<Handle
 									type="source"
 									id={branchHandle(branch.id)}
 									position={Position.Right}
 									className={classes.handle}
-									data-kind="branch"
+									data-kind={isParallel ? 'parallel' : 'branch'}
 								/>
 							</div>
 						))}
 					</div>
-				) : (
+				)}
+				{supportsNext(config.type) && (
 					<Handle type="source" id={HANDLE_NEXT} position={Position.Right} className={classes.handle} />
+				)}
+
+				{/* Anchors for the derived start → join edge, after the real handles so they are never the default. */}
+				{isParallel && (
+					<Handle
+						type="source"
+						id={HANDLE_PAIR}
+						position={Position.Bottom}
+						isConnectable={false}
+						className={classes.pairHandle}
+					/>
+				)}
+				{config.type === 'parallel_end' && (
+					<Handle
+						type="target"
+						id={HANDLE_PAIR}
+						position={Position.Bottom}
+						isConnectable={false}
+						className={classes.pairHandle}
+					/>
 				)}
 
 				{hasFailure && (

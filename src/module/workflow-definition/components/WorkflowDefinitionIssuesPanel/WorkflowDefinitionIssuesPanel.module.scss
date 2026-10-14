@@ -18,12 +18,25 @@
 	&:hover {
 		border-color: var(--mantine-color-red-3);
 	}
+
+	&[data-severity='warning'] {
+		border-color: var(--mantine-color-yellow-2);
+		background-color: var(--mantine-color-yellow-0);
+
+		&:hover {
+			border-color: var(--mantine-color-yellow-4);
+		}
+	}
 }
 
 .issueIcon {
 	flex-shrink: 0;
 	margin-top: 2px;
 	color: var(--mantine-color-red-6);
+
+	.issue[data-severity='warning'] & {
+		color: var(--mantine-color-yellow-7);
+	}
 }
 
 .issueBody {
