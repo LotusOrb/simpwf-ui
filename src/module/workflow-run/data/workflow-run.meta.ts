@@ -5,6 +5,7 @@ import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 import type { WorkflowRunSort } from '@module/workflow-run/types/WorkflowRunSort';
 import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
+import type { WorkflowRunStatusTab } from '@module/workflow-run/types/WorkflowRunStatusTab';
 
 export const runStatusMeta: Record<WorkflowRunStatus, { label: string; color: string; icon: IconType }> = {
 	running: { label: 'Running', color: 'blue', icon: LuLoaderCircle },
@@ -16,6 +17,23 @@ export const runStatusMeta: Record<WorkflowRunStatus, { label: string; color: st
 };
 
 export const runStatusOrder = Object.keys(runStatusMeta) as WorkflowRunStatus[];
+
+/** Status tabs on the run list, in display order. `statuses: null` sends no status filter. */
+export const runStatusTabs: Record<
+	WorkflowRunStatusTab,
+	{ label: string; color?: string; statuses: WorkflowRunStatus[] | null }
+> = {
+	all: { label: 'All runs', statuses: null },
+	active: { label: 'Active', statuses: ['running', 'waiting', 'paused'] },
+	...(Object.fromEntries(
+		runStatusOrder.map((status) => [
+			status,
+			{ label: runStatusMeta[status].label, color: runStatusMeta[status].color, statuses: [status] },
+		]),
+	) as Record<WorkflowRunStatus, { label: string; color: string; statuses: WorkflowRunStatus[] }>),
+};
+
+export const runStatusTabOrder = Object.keys(runStatusTabs) as WorkflowRunStatusTab[];
 
 export const getAllowedActions = (run: WorkflowRun): WorkflowRunAction[] => {
 	if (run.termination_pending) return [];

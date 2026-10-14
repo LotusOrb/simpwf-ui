@@ -1,5 +1,4 @@
 export {
-	useCountWorkflowRunsByStatusQuery,
 	useGetWorkflowRunContextQuery,
 	useGetWorkflowRunDebugContextQuery,
 	useGetWorkflowRunNodeDebugsQuery,

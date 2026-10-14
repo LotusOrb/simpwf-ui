@@ -40,7 +40,7 @@ import { WorkflowRunIdText } from '@module/workflow-run/components/WorkflowRunId
 import { WorkflowRunMigrateModal } from '@module/workflow-run/components/WorkflowRunMigrateModal';
 import { WorkflowRunStatusTabs } from '@module/workflow-run/components/WorkflowRunStatusTabs';
 import { WorkflowRunTable } from '@module/workflow-run/components/WorkflowRunTable';
-import { runSortOrders } from '@module/workflow-run/data';
+import { runSortOrders, runStatusTabs } from '@module/workflow-run/data';
 import {
 	SEARCH_URL_UPDATE,
 	useListWorkflowRunsQuery,
@@ -64,8 +64,8 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 export const WorkflowRunListPage: React.FC = () => {
 	const [view, setView] = useListViewPreference('workflowRun');
 	const [params, setParams] = useWorkflowRunListParams();
-	const { search, definitionId, status: statusTab, sort, page, perPage } = params;
-	const filters: WorkflowRunFilterValues = { search, definitionId, sort };
+	const { search, definitionId, status: statusTab, debug, sort, page, perPage } = params;
+	const filters: WorkflowRunFilterValues = { search, definitionId, debug, sort };
 	const [debouncedSearch] = useDebouncedValue(search, 300);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	const [busyIds, setBusyIds] = useState<string[]>([]);
@@ -82,6 +82,7 @@ export const WorkflowRunListPage: React.FC = () => {
 
 	const runId = debouncedSearch.trim();
 	const { by, direction } = runSortOrders[sort];
+	const statuses = runStatusTabs[statusTab].statuses;
 	const query: WorkflowRunQuery = {
 		page,
 		perPage,
@@ -93,7 +94,8 @@ export const WorkflowRunListPage: React.FC = () => {
 						workflow_definition_id: { op: '_eq' as const, value: definitionId },
 					}
 				: {}),
-			...(statusTab === 'all' ? {} : { status: { op: '_eq' as const, value: [statusTab] } }),
+			...(statuses ? { status: { op: '_eq' as const, value: statuses } } : {}),
+			...(debug !== null ? { debug: { op: '_eq' as const, value: debug } } : {}),
 		},
 	};
 
@@ -228,12 +230,13 @@ export const WorkflowRunListPage: React.FC = () => {
 		setPendingStop(null);
 	};
 
-	const hasActiveFilters = !!search || !!definitionId || statusTab !== 'all';
+	const hasActiveFilters = !!search || !!definitionId || debug !== null || statusTab !== 'all';
 	const clearFilters = () =>
 		setParams({
 			search: null,
 			definitionId: null,
 			status: null,
+			debug: null,
 			sort: null,
 			page: null,
 		});

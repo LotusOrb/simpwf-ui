@@ -2,12 +2,12 @@ import React from 'react';
 
 import { ScrollArea, UnstyledButton } from '@mantine/core';
 
-import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
+import type { WorkflowRunStatusTab } from '@module/workflow-run/types/WorkflowRunStatusTab';
 
-import { runStatusMeta, runStatusOrder } from '../../data';
+import { runStatusTabOrder, runStatusTabs } from '../../data';
 import classes from './WorkflowRunStatusTabs.module.scss';
 
-export type WorkflowRunStatusTab = WorkflowRunStatus | 'all';
+export type { WorkflowRunStatusTab };
 
 interface WorkflowRunStatusTabsProps {
 	value: WorkflowRunStatusTab;
@@ -16,14 +16,7 @@ interface WorkflowRunStatusTabsProps {
 	onChange: (value: WorkflowRunStatusTab) => void;
 }
 
-const tabs: { value: WorkflowRunStatusTab; label: string; color?: string }[] = [
-	{ value: 'all', label: 'All runs' },
-	...runStatusOrder.map((status) => ({
-		value: status,
-		label: runStatusMeta[status].label,
-		color: runStatusMeta[status].color,
-	})),
-];
+const tabs = runStatusTabOrder.map((value) => ({ value, ...runStatusTabs[value] }));
 
 export const WorkflowRunStatusTabs: React.FC<WorkflowRunStatusTabsProps> = ({ value, counts, onChange }) => {
 	return (
