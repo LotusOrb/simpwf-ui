@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 
-import { Alert, Badge, Button, Group, ScrollArea, Stack, Tabs, Text, ThemeIcon, Tooltip } from '@mantine/core';
+import { Alert, Badge, Button, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import { LuCheck, LuCircleAlert, LuFileType, LuMousePointerClick, LuShieldCheck, LuUndo2 } from 'react-icons/lu';
 
 import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
 import { useNotify } from '@module/notification/hooks';
+import { shownStartDelay } from '@module/workflow-definition/data';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
 import { useLazyGetWorkflowRunDebugContextQuery } from '@module/workflow-run/hooks';
@@ -84,8 +85,7 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 					No node selected
 				</Text>
 				<Text fz="xs" c="dimmed" ta="center" maw={220}>
-					Pick a node on the canvas or a row in the timeline to inspect its attempts, payloads and context
-					diff.
+					Pick a node on the canvas or a row in the timeline to inspect its attempts and payloads.
 				</Text>
 			</Stack>
 		);
@@ -94,8 +94,13 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 	const typeMeta = nodeDefinitionTypeMeta(node.type);
 	const status = occurrence?.status ?? 'pending';
 	const statusMeta = nodeRunStatusMeta[status];
+	const isDelay = node.type === 'delay';
+	const startDelay = shownStartDelay(node);
 
 	const facts: { label: string; value: React.ReactNode }[] = [
+		// Configured waits from the definition snapshot. A library delay's own value isn't in the snapshot.
+		...(isDelay && node.delay ? [{ label: 'Delay', value: node.delay }] : []),
+		...(startDelay ? [{ label: 'Start delay', value: startDelay }] : []),
 		{ label: 'Attempts', value: debug ? `${debug.latest_attempt} of ${debug.attempt_count}` : '—' },
 		{ label: 'Duration', value: formatDuration(debug?.duration_ms ?? null) },
 		{ label: 'Started', value: timestamp(debug?.started_at ?? null) },
@@ -179,48 +184,26 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 						))}
 					</div>
 
-					<Tabs defaultValue="io" variant="outline">
-						<Tabs.List>
-							<Tabs.Tab value="io" fz="xs">
-								Input / Output
-							</Tabs.Tab>
-							<Tabs.Tab value="context" fz="xs">
-								Context diff
-							</Tabs.Tab>
-						</Tabs.List>
-
-						<Tabs.Panel value="io" pt="sm">
-							<Stack gap="xs">
-								<Text fz={11} fw={600} c="dimmed">
-									Input
-								</Text>
-								<WorkflowRunJsonView value={debug?.input} emptyLabel="No input recorded" />
-								<Text fz={11} fw={600} c="dimmed" mt={4}>
-									Output
-								</Text>
-								<WorkflowRunJsonView value={debug?.output} emptyLabel="Node has not produced output" />
-							</Stack>
-						</Tabs.Panel>
-
-						<Tabs.Panel value="context" pt="sm">
-							<Stack gap="xs">
-								<Text fz={11} fw={600} c="dimmed">
-									Before
-								</Text>
-								<WorkflowRunJsonView
-									value={debug?.context_before}
-									emptyLabel="No snapshot taken (lean context mode)"
-								/>
-								<Text fz={11} fw={600} c="dimmed" mt={4}>
-									After
-								</Text>
-								<WorkflowRunJsonView
-									value={debug?.context_after}
-									emptyLabel="Node has not committed a context yet"
-								/>
-							</Stack>
-						</Tabs.Panel>
-					</Tabs>
+					<Stack gap="xs">
+						<Text fz={11} fw={600} c="dimmed">
+							Input
+						</Text>
+						<WorkflowRunJsonView value={debug?.input} emptyLabel="No input recorded" />
+						<Text fz={11} fw={600} c="dimmed" mt={4}>
+							Output
+						</Text>
+						{/* A finished node can legitimately output null (a delay node always does). */}
+						<WorkflowRunJsonView
+							value={debug?.output}
+							emptyLabel="Node has not produced output"
+							showNull={debug?.status === 'succeeded'}
+						/>
+						{isDelay && debug?.status === 'succeeded' && (
+							<Text fz="xs" c="dimmed">
+								A delay node always outputs null.
+							</Text>
+						)}
+					</Stack>
 				</Stack>
 			</ScrollArea>
 		</div>

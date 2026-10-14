@@ -11,16 +11,19 @@ interface WorkflowRunJsonViewProps {
 	value: unknown;
 	maxHeight?: number | string;
 	emptyLabel?: string;
+	/** Render a recorded `null` as JSON instead of the empty label, e.g. the output of a node that finished. */
+	showNull?: boolean;
 }
 
 export const WorkflowRunJsonView: React.FC<WorkflowRunJsonViewProps> = ({
 	value,
 	maxHeight = 240,
 	emptyLabel = 'No data captured',
+	showNull,
 }) => {
 	const text = formatJson(value);
 
-	if (!text || text === 'null') {
+	if (!text || (text === 'null' && !(showNull && value === null))) {
 		return (
 			<Text fz="xs" c="dimmed" p="xs">
 				{emptyLabel}
