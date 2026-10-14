@@ -8,6 +8,7 @@ export {
 	useListWorkflowDefinitionVersionPagesInfiniteQuery,
 	useListWorkflowDefinitionVersionsQuery,
 } from './workflow-definition.hooks';
+export { latestRunQuery, useEditorContextTypes, type EditorContextTypes } from './workflowDefinitionContextTypes.hooks';
 export { useWorkflowDefinitionDelete } from './workflowDefinitionDelete.hooks';
 export {
 	PALETTE_DRAG_TYPE,
@@ -16,4 +17,4 @@ export {
 	useWorkflowDefinitionEditorNodeActions,
 	type WorkflowDefinitionPaletteItem,
 } from './workflowDefinitionEditor.hooks';
-export { SEARCH_URL_UPDATE, useWorkflowDefinitionListParams } from './workflowDefinitionList.hooks';
+export { NAME_URL_UPDATE, useWorkflowDefinitionListParams } from './workflowDefinitionList.hooks';

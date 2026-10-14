@@ -1,16 +1,6 @@
 import React, { useState } from 'react';
 
-import {
-	Anchor,
-	Button,
-	Collapse,
-	Group,
-	Loader,
-	ScrollArea,
-	Text,
-	TextInput,
-	UnstyledButton,
-} from '@mantine/core';
+import { Anchor, Button, Collapse, Group, Loader, ScrollArea, Text, TextInput, UnstyledButton } from '@mantine/core';
 import { LuChevronDown, LuChevronUp, LuExternalLink, LuGripVertical, LuLibrary, LuSearch } from 'react-icons/lu';
 import { Link } from 'react-router';
 
@@ -24,7 +14,7 @@ import {
 	useWorkflowDefinitionEditorAddNode,
 	type WorkflowDefinitionPaletteItem,
 } from '@module/workflow-definition/hooks';
-import { selectEditorNodes, selectEditorScope } from '@module/workflow-definition/store';
+import { selectEditorNodeDefinition, selectEditorNodes, selectEditorScope } from '@module/workflow-definition/store';
 
 import classes from './WorkflowDefinitionPalette.module.scss';
 
@@ -99,8 +89,10 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 	const nodes = useCoreSelector(selectEditorNodes);
 	const scope = useCoreSelector(selectEditorScope);
 	const scopeLabel = scopeTrail(nodes, scope).at(-1)?.config.name ?? 'Workflow';
+	// The engine resolves library references one level deep, so a node definition's own nodes must be inline.
+	const withLibrary = !useCoreSelector(selectEditorNodeDefinition);
 
-	const library = useListNodeDefinitionsQuery(NODE_LIBRARY_QUERY);
+	const library = useListNodeDefinitionsQuery(NODE_LIBRARY_QUERY, { skip: !withLibrary });
 
 	const term = query.trim().toLowerCase();
 	const matches = (...values: string[]) => !term || values.some((value) => value.toLowerCase().includes(term));
@@ -229,7 +221,8 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 						))
 					),
 				)}
-				{renderSection('library', 'Node library', library.data ? definitions.length : null, renderLibrary())}
+				{withLibrary &&
+					renderSection('library', 'Node library', library.data ? definitions.length : null, renderLibrary())}
 			</ScrollArea>
 		</div>
 	);

@@ -31,6 +31,7 @@ import {
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
+import { ContextSourceMenu } from './ContextSourceMenu';
 import classes from './WorkflowDefinitionEditorHeader.module.scss';
 
 interface WorkflowDefinitionEditorHeaderProps {
@@ -188,6 +189,7 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 							</Tooltip>
 						</>
 					)}
+					<ContextSourceMenu />
 					{current && (
 						<Menu position="bottom-end" shadow="md" withinPortal>
 							<Menu.Target>

@@ -27,8 +27,9 @@ import { CodeEditor } from '@common/component/CodeEditor';
 import {
 	defaultOutputProperty,
 	formatRawNode,
+	isBuiltinNodeType,
 	isOutputKey,
-	nodeTypeMeta,
+	nodeTypeMetaOf,
 	parseRawNode,
 	retryOnRecoveryDefault,
 	supportsFailure,
@@ -38,12 +39,18 @@ import {
 	supportsTimeout,
 } from '@module/workflow-definition/data';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
-import { nodeSelected, nodesRemoved, selectEditorEdges, selectEditorIssues } from '@module/workflow-definition/store';
+import {
+	nodeSelected,
+	nodesRemoved,
+	selectEditorEdges,
+	selectEditorIssues,
+	selectEditorNodeDefinition,
+} from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionHookScript } from '@module/workflow-definition/types/WorkflowDefinitionHookScript';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
-import { ContextTypesProvider, InspectorContextTypesPicker } from './InspectorContextTypes';
+import { ContextTypesProvider, InspectorContextTypesStatus } from './InspectorContextTypes';
 import { useContextTypes } from './InspectorContextTypes.context';
 import { DurationInput, JsonField, SectionLabel } from './InspectorControls';
 import { ConditionsFields, FailureFields, InspectorNodeFields, ParallelStartFields } from './InspectorNodeFields';
@@ -58,11 +65,10 @@ const outputPropertyDescription = (type: WorkflowDefinitionNodeType) =>
 
 interface InspectorNodeProps {
 	node: WorkflowDefinitionEditorNode;
+	/** The node a node definition is made of: always shown, never closed or deleted. */
+	isDefinitionRoot?: boolean;
 	tab: NodeTab;
 	onTabChange: (tab: NodeTab) => void;
-	/** Debug run whose context types feed the script editors. */
-	debugRunId: string | null;
-	onDebugRunChange: (runId: string | null) => void;
 }
 
 const HookField: React.FC<{
@@ -181,7 +187,7 @@ const StartDelayField: React.FC<{ node: WorkflowDefinitionEditorNode }> = ({ nod
 	);
 };
 
-const RawJsonField: React.FC<{ node: WorkflowDefinitionEditorNode }> = ({ node }) => {
+const RawJsonField: React.FC<{ node: WorkflowDefinitionEditorNode; jsonSchema?: object }> = ({ node, jsonSchema }) => {
 	const { replaceRaw } = useWorkflowDefinitionEditorNodeActions(node.id);
 	const edges = useCoreSelector(selectEditorEdges);
 	const [text, setText] = useState(() => formatRawNode(node, edges));
@@ -204,16 +210,24 @@ const RawJsonField: React.FC<{ node: WorkflowDefinitionEditorNode }> = ({ node }
 			value={text}
 			onChange={onChange}
 			error={error}
+			jsonSchema={jsonSchema}
 		/>
 	);
 };
 
+const ALL_TABS: { label: string; value: NodeTab }[] = [
+	{ label: 'Setup', value: 'setup' },
+	{ label: 'Hooks', value: 'hooks' },
+	{ label: 'Advanced', value: 'advanced' },
+	{ label: 'JSON', value: 'json' },
+];
+const JSON_TAB = ALL_TABS.filter((item) => item.value === 'json');
+
 export const InspectorNode: React.FC<InspectorNodeProps> = ({
 	node,
-	tab,
+	isDefinitionRoot,
+	tab: selectedTab,
 	onTabChange,
-	debugRunId,
-	onDebugRunChange,
 }) => {
 	const dispatch = useCoreDispatch();
 	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
@@ -221,9 +235,13 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 	const issues = nodeIssues.filter((issue) => issue.severity !== 'warning');
 	const warnings = nodeIssues.filter((issue) => issue.severity === 'warning');
 	const canEdit = useCan(Permission.DefinitionsWrite);
+	const nodeDefinition = useCoreSelector(selectEditorNodeDefinition);
 
 	const { config } = node;
-	const meta = nodeTypeMeta[config.type];
+	const meta = nodeTypeMetaOf(config.type);
+	// The editor has no form for a custom type: its node is edited as JSON, checked by the engine on save.
+	const custom = !isBuiltinNodeType(config.type);
+	const tab = custom ? 'json' : selectedTab;
 	const isReference = !!config.node_definition_id;
 	// Tabs whose script editors see `context`.
 	const scripted =
@@ -242,14 +260,16 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 						{config.name || 'Untitled'}
 					</Text>
 					<Text fz="xs" c="dimmed">
-						{meta.label}
+						{isDefinitionRoot ? `${meta.label} node definition` : meta.label}
 					</Text>
 				</div>
-				<Tooltip label="Close">
-					<ActionIcon aria-label="Close node settings" onClick={() => dispatch(nodeSelected(null))}>
-						<LuX size={16} />
-					</ActionIcon>
-				</Tooltip>
+				{!isDefinitionRoot && (
+					<Tooltip label="Close">
+						<ActionIcon aria-label="Close node settings" onClick={() => dispatch(nodeSelected(null))}>
+							<LuX size={16} />
+						</ActionIcon>
+					</Tooltip>
+				)}
 			</div>
 
 			<div className={classes.header}>
@@ -257,26 +277,15 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 					value={tab}
 					onChange={(value) => onTabChange(value as NodeTab)}
 					classNames={{ root: classes.segmented, indicator: classes.indicator, label: classes.segmentLabel }}
-					data={[
-						{ label: 'Setup', value: 'setup' },
-						{ label: 'Hooks', value: 'hooks' },
-						{ label: 'Advanced', value: 'advanced' },
-						{ label: 'JSON', value: 'json' },
-					]}
+					data={custom ? JSON_TAB : ALL_TABS}
 				/>
 			</div>
 
-			<ContextTypesProvider debugRunId={debugRunId} nodeId={node.id}>
+			<ContextTypesProvider nodeId={node.id}>
 				<ScrollArea flex={1} type="hover">
 					<Fieldset variant="unstyled" disabled={!canEdit}>
 						<Stack gap="lg" p="md">
-							{scripted && (
-								<InspectorContextTypesPicker
-									nodeId={node.id}
-									debugRunId={debugRunId}
-									onChange={onDebugRunChange}
-								/>
-							)}
+							{scripted && <InspectorContextTypesStatus nodeId={node.id} />}
 
 							{issues.length > 0 && (
 								<Alert
@@ -378,7 +387,12 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 								</>
 							)}
 
-							{tab === 'json' && <RawJsonField node={node} />}
+							{tab === 'json' && (
+								<RawJsonField
+									node={node}
+									jsonSchema={(isDefinitionRoot && nodeDefinition?.schema) || undefined}
+								/>
+							)}
 
 							{tab === 'advanced' && (
 								<>
@@ -418,23 +432,29 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 										label={<SectionLabel>Metadata</SectionLabel>}
 										description="Free-form JSON object stored with the node"
 									/>
-									<TextInput
-										label={<SectionLabel>Node id</SectionLabel>}
-										value={node.id}
-										readOnly
-										styles={{
-											input: { fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 12 },
-										}}
-										rightSection={
-											<CopyButton value={node.id}>
-												{({ copied, copy }) => (
-													<ActionIcon aria-label="Copy node id" onClick={copy}>
-														{copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
-													</ActionIcon>
-												)}
-											</CopyButton>
-										}
-									/>
+									{/* A node definition's own node has no id of its own: the workflow using it gives one. */}
+									{!isDefinitionRoot && (
+										<TextInput
+											label={<SectionLabel>Node id</SectionLabel>}
+											value={node.id}
+											readOnly
+											styles={{
+												input: {
+													fontFamily: 'var(--mantine-font-family-monospace)',
+													fontSize: 12,
+												},
+											}}
+											rightSection={
+												<CopyButton value={node.id}>
+													{({ copied, copy }) => (
+														<ActionIcon aria-label="Copy node id" onClick={copy}>
+															{copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
+														</ActionIcon>
+													)}
+												</CopyButton>
+											}
+										/>
+									)}
 								</>
 							)}
 						</Stack>
@@ -442,7 +462,7 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 				</ScrollArea>
 			</ContextTypesProvider>
 
-			{canEdit && (
+			{canEdit && !isDefinitionRoot && (
 				<div className={classes.footer}>
 					<Button
 						fullWidth

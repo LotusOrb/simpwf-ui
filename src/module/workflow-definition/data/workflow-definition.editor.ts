@@ -12,7 +12,7 @@ import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/W
 import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/types/WorkflowDefinitionNodeConfig';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
-import { layoutGraph, nodeTypeMeta } from './workflow-definition.meta';
+import { layoutGraph, nodeTypeMetaOf } from './workflow-definition.meta';
 import {
 	analyzeParallel,
 	MAX_PARALLEL_BRANCHES,
@@ -193,7 +193,7 @@ export const createEditorNode = (
 		position,
 		config: {
 			type: source.type,
-			name: nextNodeName(nodes, scope, nodeTypeMeta[source.type].label),
+			name: nextNodeName(nodes, scope, nodeTypeMetaOf(source.type).label),
 			...structuredClone(defaultConfigs[source.type]),
 		},
 		branches,
@@ -432,6 +432,7 @@ export const toEditorDocument = (
 		nodes: {},
 		starts: { [ROOT_SCOPE]: { position: { x: 0, y: 0 } } },
 		edges: [],
+		nodeDefinition: null,
 	};
 	if (!definition) return document;
 
@@ -728,7 +729,11 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 		else if (!isContextPath(value)) nodeIssue(node, `${label} must be a path like user.name or items[0]`);
 	};
 
-	if (!document.name.trim()) issues.push({ nodeId: null, scope: null, message: 'Workflow name is required' });
+	// A node definition is named by its node, whose name is checked with the other nodes.
+	const rootId = document.nodeDefinition?.rootId;
+	if (!document.nodeDefinition && !document.name.trim()) {
+		issues.push({ nodeId: null, scope: null, message: 'Workflow name is required' });
+	}
 
 	const checkScope = (scope: string | null, label: string) => {
 		if (scopeNodes(document.nodes, scope).length === 0) {
@@ -740,6 +745,16 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 		const keyTargets = new Map<string, string | null>();
 		for (const node of scopeNodes(document.nodes, scope)) {
 			if (node.config.type !== 'conditions') continue;
+			// The engine rejects `keys` anywhere in a node definition: the workflow using it routes the branches.
+			if (document.nodeDefinition) {
+				if (node.branches.some((branch) => outgoingTarget(document.edges, node.id, branchHandle(branch.id)))) {
+					nodeIssue(
+						node,
+						'Branches of a node definition are routed by each workflow that uses it; disconnect them here',
+					);
+				}
+				continue;
+			}
 			for (const branch of node.branches) {
 				const key = branch.key.trim();
 				const target = outgoingTarget(document.edges, node.id, branchHandle(branch.id));
@@ -754,7 +769,7 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 			}
 		}
 	};
-	checkScope(null, 'The workflow');
+	if (!document.nodeDefinition) checkScope(null, 'The workflow');
 
 	const broken = new Set<string>();
 	for (const node of Object.values(document.nodes)) {
@@ -777,7 +792,7 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 		if (config.post_script) requireText(node, config.post_script.script, 'Post-script');
 		// References may carry start_delay (null disables the library's), so these run before the reference skip.
 		if (config.start_delay !== undefined && !supportsStartDelay(config.type)) {
-			nodeIssue(node, `${nodeTypeMeta[config.type].label} nodes don't support start delay`);
+			nodeIssue(node, `${nodeTypeMetaOf(config.type).label} nodes don't support start delay`);
 		}
 		checkDuration(node, config.start_delay ?? undefined, 'Start delay');
 		if (config.node_definition_id && config.delay !== undefined) {
@@ -844,11 +859,13 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 				checkScope(node.id, `Group "${config.name}"`);
 				break;
 			case 'parallel_start':
+				// A parallel_start definition carries graph ids of the workflow it was made for; only the engine checks them.
+				if (node.id === rootId) break;
 				if (!checkParallelStart(document, node, (message) => nodeIssue(node, message))) broken.add(node.id);
 				break;
 			case 'parallel_end':
 				requireText(node, config.combining_script, 'Combining script');
-				checkParallelEnd(document, node, (message) => nodeIssue(node, message));
+				if (node.id !== rootId) checkParallelEnd(document, node, (message) => nodeIssue(node, message));
 				for (const message of combiningScriptWarnings(document, node)) {
 					issues.push({ nodeId: node.id, scope: node.parentId, message, severity: 'warning' });
 				}
@@ -866,7 +883,9 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 			.map((problem) => `${problem.startId}\u0000${problem.branch}`),
 	);
 	for (const problem of analysis.problems) {
-		if (broken.has(problem.startId)) continue;
+		if (broken.has(problem.startId) || problem.startId === rootId) continue;
+		// Condition keys come from the workflow using a node definition, so they can't be resolved here.
+		if (document.nodeDefinition && problem.kind === 'missing_key') continue;
 		// "No path" follows from any other problem on the same branch, like the engine stopping at the first error.
 		if (problem.kind === 'no_path' && failedBranches.has(`${problem.startId}\u0000${problem.branch}`)) continue;
 		const node = document.nodes[problem.nodeId] ?? document.nodes[problem.startId];

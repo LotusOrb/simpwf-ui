@@ -1,6 +1,7 @@
 import type { WorkflowDefinitionContent } from './WorkflowDefinitionContent';
 import type { WorkflowDefinitionEditorEdge } from './WorkflowDefinitionEditorEdge';
 import type { WorkflowDefinitionEditorNode } from './WorkflowDefinitionEditorNode';
+import type { WorkflowDefinitionEditorNodeDefinition } from './WorkflowDefinitionEditorNodeDefinition';
 import type { WorkflowDefinitionEditorStart } from './WorkflowDefinitionEditorStart';
 
 export interface WorkflowDefinitionEditorDocument {
@@ -12,4 +13,6 @@ export interface WorkflowDefinitionEditorDocument {
 	nodes: Record<string, WorkflowDefinitionEditorNode>;
 	starts: Record<string, WorkflowDefinitionEditorStart>;
 	edges: WorkflowDefinitionEditorEdge[];
+	/** Set when the document is a node definition rather than a workflow. */
+	nodeDefinition: WorkflowDefinitionEditorNodeDefinition | null;
 }

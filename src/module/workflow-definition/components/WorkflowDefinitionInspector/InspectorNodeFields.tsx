@@ -53,6 +53,7 @@ import {
 	nodeSelected,
 	scopeEntered,
 	selectEditorEdges,
+	selectEditorNodeDefinition,
 	selectEditorNodes,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
@@ -812,18 +813,22 @@ const GroupFields: React.FC<FieldsProps> = ({ node }) => {
 	const dispatch = useCoreDispatch();
 	const nodes = useCoreSelector(selectEditorNodes);
 	const childCount = Object.values(nodes).filter((child) => child.parentId === node.id).length;
+	// A group definition's canvas is always inside its group.
+	const isOpen = useCoreSelector(selectEditorNodeDefinition)?.rootId === node.id;
 
 	return (
 		<Stack gap="xs">
 			<SectionLabel>Contents</SectionLabel>
 			<Text fz="sm" c="dimmed">
 				{childCount === 0
-					? 'This group is empty. Open it to add nodes and connect its Start.'
+					? `This group is empty. ${isOpen ? 'Add' : 'Open it to add'} nodes and connect its Start.`
 					: `${childCount} ${childCount === 1 ? 'node' : 'nodes'} inside. The group continues to its next node when its inner graph exits.`}
 			</Text>
-			<Button variant="default" w="fit-content" onClick={() => dispatch(scopeEntered(node.id))}>
-				Open group
-			</Button>
+			{!isOpen && (
+				<Button variant="default" w="fit-content" onClick={() => dispatch(scopeEntered(node.id))}>
+					Open group
+				</Button>
+			)}
 		</Stack>
 	);
 };

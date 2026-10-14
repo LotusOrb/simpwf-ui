@@ -30,7 +30,7 @@ import {
 	HANDLE_PAIR,
 	isInlineGroup,
 	isPairEdgeId,
-	nodeTypeMeta,
+	nodeTypeMetaOf,
 	outgoingTarget,
 	pairEdgeId,
 	scopeKey,
@@ -51,6 +51,7 @@ import {
 	scopeEntered,
 	selectEditorEdges,
 	selectEditorIssues,
+	selectEditorNodeDefinition,
 	selectEditorNodes,
 	selectEditorScope,
 	selectEditorSelectedId,
@@ -80,6 +81,7 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 	const scope = useCoreSelector(selectEditorScope);
 	const selectedId = useCoreSelector(selectEditorSelectedId);
 	const issues = useCoreSelector(selectEditorIssues);
+	const nodeDefinition = useCoreSelector(selectEditorNodeDefinition);
 
 	const insets = useAppLayoutInsets();
 	const { fitView, onMoveStart, onMoveEnd } = useInsetFitView({
@@ -110,23 +112,32 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 		return partner && { name: partner.config.name, branchCount: partner.branches.length };
 	};
 
+	// A node definition's root holds just its own node, which nothing starts or connects.
+	const showStart = !nodeDefinition || scope !== null;
+
 	const flowNodes: WorkflowDefinitionFlowNode[] = [
-		{
-			id: startId,
-			type: 'start',
-			position: start.position,
-			measured: start.measured,
-			deletable: false,
-			selectable: false,
-			data: { connected: !!outgoingTarget(edges, startId, HANDLE_NEXT) },
-		},
+		...(showStart
+			? [
+					{
+						id: startId,
+						type: 'start' as const,
+						position: start.position,
+						measured: start.measured,
+						deletable: false,
+						selectable: false,
+						data: { connected: !!outgoingTarget(edges, startId, HANDLE_NEXT) },
+					},
+				]
+			: []),
 		...visibleNodes.map((node) => ({
 			id: node.id,
 			type: 'step' as const,
 			position: node.position,
 			measured: node.measured,
 			selected: node.id === selectedId,
+			deletable: node.id !== nodeDefinition?.rootId,
 			data: {
+				standalone: node.id === nodeDefinition?.rootId,
 				node,
 				issueCount: issueCounts.get(node.id) ?? 0,
 				branchTargets: Object.fromEntries(
@@ -260,22 +271,25 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 					nodeColor={(node) => {
 						if (node.type !== 'step') return 'var(--mantine-color-gray-5)';
 						const { type } = (node as WorkflowDefinitionStepFlowNode).data.node.config;
-						return `var(--mantine-color-${nodeTypeMeta[type].color}-4)`;
+						return `var(--mantine-color-${nodeTypeMetaOf(type).color}-4)`;
 					}}
 				/>
 
-				{scope && (
+				{/* A group definition's trail starts at the group itself: there is nothing above it. */}
+				{scope && (!nodeDefinition || trail.length > 1) && (
 					<Panel position="top-left">
 						<Paper className={classes.trail} px="sm" py={6}>
 							<Breadcrumbs separator="›" separatorMargin={6}>
-								<Anchor
-									component="button"
-									type="button"
-									fz="sm"
-									onClick={() => dispatch(scopeEntered(null))}
-								>
-									Workflow
-								</Anchor>
+								{!nodeDefinition && (
+									<Anchor
+										component="button"
+										type="button"
+										fz="sm"
+										onClick={() => dispatch(scopeEntered(null))}
+									>
+										Workflow
+									</Anchor>
+								)}
 								{trail.map((group, index) =>
 									index === trail.length - 1 ? (
 										<Text key={group.id} fz="sm" fw={600}>

@@ -14,7 +14,12 @@ import {
 	toWorkflowDefinitionContent,
 	validateEditorDocument,
 } from '@module/workflow-definition/data/workflow-definition.editor';
+import {
+	nodeDefinitionScope,
+	toNodeDefinitionContent,
+} from '@module/workflow-definition/data/workflow-definition.node-definition';
 import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
+import type { WorkflowDefinitionEditorContextSource } from '@module/workflow-definition/types/WorkflowDefinitionEditorContextSource';
 import type { WorkflowDefinitionEditorDocument } from '@module/workflow-definition/types/WorkflowDefinitionEditorDocument';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
@@ -27,6 +32,7 @@ export interface WorkflowDefinitionEditorState extends WorkflowDefinitionEditorD
 	dirty: boolean;
 	/** The document as last loaded or saved; discarding restores it. */
 	baseline: WorkflowDefinitionEditorDocument;
+	contextSource: WorkflowDefinitionEditorContextSource;
 }
 
 const initialState: WorkflowDefinitionEditorState = {
@@ -36,11 +42,14 @@ const initialState: WorkflowDefinitionEditorState = {
 	selectedId: null,
 	dirty: false,
 	baseline: toEditorDocument(null, {}),
+	contextSource: { mode: 'latest' },
 };
 
 const removeNodes = (state: WorkflowDefinitionEditorState, ids: string[]) => {
+	// A node definition's own node is the document; only what's inside a group definition can go.
+	const removable = ids.filter((id) => id !== state.nodeDefinition?.rootId);
 	// A parallel block only exists as a pair, so either half takes the other with it.
-	const paired = ids.flatMap((id) => {
+	const paired = removable.flatMap((id) => {
 		const pairId = state.nodes[id]?.pairId;
 		return pairId && state.nodes[pairId]?.pairId === id ? [id, pairId] : [id];
 	});
@@ -68,10 +77,12 @@ export const workflowDefinitionEditorSlice = createSlice({
 		editorLoaded: (_state, action: PayloadAction<{ key: string; document: WorkflowDefinitionEditorDocument }>) => ({
 			...action.payload.document,
 			loadedKey: action.payload.key,
-			scope: null,
+			scope: nodeDefinitionScope(action.payload.document),
 			selectedId: null,
 			dirty: false,
 			baseline: action.payload.document,
+			// Another definition's run would describe the wrong workflow.
+			contextSource: { mode: 'latest' },
 		}),
 		editorReset: () => initialState,
 		editorSaved: (state) => {
@@ -80,21 +91,26 @@ export const workflowDefinitionEditorSlice = createSlice({
 		editorDiscarded: (state) => ({
 			...state.baseline,
 			loadedKey: state.loadedKey,
-			scope: null,
+			scope: nodeDefinitionScope(state.baseline),
 			selectedId: null,
 			dirty: false,
 			baseline: state.baseline,
+			contextSource: state.contextSource,
 		}),
 		nameChanged: (state, action: PayloadAction<string>) => {
 			state.name = action.payload;
 			state.dirty = true;
+		},
+		contextSourceChanged: (state, action: PayloadAction<WorkflowDefinitionEditorContextSource>) => {
+			state.contextSource = action.payload;
 		},
 		contextModeChanged: (state, action: PayloadAction<WorkflowDefinitionEditorState['contextMode']>) => {
 			state.contextMode = action.payload;
 			state.dirty = true;
 		},
 		scopeEntered: (state, action: PayloadAction<string | null>) => {
-			state.scope = action.payload;
+			// A group definition has nothing to show above its own group.
+			state.scope = action.payload ?? nodeDefinitionScope(state);
 			state.selectedId = null;
 			state.starts[scopeKey(action.payload)] ??= { position: { x: 0, y: 0 } };
 		},
@@ -245,9 +261,11 @@ export const workflowDefinitionEditorSlice = createSlice({
 		selectEditorSelectedId: (state) => state.selectedId,
 		selectEditorName: (state) => state.name,
 		selectEditorContextMode: (state) => state.contextMode,
+		selectEditorContextSource: (state) => state.contextSource,
 		selectEditorDirty: (state) => state.dirty,
 		selectEditorSourceId: (state) => state.sourceId,
 		selectEditorSourceVersion: (state) => state.sourceVersion,
+		selectEditorNodeDefinition: (state) => state.nodeDefinition,
 		selectEditorNodes: (state) => state.nodes,
 		selectEditorStarts: (state) => state.starts,
 		selectEditorEdges: (state) => state.edges,
@@ -261,6 +279,7 @@ export const {
 	branchRemoved,
 	connected,
 	contextModeChanged,
+	contextSourceChanged,
 	edgesChanged,
 	editorDiscarded,
 	editorLoaded,
@@ -281,11 +300,13 @@ export const {
 
 export const {
 	selectEditorContextMode,
+	selectEditorContextSource,
 	selectEditorLoadedKey,
 	selectEditorDirty,
 	selectEditorEdges,
 	selectEditorName,
 	selectEditorNode,
+	selectEditorNodeDefinition,
 	selectEditorNodes,
 	selectEditorScope,
 	selectEditorSelectedId,
@@ -304,4 +325,10 @@ export const selectEditorBlockingIssues = createSelector([selectEditorIssues], (
 export const selectEditorContent = createSelector(
 	[workflowDefinitionEditorSlice.selectSlice],
 	toWorkflowDefinitionContent,
+);
+
+/** Content of the node definition being edited; empty for a workflow. */
+export const selectNodeDefinitionContent = createSelector(
+	[workflowDefinitionEditorSlice.selectSlice],
+	toNodeDefinitionContent,
 );
