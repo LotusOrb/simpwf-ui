@@ -69,23 +69,86 @@ export interface WorkflowRunProgress {
 	percent: number;
 }
 
-/** Without the definition the total is unknown, so it falls back to the nodes the run has reached so far. */
+/** Node types the engine steps through without an occurrence: groups enter a scope, parallel blocks fork and join. */
+const STRUCTURAL_TYPES = new Set<WorkflowDefinitionNode['type']>(['group', 'parallel_start', 'parallel_end']);
+
+interface PathCursor {
+	node: string;
+	/** Enclosing group ids, outermost first; a path that runs off a group continues at its `next_node`. */
+	stack: string[];
+}
+
+/**
+ * The nodes the run is expected to execute: the happy path from the start node, switched onto the
+ * route the run actually took wherever it has already decided one. A failed node with `on_failure`
+ * continues on its failure route; a conditions node follows the branch that ran, else its first one.
+ * Every branch of a parallel block counts. Structural nodes are left out since they never run.
+ */
+export const projectRunPath = (detail: WorkflowRunDetail, content: WorkflowDefinitionContent): Set<string> => {
+	const byId = indexDefinitionNodes(content);
+	const reached = (id: string | null | undefined) => !!id && isNodeReached(detail.nodes[id]?.status ?? 'pending');
+
+	const path = new Set<string>();
+	const seen = new Set<string>();
+	const work: PathCursor[] = [{ node: content.start_node_id, stack: [] }];
+
+	const advance = (next: string | null | undefined, cursorStack: string[]) => {
+		const stack = [...cursorStack];
+		let target = next ?? '';
+		while (!target && stack.length > 0) target = byId.get(stack.pop()!)?.next_node ?? '';
+		if (target) work.push({ node: target, stack });
+	};
+
+	while (work.length > 0) {
+		const { node: id, stack } = work.pop()!;
+		const key = [id, ...stack].join('\u0000');
+		if (seen.has(key)) continue;
+		seen.add(key);
+
+		const node = byId.get(id);
+		if (!node) continue;
+		if (!STRUCTURAL_TYPES.has(node.type)) path.add(id);
+
+		if (node.type === 'group' && node.start_node_id) {
+			work.push({ node: node.start_node_id, stack: [...stack, id] });
+		} else if (node.type === 'parallel_start') {
+			// Branches walk on through the join, which the shared `seen` set visits once.
+			const targets = node.branches ? Object.values(node.branches) : [node.parallel_end_node_id];
+			for (const target of targets) advance(target, stack);
+		} else if (detail.nodes[id]?.status === 'failed' && node.on_failure) {
+			advance(node.on_failure.next_node, stack);
+		} else if (node.type === 'conditions') {
+			const keys = (stack.length > 0 ? byId.get(stack[stack.length - 1])?.keys : content.keys) ?? {};
+			const targets = (node.conditions ?? []).map((condition) => (condition.key ? keys[condition.key] : null));
+			if (targets.length > 0) advance(targets.find(reached) ?? targets[0], stack);
+		} else {
+			advance(node.next_node, stack);
+		}
+	}
+	return path;
+};
+
+/**
+ * Settled occurrences against the projected path, widened by anything the run reached off it (a loop,
+ * a rollback, a library group's materialized nodes). Without the definition the total falls back to
+ * the nodes the run has reached so far.
+ */
 export const getRunProgress = (
 	detail: WorkflowRunDetail,
 	content: WorkflowDefinitionContent | null,
 ): WorkflowRunProgress => {
-	const occurrences = Object.values(detail.nodes);
-	const total = content
-		? flattenDefinitionNodes(content.nodes).filter((node) => node.type !== 'group').length
-		: occurrences.length;
-	const reached = occurrences.filter((occurrence) => isNodeReached(occurrence.status)).length;
-	const settled = occurrences.filter((occurrence) => nodeRunStatusMeta[occurrence.status].settled).length;
+	const occurrences = Object.entries(detail.nodes);
+	const expected = content ? projectRunPath(detail, content) : new Set<string>();
+	for (const [nodeId, occurrence] of occurrences) if (isNodeReached(occurrence.status)) expected.add(nodeId);
+	const total = content ? expected.size : occurrences.length;
+	const reached = occurrences.filter(([, occurrence]) => isNodeReached(occurrence.status)).length;
+	const settled = occurrences.filter(([, occurrence]) => nodeRunStatusMeta[occurrence.status].settled).length;
 
 	return {
 		reached,
 		settled,
 		total,
-		failed: occurrences.filter((occurrence) => occurrence.status === 'failed').length,
+		failed: occurrences.filter(([, occurrence]) => occurrence.status === 'failed').length,
 		percent: total === 0 ? 0 : Math.round((settled / total) * 100),
 	};
 };

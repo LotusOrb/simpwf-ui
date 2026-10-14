@@ -3,7 +3,8 @@ import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/W
 
 import { flattenDefinitionNodes } from './workflow-run.detail';
 
-export type WorkflowRunGraphEdgeKind = 'next' | 'branch' | 'failure';
+/** `pair` links a parallel_start to its join: it marks the region and routes nothing. */
+export type WorkflowRunGraphEdgeKind = 'next' | 'branch' | 'failure' | 'pair';
 
 export interface WorkflowRunGraphEdge {
 	id: string;
@@ -95,7 +96,7 @@ export const buildRunGraph = (content: WorkflowDefinitionContent): WorkflowRunGr
 					});
 				}
 			}
-		} else if ((node.type as string) === 'parallel_start') {
+		} else if (node.type === 'parallel_start') {
 			// A fork continues past its join, so its only outgoing edges are the branches.
 			for (const [name, branchTarget] of Object.entries(node.branches ?? {})) {
 				const target = resolve(branchTarget);
@@ -109,6 +110,8 @@ export const buildRunGraph = (content: WorkflowDefinitionContent): WorkflowRunGr
 					});
 				}
 			}
+			const end = resolve(node.parallel_end_node_id);
+			if (end) edges.push({ id: `${node.id}=>${end}:pair`, source: node.id, target: end, kind: 'pair' });
 		} else if (next) {
 			edges.push({ id: `${node.id}->${next}`, source: node.id, target: next, kind: 'next' });
 		}
@@ -125,8 +128,10 @@ export const buildRunGraph = (content: WorkflowDefinitionContent): WorkflowRunGr
 		}
 	}
 
+	// The pair edge is drawn on top of the layout, never through it.
 	const outgoing = new Map<string, string[]>();
-	for (const edge of edges) outgoing.set(edge.source, [...(outgoing.get(edge.source) ?? []), edge.target]);
+	for (const edge of edges.filter((item) => item.kind !== 'pair'))
+		outgoing.set(edge.source, [...(outgoing.get(edge.source) ?? []), edge.target]);
 
 	const column = new Map<string, number>();
 	const visit = (id: string, level: number, trail: Set<string>) => {
