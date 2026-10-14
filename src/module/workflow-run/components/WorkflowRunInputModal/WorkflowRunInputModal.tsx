@@ -1,30 +1,55 @@
 import React, { useState } from 'react';
 
-import { Alert, Badge, Button, Group, Modal, Stack, Text, Textarea } from '@mantine/core';
+import { Alert, Badge, Button, Group, Modal, Select, Stack, Text, Textarea } from '@mantine/core';
 import { LuInfo } from 'react-icons/lu';
 
+import type { WorkflowRunBranchInput } from '@module/workflow-run/data';
 import type { WorkflowRunPendingInput } from '@module/workflow-run/types/WorkflowRunPendingInput';
 
 interface WorkflowRunInputModalProps {
+	opened: boolean;
+	/** The run's own parked input; takes precedence over branches. */
 	pending: WorkflowRunPendingInput | null;
+	/** Parallel branches parked on an http input while the run waits on their join. */
+	branches?: WorkflowRunBranchInput[];
+	/** Preselects a branch; defaults to the first parked one. */
+	branchId?: string | null;
 	onClose: () => void;
 	/** Resolves once the engine accepted the payload; a rejection keeps the modal open. */
-	onSubmit: (payload: unknown) => Promise<void>;
+	onSubmit: (payload: unknown, branchId?: string) => Promise<void>;
 }
 
-export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({ pending, onClose, onSubmit }) => {
+export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({
+	opened,
+	pending,
+	branches = [],
+	branchId,
+	onClose,
+	onSubmit,
+}) => {
 	const [raw, setRaw] = useState('');
 	const [error, setError] = useState<string | null>(null);
 	const [submitting, setSubmitting] = useState(false);
+	const [picked, setPicked] = useState<string | null>(null);
+
+	// The run's own input wins; otherwise the requested branch, and only while it is still parked.
+	const requested = picked ?? branchId ?? null;
+	const branch = pending
+		? null
+		: requested
+			? (branches.find((item) => item.branch.id === requested) ?? null)
+			: (branches[0] ?? null);
+	const target = pending ?? branch?.pending ?? null;
 
 	const close = () => {
 		setRaw('');
 		setError(null);
+		setPicked(null);
 		onClose();
 	};
 
 	const submit = async () => {
-		if (!pending) return;
+		if (!target) return;
 
 		let payload: unknown;
 		try {
@@ -37,7 +62,7 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({ pe
 		setError(null);
 		setSubmitting(true);
 		try {
-			await onSubmit(payload);
+			await onSubmit(payload, branch?.branch.id);
 			close();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to deliver input');
@@ -47,16 +72,42 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({ pe
 	};
 
 	return (
-		<Modal opened={!!pending} onClose={close} title="Provide workflow input" centered size="md">
-			{pending && (
+		<Modal opened={opened} onClose={close} title="Provide workflow input" centered size="md">
+			{target && (
 				<Stack gap="md">
+					{branches.length > 1 && !pending && (
+						<Select
+							label="Branch"
+							description="Parallel branches parked on an input node"
+							data={branches.map((item) => ({
+								value: item.branch.id,
+								label: `${item.branch.name} · ${item.node.name}`,
+							}))}
+							value={branch?.branch.id ?? null}
+							allowDeselect={false}
+							onChange={(value) => {
+								setPicked(value);
+								setError(null);
+							}}
+						/>
+					)}
+
 					<Alert color="blue" icon={<LuInfo size={16} />} p="sm">
-						<Text fz="xs">
-							The run is parked on <strong>{pending.node_id}</strong>. The payload is written to context
-							key <strong>{pending.output_property || pending.node_id}</strong>.
-						</Text>
+						{branch ? (
+							<Text fz="xs">
+								Branch <strong>{branch.branch.name}</strong> is parked on{' '}
+								<strong>{branch.node.name}</strong>. The payload is written to context key{' '}
+								<strong>{target.output_property}</strong> of that branch; the join decides what reaches
+								the run.
+							</Text>
+						) : (
+							<Text fz="xs">
+								The run is parked on <strong>{target.node_id}</strong>. The payload is written to
+								context key <strong>{target.output_property || target.node_id}</strong>.
+							</Text>
+						)}
 						<Badge size="xs" variant="light" mt={6}>
-							channel {pending.channel}
+							channel {target.channel}
 						</Badge>
 					</Alert>
 
@@ -84,6 +135,18 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({ pe
 						</Button>
 						<Button onClick={submit} loading={submitting}>
 							Submit input
+						</Button>
+					</Group>
+				</Stack>
+			)}
+			{!target && (
+				<Stack gap="md">
+					<Text fz="sm">
+						Nothing is waiting for input any more. The run may have moved on since you opened this.
+					</Text>
+					<Group justify="flex-end">
+						<Button variant="default" onClick={close}>
+							Close
 						</Button>
 					</Group>
 				</Stack>

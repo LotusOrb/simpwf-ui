@@ -17,13 +17,14 @@ export const WorkflowDefinitionIssuesPanel: React.FC = () => {
 	const issues = useCoreSelector(selectEditorIssues);
 	const nodes = useCoreSelector(selectEditorNodes);
 	const focusIssue = useFocusEditorIssue();
+	const blocking = issues.filter((issue) => issue.severity !== 'warning').length;
 
 	return (
 		<MainLayoutPanelBar
 			title="Issues"
 			meta={
 				issues.length > 0 ? (
-					<Badge size="sm" color="red" variant="light">
+					<Badge size="sm" color={blocking > 0 ? 'red' : 'yellow'} variant="light">
 						{issues.length}
 					</Badge>
 				) : (
@@ -45,6 +46,7 @@ export const WorkflowDefinitionIssuesPanel: React.FC = () => {
 							<UnstyledButton
 								key={`${issue.nodeId}-${index}`}
 								className={classes.issue}
+								data-severity={issue.severity}
 								onClick={() => focusIssue(issue)}
 							>
 								<LuCircleAlert size={14} className={classes.issueIcon} />

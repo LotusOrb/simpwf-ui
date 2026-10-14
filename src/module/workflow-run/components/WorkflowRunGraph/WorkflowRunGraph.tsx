@@ -25,6 +25,7 @@ import {
 	GRAPH_NODE_HEIGHT,
 	GRAPH_NODE_WIDTH,
 	isNodeReached,
+	latestJoinExecution,
 	nodeRunStatusMeta,
 	flattenDefinitionNodes,
 } from '@module/workflow-run/data';
@@ -91,6 +92,7 @@ export const WorkflowRunGraph: React.FC<WorkflowRunGraphProps> = ({
 		})),
 		...graph.nodes.map((item) => {
 			const occurrence = detail.nodes[item.node.id] ?? null;
+			const join = item.node.type === 'parallel_end' ? latestJoinExecution(detail.parallel, item.node.id) : null;
 			return {
 				id: item.node.id,
 				type: 'run' as const,
@@ -106,12 +108,27 @@ export const WorkflowRunGraph: React.FC<WorkflowRunGraphProps> = ({
 					debug: occurrence ? (debug[occurrence.occurrence_id] ?? null) : null,
 					current: detail.current_node_id === item.node.id,
 					debugCursor: !!debugCursorNodeId && debugCursorNodeId === item.node.id,
+					join: join ? { completed: join.completed_count, total: join.branch_count } : null,
 				},
 			};
 		}),
 	];
 
 	const edges: Edge[] = graph.edges.map((edge) => {
+		// Behind the nodes and without an arrowhead: it marks the fork/join region, not a route.
+		if (edge.kind === 'pair') {
+			return {
+				id: edge.id,
+				source: edge.source,
+				target: edge.target,
+				type: 'smoothstep',
+				className: classes.edgePair,
+				selectable: false,
+				data: { kind: edge.kind },
+				zIndex: 0,
+			};
+		}
+
 		const sourceStatus = detail.nodes[edge.source]?.status ?? 'pending';
 		const targetStatus = detail.nodes[edge.target]?.status ?? 'pending';
 		const traversed = isNodeReached(sourceStatus) && isNodeReached(targetStatus);

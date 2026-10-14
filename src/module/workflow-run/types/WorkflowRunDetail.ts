@@ -1,5 +1,6 @@
 import type { WorkflowRun } from './WorkflowRun';
 import type { WorkflowRunNodeOccurrence } from './WorkflowRunNodeOccurrence';
+import type { WorkflowRunParallelExecution } from './WorkflowRunParallelExecution';
 import type { WorkflowRunPendingInput } from './WorkflowRunPendingInput';
 
 export interface WorkflowRunDetail extends WorkflowRun {
@@ -16,4 +17,6 @@ export interface WorkflowRunDetail extends WorkflowRun {
 	superseded_by: string | null;
 	/** Keyed by workflow definition node id. */
 	nodes: Record<string, WorkflowRunNodeOccurrence>;
+	/** Fork/join executions; omitted when the run never forked. */
+	parallel?: WorkflowRunParallelExecution[] | null;
 }

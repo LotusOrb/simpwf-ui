@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import {
 	ActionIcon,
+	Anchor,
 	Button,
+	Collapse,
 	Group,
 	NumberInput,
 	SegmentedControl,
@@ -15,7 +17,16 @@ import {
 	TextInput,
 	Tooltip,
 } from '@mantine/core';
-import { LuArrowRight, LuChevronsUpDown, LuPlus, LuTrash2 } from 'react-icons/lu';
+import {
+	LuArrowRight,
+	LuChevronDown,
+	LuChevronRight,
+	LuChevronsUpDown,
+	LuGitFork,
+	LuGitMerge,
+	LuPlus,
+	LuTrash2,
+} from 'react-icons/lu';
 
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
@@ -25,7 +36,10 @@ import {
 	branchHandle,
 	HANDLE_FAILURE,
 	isContextPath,
+	MAX_PARALLEL_BRANCHES,
+	MIN_PARALLEL_BRANCHES,
 	nextBranchKeys,
+	nextParallelBranchNames,
 	outgoingTarget,
 	shortId,
 } from '@module/workflow-definition/data';
@@ -36,6 +50,7 @@ import {
 	branchRemoved,
 	failureOutputPropertyChanged,
 	jsonDraftChanged,
+	nodeSelected,
 	scopeEntered,
 	selectEditorEdges,
 	selectEditorNodes,
@@ -180,6 +195,198 @@ const ConditionsFields: React.FC<FieldsProps> = ({ node }) => {
 	);
 };
 
+/** The other half of a parallel block, when both point at each other. */
+const usePartner = (node: WorkflowDefinitionEditorNode) => {
+	const nodes = useCoreSelector(selectEditorNodes);
+	const partner = node.pairId ? nodes[node.pairId] : undefined;
+	return partner?.pairId === node.id ? partner : undefined;
+};
+
+const PartnerLink: React.FC<{
+	label: string;
+	icon: React.ReactNode;
+	partner: WorkflowDefinitionEditorNode | undefined;
+	missing: string;
+}> = ({ label, icon, partner, missing }) => {
+	const dispatch = useCoreDispatch();
+	return (
+		<Group gap={6} wrap="nowrap">
+			{icon}
+			<Text fz="sm" c="dimmed">
+				{label}:
+			</Text>
+			{partner ? (
+				<Anchor component="button" type="button" fz="sm" onClick={() => dispatch(nodeSelected(partner.id))}>
+					{partner.config.name || 'Untitled'}
+				</Anchor>
+			) : (
+				<Text fz="sm" c="red.7">
+					{missing}
+				</Text>
+			)}
+		</Group>
+	);
+};
+
+const ParallelStartFields: React.FC<FieldsProps> = ({ node }) => {
+	const dispatch = useCoreDispatch();
+	const nodes = useCoreSelector(selectEditorNodes);
+	const edges = useCoreSelector(selectEditorEdges);
+	const join = usePartner(node);
+	// A library parallel's branches come with the reference; only their routing is drawn here.
+	const readOnly = !!node.config.node_definition_id;
+
+	const addBranch = () => {
+		const [key] = nextParallelBranchNames(node.branches, 1);
+		dispatch(branchAdded({ id: node.id, branch: { id: shortId(), key, condition: '' } }));
+	};
+
+	return (
+		<Stack gap="sm">
+			<PartnerLink label="Joins at" icon={<LuGitMerge size={14} />} partner={join} missing="No join" />
+
+			<div>
+				<SectionLabel required>Branches</SectionLabel>
+				<Text fz="xs" c="dimmed">
+					Every branch runs at once on its own copy of the context. Connect each branch handle to the node it
+					starts at; every path has to reach the join.
+				</Text>
+			</div>
+
+			{node.branches.map((branch, index) => {
+				const target = outgoingTarget(edges, node.id, branchHandle(branch.id));
+				return (
+					<Stack key={branch.id} gap={6} p="xs" bd="1px solid gray.2" bdrs="md">
+						<Group gap={6} wrap="nowrap" align="flex-end">
+							<TextInput
+								size="xs"
+								flex={1}
+								label="Name"
+								description={index === 0 ? 'Read in the join as branch["name"]' : undefined}
+								inputWrapperOrder={['label', 'input', 'description']}
+								placeholder={`branch_${index + 1}`}
+								value={branch.key}
+								readOnly={readOnly}
+								onChange={(event) =>
+									dispatch(
+										branchChanged({
+											id: node.id,
+											branchId: branch.id,
+											patch: { key: event.currentTarget.value },
+										}),
+									)
+								}
+							/>
+							{!readOnly && (
+								<Tooltip label="Remove branch">
+									<ActionIcon
+										size="md"
+										color="red"
+										aria-label={`Remove branch ${branch.key || index + 1}`}
+										disabled={node.branches.length <= MIN_PARALLEL_BRANCHES}
+										onClick={() => dispatch(branchRemoved({ id: node.id, branchId: branch.id }))}
+									>
+										<LuTrash2 size={14} />
+									</ActionIcon>
+								</Tooltip>
+							)}
+						</Group>
+						<Group gap={4} c="dimmed" wrap="nowrap">
+							<LuArrowRight size={12} aria-hidden />
+							<Text fz="xs" truncate>
+								{target ? (nodes[target]?.config.name ?? 'Unknown node') : 'Not connected'}
+							</Text>
+						</Group>
+					</Stack>
+				);
+			})}
+
+			{!readOnly && (
+				<Button
+					variant="default"
+					size="xs"
+					leftSection={<LuPlus size={14} />}
+					w="fit-content"
+					disabled={node.branches.length >= MAX_PARALLEL_BRANCHES}
+					onClick={addBranch}
+				>
+					Add branch
+				</Button>
+			)}
+		</Stack>
+	);
+};
+
+const DEFAULT_CONTEXT_DECLARATION = 'declare const context: Record<string, any>;';
+
+/** `branch` typed from the paired start's names, next to the loaded (or generic) `context` declaration. */
+const branchDeclaration = (contextTypes: string | undefined, names: string[]) =>
+	[
+		contextTypes ?? DEFAULT_CONTEXT_DECLARATION,
+		'interface SimpwfParallelBranch {',
+		'\t/** The branch context when it finished. A frozen copy: assign to `context` to keep values. */',
+		'\treadonly context: Record<string, any>;',
+		'\treadonly status: string;',
+		'\treadonly branch_id: string;',
+		'\treadonly start_node_id: string;',
+		'}',
+		'/** Every branch of the paired parallel, by name. Read-only. */',
+		`declare const branch: { readonly [name: string]: SimpwfParallelBranch } & {`,
+		...names.map((name) => `\treadonly ${JSON.stringify(name)}: SimpwfParallelBranch;`),
+		'};',
+	].join('\n');
+
+const ParallelEndFields: React.FC<FieldsProps> = ({ node }) => {
+	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
+	const contextTypes = useContextTypes();
+	const start = usePartner(node);
+	const [helpOpened, setHelpOpened] = useState(false);
+	const names = (start?.branches ?? []).map((branch) => branch.key.trim()).filter(Boolean);
+
+	return (
+		<>
+			<PartnerLink label="Pairs with" icon={<LuGitFork size={14} />} partner={start} missing="No parallel" />
+			<CodeEditor
+				extraLib={branchDeclaration(contextTypes, names)}
+				label={<SectionLabel required>Combining script</SectionLabel>}
+				description="Runs once every branch has finished. Build the context the workflow continues with."
+				height={200}
+				value={node.config.combining_script ?? ''}
+				onChange={(combining_script) => patch({ combining_script })}
+			/>
+			<Stack gap={4}>
+				<Button
+					variant="subtle"
+					color="gray"
+					size="compact-xs"
+					w="fit-content"
+					leftSection={helpOpened ? <LuChevronDown size={12} /> : <LuChevronRight size={12} />}
+					onClick={() => setHelpOpened((opened) => !opened)}
+					aria-expanded={helpOpened}
+				>
+					How combining works
+				</Button>
+				<Collapse expanded={helpOpened}>
+					<Stack gap={4}>
+						<Text fz="xs" c="dimmed">
+							`branch["name"]` holds each branch's `context`, `status`, `branch_id` and `start_node_id`.
+							It is read-only.
+						</Text>
+						<Text fz="xs" c="dimmed">
+							`context` starts as the context from before the fork. Whatever it holds when the script ends
+							replaces the workflow context.
+						</Text>
+						<Text fz="xs" c="dimmed">
+							Nothing is merged automatically: copy every branch value you want to keep. Renaming a branch
+							doesn't update this script.
+						</Text>
+					</Stack>
+				</Collapse>
+			</Stack>
+		</>
+	);
+};
+
 const DEFAULT_FORM_SCHEMA = { type: 'object', properties: {} };
 
 const InputFields: React.FC<FieldsProps> = ({ node }) => {
@@ -289,6 +496,21 @@ const OutputFields: React.FC<FieldsProps> = ({ node }) => {
 				error={contextPathError(config.context_path)}
 			/>
 		</>
+	);
+};
+
+const DelayFields: React.FC<FieldsProps> = ({ node }) => {
+	const { patch } = useWorkflowDefinitionEditorNodeActions(node.id);
+
+	return (
+		<DurationInput
+			label={<SectionLabel required>Delay</SectionLabel>}
+			description="How long to wait before continuing, capped by the engine maximum (default 5m). Repeats on every visit and doesn't hold a worker."
+			inputWrapperOrder={['label', 'input', 'description', 'error']}
+			placeholder="30s"
+			value={node.config.delay}
+			onChange={(delay) => patch({ delay })}
+		/>
 	);
 };
 
@@ -648,9 +870,15 @@ export const InspectorNodeFields: React.FC<FieldsProps> = ({ node }) => {
 			return <ExternalCallFields node={node} />;
 		case 'poller':
 			return <PollerFields node={node} />;
+		case 'delay':
+			return <DelayFields node={node} />;
 		case 'group':
 			return <GroupFields node={node} />;
+		case 'parallel_start':
+			return <ParallelStartFields node={node} />;
+		case 'parallel_end':
+			return <ParallelEndFields node={node} />;
 	}
 };
 
-export { ConditionsFields };
+export { ConditionsFields, ParallelStartFields };

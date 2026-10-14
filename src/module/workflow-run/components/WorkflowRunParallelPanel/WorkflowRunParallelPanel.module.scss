@@ -1,0 +1,52 @@
+.card {
+	min-width: 0;
+}
+
+.route {
+	flex: 1;
+	min-width: 0;
+}
+
+.branch {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+	padding: 6px 8px;
+	border-radius: var(--mantine-radius-sm);
+
+	&:hover {
+		background-color: var(--mantine-color-gray-0);
+	}
+
+	&[data-selected] {
+		background-color: var(--mantine-color-blue-0);
+	}
+}
+
+.branchSelect {
+	display: flex;
+	flex: 1;
+	gap: 8px;
+	align-items: center;
+	min-width: 0;
+	text-align: left;
+}
+
+.branchIcon {
+	flex-shrink: 0;
+}
+
+.branchName {
+	flex: 1;
+	min-width: 0;
+}
+
+.error {
+	font-family: var(--mantine-font-family-monospace);
+	word-break: break-word;
+}
+
+.history {
+	padding-top: 6px;
+	border-top: 1px dashed var(--mantine-color-gray-3);
+}

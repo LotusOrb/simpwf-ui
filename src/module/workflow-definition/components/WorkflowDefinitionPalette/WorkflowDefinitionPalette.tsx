@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import {
-	ActionIcon,
+	Anchor,
 	Button,
 	Collapse,
 	Group,
@@ -9,7 +9,6 @@ import {
 	ScrollArea,
 	Text,
 	TextInput,
-	Tooltip,
 	UnstyledButton,
 } from '@mantine/core';
 import { LuChevronDown, LuChevronUp, LuExternalLink, LuGripVertical, LuLibrary, LuSearch } from 'react-icons/lu';
@@ -19,7 +18,7 @@ import { useCoreSelector } from '@core/store';
 
 import { NODE_LIBRARY_QUERY, nodeDefinitionLink, nodeDefinitionTypeMeta } from '@module/node-definition/data';
 import { useListNodeDefinitionsQuery } from '@module/node-definition/hooks';
-import { nodeTypeMeta, nodeTypeOrder, scopeTrail } from '@module/workflow-definition/data';
+import { nodeTypeMeta, paletteNodeTypes, scopeTrail } from '@module/workflow-definition/data';
 import {
 	PALETTE_DRAG_TYPE,
 	useWorkflowDefinitionEditorAddNode,
@@ -77,20 +76,17 @@ const PaletteEntry: React.FC<PaletteEntryProps> = ({ item, type, title, descript
 	return (
 		<div className={classes.entry}>
 			{entry}
-			<Tooltip label="Open in library">
-				<ActionIcon
-					component={Link}
-					to={nodeDefinitionLink(libraryId)}
-					target="_blank"
-					rel="noopener"
-					size="sm"
-					variant="default"
-					className={classes.libraryLink}
-					aria-label={`Open ${title} in library`}
-				>
-					<LuExternalLink size={12} />
-				</ActionIcon>
-			</Tooltip>
+			<Anchor
+				component={Link}
+				to={nodeDefinitionLink(libraryId)}
+				target="_blank"
+				rel="noopener"
+				fz="xs"
+				className={classes.libraryLink}
+			>
+				<LuExternalLink size={12} />
+				Open in library
+			</Anchor>
 		</div>
 	);
 };
@@ -109,7 +105,9 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 	const term = query.trim().toLowerCase();
 	const matches = (...values: string[]) => !term || values.some((value) => value.toLowerCase().includes(term));
 
-	const builtins = nodeTypeOrder.filter((type) => matches(nodeTypeMeta[type].label, nodeTypeMeta[type].description));
+	const builtins = paletteNodeTypes.filter((type) =>
+		matches(nodeTypeMeta[type].label, nodeTypeMeta[type].description),
+	);
 	const definitions = (library.data?.items ?? []).filter((definition) =>
 		matches(definition.name, nodeDefinitionTypeMeta(definition.type).label),
 	);

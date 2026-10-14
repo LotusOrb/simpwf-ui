@@ -36,6 +36,8 @@ interface WorkflowRunDetailHeaderProps {
 	detail: WorkflowRunDetail;
 	/** The node a run parked on input is waiting at. */
 	pendingNode: WorkflowDefinitionNode | null;
+	/** Parallel branches parked on an http input while the run waits on their join. */
+	branchInputCount?: number;
 	/** Where a debug run is paused; null for regular runs or when the engine hides it. */
 	debugCursor: WorkflowRunDebugContext | null;
 	/** The node at the debug cursor, when it resolves. */
@@ -63,6 +65,7 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	definition,
 	detail,
 	pendingNode,
+	branchInputCount = 0,
 	debugCursor,
 	debugNode,
 	onBack,
@@ -151,7 +154,7 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 						onChange={(event) => onLiveChange(event.currentTarget.checked)}
 					/>
 
-					{detail.pending_input && onProvideInput && (
+					{(detail.pending_input || branchInputCount > 0) && onProvideInput && (
 						<Button size="sm" leftSection={<LuHourglass size={15} />} onClick={onProvideInput}>
 							Provide input
 						</Button>
@@ -292,7 +295,16 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 							</Text>
 						</Text>
 					) : (
-						<Text fz="xs">{formatWaitingReason(detail.waiting_reason)}</Text>
+						<Text fz="xs">
+							{formatWaitingReason(detail.waiting_reason)}
+							{branchInputCount > 0 && (
+								<Text span fz="xs" c="dimmed">
+									{' · '}
+									{branchInputCount} {branchInputCount === 1 ? 'branch' : 'branches'} waiting for
+									input
+								</Text>
+							)}
+						</Text>
 					)}
 				</Alert>
 			)}

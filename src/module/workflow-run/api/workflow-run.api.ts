@@ -62,14 +62,17 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			providesTags: (_result, _error, id) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
 
-		/** Debug detail of every executed node, keyed by occurrence id. */
+		/**
+		 * Debug detail of every executed node, keyed by occurrence id. Fetched by occurrence id: the engine
+		 * resolves a graph node id in the parent scope only, which misses nodes run inside parallel branches.
+		 */
 		getWorkflowRunNodeDebugs: build.query<Record<string, WorkflowRunNodeDebug>, WorkflowRunNodeDebugQuery>({
 			queryFn: async ({ id, nodes }, _api, _extra, baseQuery) => {
 				const results = await Promise.all(
 					nodes.map((node) =>
 						baseQuery({
 							method: 'get',
-							url: `${RESOURCE}/${id}/status/node/${encodeURIComponent(node.nodeId)}`,
+							url: `${RESOURCE}/${id}/status/node/${encodeURIComponent(node.occurrenceId)}`,
 						}),
 					),
 				);
@@ -120,10 +123,15 @@ export const workflowRunApi = coreApi.injectEndpoints({
 			invalidatesTags: (_result, _error, { id }) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
 
-		provideWorkflowRunInput: build.mutation<{ accepted: boolean }, { id: string; payload: unknown }>({
-			query: ({ id, payload }) => ({
+		/** `branchId` delivers to a parallel branch parked on an http input; the parent must be parked on the join. */
+		provideWorkflowRunInput: build.mutation<
+			{ accepted: boolean },
+			{ id: string; payload: unknown; branchId?: string }
+		>({
+			query: ({ id, payload, branchId }) => ({
 				method: 'put',
 				url: `${RESOURCE}/${id}/input`,
+				qParam: branchId ? { filter: { branch_id: { op: '_eq', value: branchId } } } : undefined,
 				// Pre-serialised so a bare string/number payload still goes out as JSON.
 				body: JSON.stringify(payload),
 				head: { 'Idempotency-Key': crypto.randomUUID() },

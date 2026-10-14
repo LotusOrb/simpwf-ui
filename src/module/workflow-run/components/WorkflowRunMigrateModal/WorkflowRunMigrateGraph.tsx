@@ -133,19 +133,31 @@ export const WorkflowRunMigrateGraph: React.FC<WorkflowRunMigrateGraphProps> = (
 		})),
 	];
 
-	const edges: Edge[] = graph.edges.map((edge) => ({
-		id: edge.id,
-		source: edge.source,
-		target: edge.target,
-		type: 'smoothstep',
-		label: edge.label,
-		className: classes.edge,
-		labelBgPadding: [6, 3] as [number, number],
-		labelBgBorderRadius: 4,
-		labelStyle: { fontSize: 10, fontWeight: 500 },
-		markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14 },
-		zIndex: 2,
-	}));
+	const edges: Edge[] = graph.edges.map((edge) =>
+		edge.kind === 'pair'
+			? {
+					id: edge.id,
+					source: edge.source,
+					target: edge.target,
+					type: 'smoothstep',
+					className: classes.edgePair,
+					selectable: false,
+					zIndex: 0,
+				}
+			: {
+					id: edge.id,
+					source: edge.source,
+					target: edge.target,
+					type: 'smoothstep',
+					label: edge.label,
+					className: classes.edge,
+					labelBgPadding: [6, 3] as [number, number],
+					labelBgBorderRadius: 4,
+					labelStyle: { fontSize: 10, fontWeight: 500 },
+					markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14 },
+					zIndex: 2,
+				},
+	);
 
 	return (
 		<div className={classes.graph}>

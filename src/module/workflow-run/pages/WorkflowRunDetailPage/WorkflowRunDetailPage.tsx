@@ -12,6 +12,7 @@ import { useNavigateBack } from '@common/hooks/useNavigateBack';
 import { MainLayoutPanel, MainLayoutPanelBar } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useNotify } from '@module/notification/hooks';
+import { analyzeParallel, parallelMembership } from '@module/workflow-definition/data';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { WorkflowRunDetailHeader } from '@module/workflow-run/components/WorkflowRunDetailHeader';
 import { WorkflowRunGraph } from '@module/workflow-run/components/WorkflowRunGraph';
@@ -22,7 +23,13 @@ import { WorkflowRunRollbackModal } from '@module/workflow-run/components/Workfl
 import { WorkflowRunSidePanel } from '@module/workflow-run/components/WorkflowRunSidePanel';
 import { WorkflowRunSummary } from '@module/workflow-run/components/WorkflowRunSummary';
 import { WorkflowRunTimeline } from '@module/workflow-run/components/WorkflowRunTimeline';
-import { indexDebugNodes, indexDefinitionNodes } from '@module/workflow-run/data';
+import {
+	buildTimelineRows,
+	describeInputError,
+	findBranchInputs,
+	indexDebugNodes,
+	indexDefinitionNodes,
+} from '@module/workflow-run/data';
 import {
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
@@ -64,6 +71,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 	const [rollbackFrom, setRollbackFrom] = useState<string | null>(null);
 	const [rollbackOpened, setRollbackOpened] = useState(false);
 	const [inputOpened, setInputOpened] = useState(false);
+	const [inputBranchId, setInputBranchId] = useState<string | null>(null);
 	const [stopOpened, setStopOpened] = useState(false);
 	const [migrateOpened, setMigrateOpened] = useState(false);
 	const [actionError, setActionError] = useState<string | null>(null);
@@ -83,6 +91,22 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		if (!canReadDefinition && runDetail) return indexDebugNodes(runDetail, runDebug);
 		return new Map<string, WorkflowDefinitionNode>();
 	}, [content, canReadDefinition, runDetail, runDebug]);
+
+	// Branch membership is structural, so both need the definition; without it the timeline stays flat.
+	const parallelAnalysis = useMemo(() => (content ? analyzeParallel(content) : null), [content]);
+	const membership = useMemo(
+		() => (content && parallelAnalysis ? parallelMembership(content, parallelAnalysis) : undefined),
+		[content, parallelAnalysis],
+	);
+	const timelineRows = useMemo(
+		() => (run.timeline ? buildTimelineRows(run.timeline, membership, nodesById) : []),
+		[run.timeline, membership, nodesById],
+	);
+	const branchInputs = useMemo(
+		() => (content && parallelAnalysis && runDetail ? findBranchInputs(runDetail, content, parallelAnalysis) : []),
+		[content, parallelAnalysis, runDetail],
+	);
+	const inputBranchIds = useMemo(() => new Set(branchInputs.map((item) => item.branch.id)), [branchInputs]);
 
 	if (run.isLoading) {
 		return (
@@ -150,6 +174,11 @@ export const WorkflowRunDetailPage: React.FC = () => {
 		if (nodeId) panel.open('right');
 	};
 
+	const openInput = (branchId: string | null) => {
+		setInputBranchId(branchId);
+		setInputOpened(true);
+	};
+
 	const openRollback = (nodeId: string | null) => {
 		setRollbackFrom(nodeId);
 		setRollbackOpened(true);
@@ -162,6 +191,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					definition={definition ?? null}
 					detail={detail}
 					pendingNode={pendingNode}
+					branchInputCount={branchInputs.length}
 					debugCursor={debugCursor}
 					debugNode={debugNode}
 					onBack={navigateBack}
@@ -185,7 +215,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					canRollback={canRollback}
 					actionError={actionError}
 					onDismissActionError={() => setActionError(null)}
-					onProvideInput={canDeliverInput ? () => setInputOpened(true) : undefined}
+					onProvideInput={canDeliverInput ? () => openInput(null) : undefined}
 					onPause={() => perform('pause run', () => pauseRun(detail.id).unwrap())}
 					onResume={() => perform('resume run', () => resumeRun(detail.id).unwrap())}
 					onRollback={() => openRollback(null)}
@@ -199,6 +229,11 @@ export const WorkflowRunDetailPage: React.FC = () => {
 					detail={detail}
 					context={context}
 					canEditContext={canUpdateContext}
+					nodesById={nodesById}
+					selectedNodeId={selectedNodeId}
+					onSelectNode={selectNode}
+					inputBranchIds={inputBranchIds}
+					onProvideBranchInput={canDeliverInput ? openInput : undefined}
 					onReplaceContext={(next, reason) =>
 						perform('replace context', async () => {
 							await replaceContext({ id: detail.id, context: next, reason }).unwrap();
@@ -232,7 +267,12 @@ export const WorkflowRunDetailPage: React.FC = () => {
 						</Text>
 					}
 				>
-					<WorkflowRunTimeline timeline={timeline} selectedNodeId={selectedNodeId} onSelect={selectNode} />
+					<WorkflowRunTimeline
+						timeline={timeline}
+						rows={timelineRows}
+						selectedNodeId={selectedNodeId}
+						onSelect={selectNode}
+					/>
 				</MainLayoutPanelBar>
 			</MainLayoutPanel>
 
@@ -266,13 +306,16 @@ export const WorkflowRunDetailPage: React.FC = () => {
 				)}
 
 				<WorkflowRunInputModal
-					pending={inputOpened ? detail.pending_input : null}
+					opened={inputOpened}
+					pending={detail.pending_input}
+					branches={branchInputs}
+					branchId={inputBranchId}
 					onClose={() => setInputOpened(false)}
-					onSubmit={async (payload) => {
+					onSubmit={async (payload, branchId) => {
 						try {
-							await provideInput({ id: detail.id, payload }).unwrap();
+							await provideInput({ id: detail.id, payload, branchId }).unwrap();
 						} catch (error) {
-							throw new Error(errorMessage(error, 'Failed to deliver input'));
+							throw new Error(describeInputError(error, !!branchId));
 						}
 					}}
 				/>

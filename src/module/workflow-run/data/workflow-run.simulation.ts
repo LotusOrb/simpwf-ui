@@ -191,8 +191,16 @@ const settleNode = (
 	cursor.detail.updated_at = iso(cursor.clock);
 };
 
-const waitingStatusFor = (nodeId: string): WorkflowRunNodeStatus =>
-	nodeIndex.get(nodeId)?.type === 'input' ? 'waiting' : 'running';
+const isDelayNode = (nodeId: string | null) => !!nodeId && nodeIndex.get(nodeId)?.type === 'delay';
+
+const waitingStatusFor = (nodeId: string): WorkflowRunNodeStatus => {
+	const type = nodeIndex.get(nodeId)?.type;
+	return type === 'input' || type === 'delay' ? 'waiting' : 'running';
+};
+
+/** The engine reports a parked delay with the bare `delay` reason; input waits get a readable message here. */
+const waitingReasonFor = (nodeId: string) =>
+	isDelayNode(nodeId) ? 'delay' : `Waiting for input on channel ${nodeIndex.get(nodeId)?.channel ?? 'http'}`;
 
 const pendingInputFor = (nodeId: string): WorkflowRunDetail['pending_input'] => {
 	const node = nodeIndex.get(nodeId);
@@ -232,7 +240,7 @@ const advance = (cursor: Cursor, fromNodeId: string, viaFailure = false) => {
 
 	if (status === 'waiting') {
 		cursor.detail.status = 'waiting';
-		cursor.detail.waiting_reason = `Waiting for input on channel ${nodeIndex.get(target)?.channel ?? 'http'}`;
+		cursor.detail.waiting_reason = waitingReasonFor(target);
 		cursor.detail.pending_input = pendingInputFor(target);
 	} else {
 		cursor.detail.status = 'running';
@@ -352,7 +360,9 @@ export const simulationReducer = (
 		case 'tick': {
 			const { detail } = state;
 			const nodeId = detail.current_node_id;
-			if (detail.status !== 'running' || !nodeId) {
+			// A delay parks the run as waiting, but the clock still carries it to its deadline.
+			const delayed = detail.status === 'waiting' && isDelayNode(nodeId);
+			if ((detail.status !== 'running' && !delayed) || !nodeId) {
 				// A live poller keeps its bar growing even while nothing settles.
 				return state;
 			}
@@ -408,7 +418,9 @@ export const simulationReducer = (
 			const next = clone(state);
 			if (next.detail.status === 'waiting') {
 				next.detail.status = 'paused';
-				next.detail.waiting_reason = 'Paused while waiting for input';
+				next.detail.waiting_reason = isDelayNode(next.detail.current_node_id)
+					? 'Paused during a delay'
+					: 'Paused while waiting for input';
 			} else {
 				next.detail.pause_requested = true;
 			}
@@ -424,11 +436,11 @@ export const simulationReducer = (
 			const nodeId = cursor.detail.current_node_id;
 			const pending = nodeId ? pendingInputFor(nodeId) : null;
 
-			if (pending) {
+			if (pending || isDelayNode(nodeId)) {
 				if (cursor.detail.nodes[nodeId!]?.status !== 'waiting') beginNode(cursor, nodeId!, 'waiting');
 				cursor.detail.status = 'waiting';
 				cursor.detail.pending_input = pending;
-				cursor.detail.waiting_reason = `Waiting for input on channel ${pending.channel}`;
+				cursor.detail.waiting_reason = waitingReasonFor(nodeId!);
 			} else {
 				cursor.detail.status = 'running';
 				cursor.detail.waiting_reason = null;

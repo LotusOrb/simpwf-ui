@@ -46,8 +46,15 @@ export const formatRunDuration = (run: WorkflowRun): string => {
 	return `${Math.floor(hours / 24)}d ${hours % 24}h`;
 };
 
+const waitingReasonLabels: Record<string, string> = {
+	input: 'Waiting for input',
+	parallel: 'Waiting for parallel branches',
+	paused: 'Paused',
+	delay: 'Delayed',
+};
+
 /** Engine park reasons are bare enums (`input`); unknown ones are shown as sent. */
-export const formatWaitingReason = (reason: string): string => (reason === 'input' ? 'Waiting for input' : reason);
+export const formatWaitingReason = (reason: string): string => waitingReasonLabels[reason] ?? reason;
 
 export const shortRunId = (id: string) => id.slice(-8);
 

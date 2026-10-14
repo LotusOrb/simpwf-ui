@@ -13,9 +13,10 @@ import {
 	Panel,
 	ReactFlow,
 	type Edge,
+	type EdgeTypes,
 	type NodeTypes,
 } from '@xyflow/react';
-import { LuMousePointerClick, LuScan } from 'react-icons/lu';
+import { LuMousePointerClick, LuScan, LuWorkflow } from 'react-icons/lu';
 
 import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreDispatch, useCoreSelector } from '@core/store';
@@ -26,9 +27,12 @@ import { useAppLayoutInsets } from '@module/app/hooks';
 import {
 	HANDLE_FAILURE,
 	HANDLE_NEXT,
+	HANDLE_PAIR,
 	isInlineGroup,
+	isPairEdgeId,
 	nodeTypeMeta,
 	outgoingTarget,
+	pairEdgeId,
 	scopeKey,
 	scopeTrail,
 	startNodeId,
@@ -43,6 +47,7 @@ import {
 	edgesChanged,
 	nodeSelected,
 	nodesChanged,
+	scopeAutoLaidOut,
 	scopeEntered,
 	selectEditorEdges,
 	selectEditorIssues,
@@ -51,13 +56,16 @@ import {
 	selectEditorSelectedId,
 	selectEditorStarts,
 } from '@module/workflow-definition/store';
+import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 
 import classes from './WorkflowDefinitionCanvas.module.scss';
 import type { WorkflowDefinitionFlowNode, WorkflowDefinitionStepFlowNode } from './WorkflowDefinitionCanvas.types';
+import { WorkflowDefinitionPairEdge } from './WorkflowDefinitionPairEdge';
 import { WorkflowDefinitionStartNode } from './WorkflowDefinitionStartNode';
 import { WorkflowDefinitionStepNode } from './WorkflowDefinitionStepNode';
 
 const nodeTypes: NodeTypes = { step: WorkflowDefinitionStepNode, start: WorkflowDefinitionStartNode };
+const edgeTypes: EdgeTypes = { pair: WorkflowDefinitionPairEdge };
 
 const FIT_VIEW_MARGIN = 48;
 
@@ -83,13 +91,24 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 
 	const issueCounts = new Map<string, number>();
 	for (const issue of issues) {
-		if (issue.nodeId) issueCounts.set(issue.nodeId, (issueCounts.get(issue.nodeId) ?? 0) + 1);
+		if (issue.nodeId && issue.severity !== 'warning')
+			issueCounts.set(issue.nodeId, (issueCounts.get(issue.nodeId) ?? 0) + 1);
 	}
 
 	const allNodes = Object.values(nodes);
 	const visibleNodes = allNodes.filter((node) => node.parentId === scope);
 	const startId = startNodeId(scope);
 	const start = starts[scopeKey(scope)] ?? { position: { x: 0, y: 0 } };
+	/** The other half of a parallel block, when both point at each other. */
+	const partnerOf = (node: WorkflowDefinitionEditorNode | undefined) => {
+		const partner = node?.pairId ? nodes[node.pairId] : undefined;
+		return partner && partner.pairId === node?.id ? partner : undefined;
+	};
+	const pairedSelectedId = selectedId ? partnerOf(nodes[selectedId])?.id : undefined;
+	const pairedStartOf = (node: WorkflowDefinitionEditorNode) => {
+		const partner = node.config.type === 'parallel_end' ? partnerOf(node) : undefined;
+		return partner && { name: partner.config.name, branchCount: partner.branches.length };
+	};
 
 	const flowNodes: WorkflowDefinitionFlowNode[] = [
 		{
@@ -113,33 +132,58 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 				branchTargets: Object.fromEntries(
 					node.branches.map((branch) => [branch.id, !!outgoingTarget(edges, node.id, `branch:${branch.id}`)]),
 				),
+				pairedStart: pairedStartOf(node),
+				pairedSelected: pairedSelectedId === node.id,
 			},
 		})),
 	];
 
 	const visibleIds = new Set(flowNodes.map((node) => node.id));
-	const flowEdges: Edge[] = edges
-		.filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target))
-		.map((edge) => {
-			const failure = edge.sourceHandle === HANDLE_FAILURE;
-			const branch = edge.sourceHandle.startsWith('branch:')
-				? nodes[edge.source]?.branches.find((item) => `branch:${item.id}` === edge.sourceHandle)
-				: undefined;
-			return {
-				id: edge.id,
-				source: edge.source,
-				sourceHandle: edge.sourceHandle,
-				target: edge.target,
-				selected: edge.selected,
-				type: 'smoothstep',
-				label: failure ? 'on failure' : branch?.key || undefined,
-				className: failure ? classes.failureEdge : undefined,
-				labelBgPadding: [6, 3] as [number, number],
-				labelBgBorderRadius: 4,
-				labelStyle: { fontSize: 11, fontWeight: 500 },
-				markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
-			};
-		});
+	// Derived, never stored: the dashed start → join link that outlines each visible parallel block.
+	const pairEdges: Edge[] = visibleNodes.flatMap((node) => {
+		const partner = node.config.type === 'parallel_start' ? partnerOf(node) : undefined;
+		if (!partner || !visibleIds.has(partner.id)) return [];
+		return [
+			{
+				id: pairEdgeId(node.id),
+				source: node.id,
+				sourceHandle: HANDLE_PAIR,
+				target: partner.id,
+				targetHandle: HANDLE_PAIR,
+				type: 'pair',
+				className: classes.pairEdge,
+				selectable: false,
+				deletable: false,
+				focusable: false,
+				zIndex: -1,
+			},
+		];
+	});
+	const flowEdges: Edge[] = [
+		...edges
+			.filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target))
+			.map((edge): Edge => {
+				const failure = edge.sourceHandle === HANDLE_FAILURE;
+				const branch = edge.sourceHandle.startsWith('branch:')
+					? nodes[edge.source]?.branches.find((item) => `branch:${item.id}` === edge.sourceHandle)
+					: undefined;
+				return {
+					id: edge.id,
+					source: edge.source,
+					sourceHandle: edge.sourceHandle,
+					target: edge.target,
+					selected: edge.selected,
+					type: 'smoothstep',
+					label: failure ? 'on failure' : branch?.key || undefined,
+					className: failure ? classes.failureEdge : undefined,
+					labelBgPadding: [6, 3] as [number, number],
+					labelBgBorderRadius: 4,
+					labelStyle: { fontSize: 11, fontWeight: 500 },
+					markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+				};
+			}),
+		...pairEdges,
+	];
 
 	const trail = scopeTrail(nodes, scope);
 
@@ -157,9 +201,16 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 				nodes={flowNodes}
 				edges={flowEdges}
 				nodeTypes={nodeTypes}
+				edgeTypes={edgeTypes}
 				onNodesChange={(changes) => dispatch(nodesChanged(changes))}
-				onEdgesChange={(changes) => dispatch(edgesChanged(changes))}
-				onConnect={(connection) => dispatch(connected(connection))}
+				onEdgesChange={(changes) => {
+					const stored = changes.filter((change) => !('id' in change) || !isPairEdgeId(change.id));
+					if (stored.length > 0) dispatch(edgesChanged(stored));
+				}}
+				onConnect={(connection) => {
+					if (connection.sourceHandle === HANDLE_PAIR || connection.targetHandle === HANDLE_PAIR) return;
+					dispatch(connected(connection));
+				}}
 				// View-only keeps selection, panning and group navigation so the definition can still be inspected.
 				nodesDraggable={canEdit}
 				nodesConnectable={canEdit}
@@ -187,6 +238,19 @@ export const WorkflowDefinitionCanvas: React.FC = () => {
 					<ControlButton title="Fit view" aria-label="Fit view" onClick={fitView}>
 						<LuScan />
 					</ControlButton>
+					{canEdit && (
+						<ControlButton
+							title="Auto layout"
+							aria-label="Auto layout"
+							onClick={() => {
+								dispatch(scopeAutoLaidOut());
+								// Fit once the new positions have reached React Flow.
+								requestAnimationFrame(fitView);
+							}}
+						>
+							<LuWorkflow />
+						</ControlButton>
+					)}
 				</Controls>
 				<MiniMap
 					position="bottom-right"

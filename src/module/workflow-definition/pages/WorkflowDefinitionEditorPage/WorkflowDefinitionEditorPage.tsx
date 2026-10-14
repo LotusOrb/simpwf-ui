@@ -46,7 +46,7 @@ import {
 	editorSaved,
 	selectEditorContent,
 	selectEditorDirty,
-	selectEditorIssues,
+	selectEditorBlockingIssues,
 	selectEditorLoadedKey,
 	selectEditorName,
 	selectEditorSourceId,
@@ -108,7 +108,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const loadedKey = useCoreSelector(selectEditorLoadedKey);
 	const name = useCoreSelector(selectEditorName);
 	const dirty = useCoreSelector(selectEditorDirty);
-	const issues = useCoreSelector(selectEditorIssues);
+	const issues = useCoreSelector(selectEditorBlockingIssues);
 	const sourceId = useCoreSelector(selectEditorSourceId);
 
 	const routeKey = id ?? (duplicateOf ? `new:${duplicateOf}` : 'new');

@@ -2,21 +2,23 @@ import React from 'react';
 
 import { Badge, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { LuBug, LuRefreshCw } from 'react-icons/lu';
+import { LuBug, LuGitMerge, LuRefreshCw, LuTimer } from 'react-icons/lu';
 
 import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
+import { nodeSubtitle, shownStartDelay } from '@module/workflow-definition/data';
 import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
 
 import classes from './WorkflowRunGraph.module.scss';
 import type { WorkflowRunStepFlowNode } from './WorkflowRunGraph.types';
 
 export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> = ({ data, selected }) => {
-	const { node, occurrence, debug, current, debugCursor } = data;
-	// Parallel and custom types have no editor meta yet; they get the library's generic look.
+	const { node, occurrence, debug, current, debugCursor, join } = data;
+	// Custom types registered with the engine have no editor meta; they get the library's generic look.
 	const typeMeta = nodeDefinitionTypeMeta(node.type);
 	const status = occurrence?.status ?? 'pending';
 	const statusMeta = nodeRunStatusMeta[status];
 	const retried = (debug?.attempt_count ?? 1) > 1;
+	const startDelay = shownStartDelay(node);
 
 	return (
 		<div
@@ -37,9 +39,17 @@ export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> 
 						{node.name}
 					</Text>
 					<Text fz={11} c="dimmed" truncate>
-						{typeMeta.label}
+						{nodeSubtitle(node, typeMeta.label)}
 					</Text>
 				</div>
+				{startDelay && (
+					<Tooltip label={`Waits ${startDelay} on arrival`}>
+						<span className={classes.startDelay}>
+							<LuTimer size={10} aria-hidden />
+							{startDelay}
+						</span>
+					</Tooltip>
+				)}
 				<Tooltip label={statusMeta.label}>
 					<span className={classes.statusDot} data-spin={status === 'running' || undefined}>
 						<statusMeta.icon size={13} />
@@ -57,6 +67,13 @@ export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> 
 							<LuRefreshCw size={10} aria-hidden />
 							{debug?.attempt_count}
 						</span>
+					</Tooltip>
+				)}
+				{join && (
+					<Tooltip label="Branches finished of the latest fork">
+						<Badge size="xs" variant="light" color="indigo" leftSection={<LuGitMerge size={9} />}>
+							{join.completed}/{join.total} branches
+						</Badge>
 					</Tooltip>
 				)}
 				{debugCursor && (

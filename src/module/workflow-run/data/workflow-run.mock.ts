@@ -101,8 +101,16 @@ export const mockRunDefinition: WorkflowRunMockDefinition = {
 					until: 'response.body.status === "settled"',
 				},
 				output_property: 'payment',
-				next_node: 'confirm-shipment',
+				next_node: 'fraud-hold',
 				on_failure: { next_node: 'handle-failure', output_property: 'payment_error' },
+			},
+			{
+				id: 'fraud-hold',
+				type: 'delay',
+				name: 'Fraud review hold',
+				delay: '30s',
+				retry_on_recovery: true,
+				next_node: 'confirm-shipment',
 			},
 			{
 				id: 'confirm-shipment',
@@ -129,6 +137,7 @@ export const mockRunDefinition: WorkflowRunMockDefinition = {
 				name: 'Notify customer',
 				channel: 'redis',
 				context_path: 'shipment',
+				start_delay: '15s',
 			},
 			{
 				id: 'handle-failure',
@@ -199,6 +208,11 @@ export const mockNodeBehaviour: Record<string, WorkflowRunMockNodeBehaviour> = {
 		output: { status: 'settled', paid_at: '2026-09-21T14:06:02Z', amount: 1_248_000 },
 		contextPatch: { payment: { status: 'settled', amount: 1_248_000 } },
 	},
+	'fraud-hold': {
+		durationMs: 30_000,
+		// A delay node always outputs null.
+		output: null,
+	},
 	'confirm-shipment': {
 		durationMs: 0,
 		input: { channel: 'http', awaiting: true },
@@ -218,7 +232,7 @@ export const mockNodeBehaviour: Record<string, WorkflowRunMockNodeBehaviour> = {
 	},
 };
 
-export type WorkflowRunMockScenarioId = 'live' | 'awaiting-input' | 'failed';
+export type WorkflowRunMockScenarioId = 'live' | 'delayed' | 'awaiting-input' | 'failed';
 
 export interface WorkflowRunMockScenario {
 	id: WorkflowRunMockScenarioId;
@@ -246,6 +260,25 @@ export const mockRunScenarios: Record<WorkflowRunMockScenarioId, WorkflowRunMock
 		status: 'running',
 		skipped: ['notify-backorder'],
 	},
+	delayed: {
+		id: 'delayed',
+		label: 'Delayed run',
+		description: 'Parked on a delay node before shipment',
+		completed: [
+			'receive-order',
+			'validate-order',
+			'check-stock',
+			'stock-route',
+			'lock-inventory',
+			'write-ledger',
+			'await-payment',
+		],
+		current: 'fraud-hold',
+		currentStatus: 'waiting',
+		status: 'waiting',
+		waitingReason: 'delay',
+		skipped: ['notify-backorder'],
+	},
 	'awaiting-input': {
 		id: 'awaiting-input',
 		label: 'Awaiting input',
@@ -258,6 +291,7 @@ export const mockRunScenarios: Record<WorkflowRunMockScenarioId, WorkflowRunMock
 			'lock-inventory',
 			'write-ledger',
 			'await-payment',
+			'fraud-hold',
 		],
 		current: 'confirm-shipment',
 		currentStatus: 'waiting',
@@ -277,7 +311,7 @@ export const mockRunScenarios: Record<WorkflowRunMockScenarioId, WorkflowRunMock
 	},
 };
 
-export const mockRunScenarioOrder: WorkflowRunMockScenarioId[] = ['live', 'awaiting-input', 'failed'];
+export const mockRunScenarioOrder: WorkflowRunMockScenarioId[] = ['live', 'delayed', 'awaiting-input', 'failed'];
 
 /** Picks a stable scenario for a run id so any row in the list opens onto something plausible. */
 export const scenarioForRunId = (runId: string): WorkflowRunMockScenarioId => {

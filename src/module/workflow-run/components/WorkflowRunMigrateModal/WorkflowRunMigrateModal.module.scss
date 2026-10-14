@@ -78,6 +78,13 @@
 	}
 }
 
+.edgePair {
+	:global(.react-flow__edge-path) {
+		stroke: var(--mantine-color-indigo-3);
+		stroke-dasharray: 2 6;
+	}
+}
+
 .mono {
 	font-family: var(--mantine-font-family-monospace);
 	word-break: break-all;

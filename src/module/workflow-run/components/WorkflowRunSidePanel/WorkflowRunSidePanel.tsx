@@ -1,11 +1,13 @@
 import React from 'react';
 
-import { Stack, Tabs, Text } from '@mantine/core';
+import { Badge, Stack, Tabs, Text } from '@mantine/core';
 
+import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 
 import { WorkflowRunContextPanel } from '../WorkflowRunContextPanel';
 import { WorkflowRunJsonView } from '../WorkflowRunJsonView';
+import { WorkflowRunParallelPanel } from '../WorkflowRunParallelPanel';
 import classes from './WorkflowRunSidePanel.module.scss';
 
 interface WorkflowRunSidePanelProps {
@@ -13,6 +15,14 @@ interface WorkflowRunSidePanelProps {
 	context: Record<string, unknown>;
 	canEditContext: boolean;
 	onReplaceContext: (context: Record<string, unknown>, reason: string) => void;
+	/** Resolves start and end node names in the parallel tree. */
+	nodesById: Map<string, WorkflowDefinitionNode>;
+	selectedNodeId: string | null;
+	onSelectNode: (nodeId: string) => void;
+	/** Parked branches a payload can be delivered to. */
+	inputBranchIds: Set<string>;
+	/** Omitted when the caller cannot deliver input. */
+	onProvideBranchInput?: (branchId: string) => void;
 }
 
 export const WorkflowRunSidePanel: React.FC<WorkflowRunSidePanelProps> = ({
@@ -20,10 +30,27 @@ export const WorkflowRunSidePanel: React.FC<WorkflowRunSidePanelProps> = ({
 	context,
 	canEditContext,
 	onReplaceContext,
+	nodesById,
+	selectedNodeId,
+	onSelectNode,
+	inputBranchIds,
+	onProvideBranchInput,
 }) => (
 	<Tabs defaultValue="context" keepMounted={false} className={classes.root}>
 		<Tabs.List className={classes.list}>
 			<Tabs.Tab value="context">Context</Tabs.Tab>
+			{!!detail.parallel?.length && (
+				<Tabs.Tab
+					value="parallel"
+					rightSection={
+						<Badge size="xs" variant="light" color="indigo" circle>
+							{detail.parallel.length}
+						</Badge>
+					}
+				>
+					Parallel
+				</Tabs.Tab>
+			)}
 			<Tabs.Tab value="raw">Raw status</Tabs.Tab>
 		</Tabs.List>
 
@@ -34,6 +61,19 @@ export const WorkflowRunSidePanel: React.FC<WorkflowRunSidePanelProps> = ({
 				onReplace={onReplaceContext}
 			/>
 		</Tabs.Panel>
+
+		{!!detail.parallel?.length && (
+			<Tabs.Panel value="parallel" className={classes.panel}>
+				<WorkflowRunParallelPanel
+					executions={detail.parallel}
+					nodesById={nodesById}
+					selectedNodeId={selectedNodeId}
+					onSelectNode={onSelectNode}
+					inputBranchIds={inputBranchIds}
+					onProvideInput={onProvideBranchInput}
+				/>
+			</Tabs.Panel>
+		)}
 
 		<Tabs.Panel value="raw" className={classes.panel}>
 			<Stack gap="xs" p="md">

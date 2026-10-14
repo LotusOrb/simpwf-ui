@@ -54,6 +54,14 @@
 	}
 }
 
+.pairEdge {
+	:global(.react-flow__edge-path) {
+		stroke: var(--mantine-color-indigo-3);
+		stroke-dasharray: 2 5;
+		stroke-linecap: round;
+	}
+}
+
 .minimap {
 	overflow: hidden;
 	border: 1px solid var(--mantine-color-gray-2);
@@ -130,6 +138,12 @@
 		border-color: var(--mantine-primary-color-filled);
 		box-shadow: 0 0 0 3px color-mix(in srgb, var(--mantine-primary-color-filled) 15%, transparent);
 	}
+
+	// The other half of a selected parallel block.
+	&[data-paired-selected] {
+		border-color: var(--mantine-color-indigo-3);
+		border-style: dashed;
+	}
 }
 
 .nodeHeader {
@@ -149,6 +163,19 @@
 	color: var(--mantine-color-red-6);
 }
 
+.startDelay {
+	display: inline-flex;
+	flex-shrink: 0;
+	gap: 3px;
+	align-items: center;
+	padding: 1px 6px;
+	border-radius: var(--mantine-radius-sm);
+	background-color: var(--mantine-color-lime-1);
+	color: var(--mantine-color-lime-9);
+	font-size: 11px;
+	font-weight: 600;
+}
+
 .branches {
 	display: flex;
 	flex-direction: column;
@@ -161,6 +188,20 @@
 	padding: 3px 8px;
 	border-radius: var(--mantine-radius-sm);
 	background-color: var(--mantine-color-orange-0);
+
+	&[data-kind='parallel'] {
+		background-color: var(--mantine-color-indigo-0);
+	}
+}
+
+.pairBadge {
+	margin-top: 8px;
+	padding: 3px 8px;
+	border-radius: var(--mantine-radius-sm);
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--mantine-color-indigo-8);
+	background-color: var(--mantine-color-indigo-0);
 }
 
 .failureLabel {
@@ -272,9 +313,19 @@
 		background-color: var(--mantine-color-orange-6);
 	}
 
+	&[data-kind='parallel'] {
+		right: -11px;
+		background-color: var(--mantine-color-indigo-6);
+	}
+
 	&[data-kind='failure'] {
 		background-color: var(--mantine-color-red-6);
 	}
+}
+
+.pairHandle {
+	visibility: hidden;
+	pointer-events: none;
 }
 
 .start {

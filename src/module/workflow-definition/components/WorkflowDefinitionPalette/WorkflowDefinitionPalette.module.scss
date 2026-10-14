@@ -79,18 +79,31 @@
 }
 
 .entry {
-	position: relative;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+	transition: border-color 120ms ease;
 
-	&:hover .libraryLink,
-	.libraryLink:focus-visible {
-		opacity: 1;
+	// The card border sits on the wrapper so the link below reads as part of the same card.
+	.item {
+		width: 100%;
+		border: none;
+	}
+
+	&:hover,
+	&:focus-within {
+		border-color: var(--mantine-color-brand-2);
+
+		.libraryLink {
+			display: inline-flex;
+		}
 	}
 }
 
 .libraryLink {
-	position: absolute;
-	top: 6px;
-	right: 28px;
-	opacity: 0;
-	transition: opacity 120ms ease;
+	display: none;
+	align-items: center;
+	gap: 4px;
+	// Lines up with the title: item padding + icon width + gap.
+	margin: -4px 0 8px calc(8px + 34px + var(--mantine-spacing-sm));
 }

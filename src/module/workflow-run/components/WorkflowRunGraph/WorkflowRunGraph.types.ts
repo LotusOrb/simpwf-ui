@@ -11,6 +11,8 @@ export interface WorkflowRunGraphNodeData extends Record<string, unknown> {
 	current: boolean;
 	/** Where a debug run is paused. */
 	debugCursor: boolean;
+	/** Branch progress of the latest fork joining here; null for other nodes or before the fork. */
+	join: { completed: number; total: number } | null;
 }
 
 export interface WorkflowRunGraphGroupData extends Record<string, unknown> {

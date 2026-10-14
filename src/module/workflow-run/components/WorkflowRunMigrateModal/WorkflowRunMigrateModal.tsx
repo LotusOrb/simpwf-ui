@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router';
 import { CodeEditor } from '@common/component/CodeEditor';
 
 import { useNotify } from '@module/notification/hooks';
+import { parallelInterior } from '@module/workflow-definition/data';
 import {
 	useGetWorkflowDefinitionQuery,
 	useListWorkflowDefinitionVersionsQuery,
@@ -38,7 +39,6 @@ import {
 	diffDefinitionNodes,
 	indexDefinitionNodes,
 	migrateSourceNodeId,
-	parallelInterior,
 	type WorkflowRunMigrateErrorCopy,
 } from '@module/workflow-run/data';
 import {
