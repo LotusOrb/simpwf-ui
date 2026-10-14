@@ -117,9 +117,6 @@ export const LoginPage: React.FC = () => {
 		if (!activeMethod) {
 			return (
 				<Stack gap="md">
-					<Alert variant="light" color="yellow" icon={<LuTriangleAlert size={16} aria-hidden />}>
-						The workflow engine has no login method enabled, so it does not ask who you are.
-					</Alert>
 					<Button size="md" fullWidth leftSection={<LuArrowRight size={18} />} onClick={handleOpenAccess}>
 						Go to app
 					</Button>
