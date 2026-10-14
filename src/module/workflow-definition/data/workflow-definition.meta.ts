@@ -1,5 +1,16 @@
 import type { IconType } from 'react-icons';
-import { LuBoxes, LuCode, LuGlobe, LuLogIn, LuRadar, LuSend, LuSplit } from 'react-icons/lu';
+import {
+	LuBoxes,
+	LuCode,
+	LuGitFork,
+	LuGitMerge,
+	LuGlobe,
+	LuLogIn,
+	LuRadar,
+	LuSend,
+	LuSplit,
+	LuTimer,
+} from 'react-icons/lu';
 
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionGraphLayout } from '@module/workflow-definition/types/WorkflowDefinitionGraphLayout';
@@ -33,6 +44,19 @@ export const nodeTypeMeta: Record<
 		description: 'Call an HTTP endpoint or run a command',
 	},
 	poller: { label: 'Poller', color: 'cyan', icon: LuRadar, description: 'Repeat a check until a predicate matches' },
+	delay: { label: 'Delay', color: 'lime', icon: LuTimer, description: 'Wait a fixed duration, then continue' },
+	parallel_start: {
+		label: 'Parallel',
+		color: 'indigo',
+		icon: LuGitFork,
+		description: 'Run named branches at once, then join them',
+	},
+	parallel_end: {
+		label: 'Join',
+		color: 'indigo',
+		icon: LuGitMerge,
+		description: 'Wait for every branch and combine their contexts',
+	},
 	group: { label: 'Group', color: 'violet', icon: LuBoxes, description: 'Nested sub-graph with its own start' },
 	output: {
 		label: 'Output',
@@ -43,6 +67,22 @@ export const nodeTypeMeta: Record<
 };
 
 export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowDefinitionNodeType[];
+
+/**
+ * Card subtitle under a node's name: an inline delay node shows its duration instead of the type label. A library
+ * delay keeps the label, since its duration lives in the definition.
+ */
+export const nodeSubtitle = (
+	node: Pick<WorkflowDefinitionNode, 'type' | 'delay' | 'node_definition_id'>,
+	label: string,
+) => (node.type === 'delay' && !node.node_definition_id ? `${label} · ${node.delay || 'not set'}` : label);
+
+/** The start delay a card shows. Null (disabled) and omitted (inherited from the library) show nothing. */
+export const shownStartDelay = (node: Pick<WorkflowDefinitionNode, 'start_delay'>) =>
+	typeof node.start_delay === 'string' && node.start_delay ? node.start_delay : null;
+
+/** A join only arrives together with its parallel_start, so the palette never offers it alone. */
+export const paletteNodeTypes = nodeTypeOrder.filter((type) => type !== 'parallel_end');
 
 const flattenNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
 	nodes.flatMap((node) => [node, ...(node.nodes ? flattenNodes(node.nodes) : [])]);
@@ -62,6 +102,7 @@ const getTargets = (node: WorkflowDefinitionNode, content: WorkflowDefinitionCon
 	for (const condition of node.conditions ?? []) {
 		if (condition.key) targets.push(content.keys?.[condition.key]);
 	}
+	targets.push(...Object.values(node.branches ?? {}));
 	return targets.filter((target): target is string => !!target);
 };
 

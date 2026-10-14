@@ -24,7 +24,7 @@ import { scheduleCreateLink } from '@module/schedule/data';
 import type { WorkflowDefinitionErrorCopy } from '@module/workflow-definition/data';
 import {
 	selectEditorDirty,
-	selectEditorIssues,
+	selectEditorBlockingIssues,
 	selectEditorName,
 	selectEditorSourceId,
 	selectEditorSourceVersion,
@@ -86,7 +86,7 @@ export const WorkflowDefinitionEditorHeader: React.FC<WorkflowDefinitionEditorHe
 
 	const name = useCoreSelector(selectEditorName);
 	const dirty = useCoreSelector(selectEditorDirty);
-	const issues = useCoreSelector(selectEditorIssues);
+	const issues = useCoreSelector(selectEditorBlockingIssues);
 	const sourceId = useCoreSelector(selectEditorSourceId);
 	const sourceVersion = useCoreSelector(selectEditorSourceVersion);
 

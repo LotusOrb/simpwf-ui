@@ -1,6 +1,7 @@
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
+import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
 import type { WorkflowDefinitionEditorDocument } from '@module/workflow-definition/types/WorkflowDefinitionEditorDocument';
 import type { WorkflowDefinitionEditorEdge } from '@module/workflow-definition/types/WorkflowDefinitionEditorEdge';
 import type { WorkflowDefinitionEditorIssue } from '@module/workflow-definition/types/WorkflowDefinitionEditorIssue';
@@ -12,10 +13,19 @@ import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/t
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
 import { layoutGraph, nodeTypeMeta } from './workflow-definition.meta';
+import {
+	analyzeParallel,
+	MAX_PARALLEL_BRANCHES,
+	MAX_PARALLEL_DEPTH,
+	MIN_PARALLEL_BRANCHES,
+	type ParallelProblem,
+} from './workflow-definition.parallel';
 
 export const ROOT_SCOPE = 'root';
 export const HANDLE_NEXT = 'next';
 export const HANDLE_FAILURE = 'failure';
+/** Hidden handles the derived start → join edge hangs off. Never connectable, never stored. */
+export const HANDLE_PAIR = 'pair';
 export const EDITOR_METADATA_KEY = 'editor';
 
 const START_PREFIX = 'start:';
@@ -30,6 +40,8 @@ export const scopeOfStartNode = (id: string) => {
 	return key === ROOT_SCOPE ? null : key;
 };
 export const branchHandle = (branchId: string) => `branch:${branchId}`;
+export const pairEdgeId = (startId: string) => `pair:${startId}`;
+export const isPairEdgeId = (id: string) => id.startsWith('pair:');
 
 export const uuidv7 = () => {
 	const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -43,9 +55,12 @@ export const uuidv7 = () => {
 
 export const shortId = () => Math.random().toString(36).slice(2, 10);
 
-export const supportsNext = (type: WorkflowDefinitionNodeType) => type !== 'conditions';
+export const supportsNext = (type: WorkflowDefinitionNodeType) => type !== 'conditions' && type !== 'parallel_start';
 export const supportsFailure = (type: WorkflowDefinitionNodeType) => type === 'external_call' || type === 'poller';
-export const supportsOutputProperty = (type: WorkflowDefinitionNodeType) => type !== 'conditions' && type !== 'group';
+export const isParallelType = (type: WorkflowDefinitionNodeType) =>
+	type === 'parallel_start' || type === 'parallel_end';
+export const supportsOutputProperty = (type: WorkflowDefinitionNodeType) =>
+	type !== 'conditions' && type !== 'group' && !isParallelType(type);
 export const toSnakeCase = (value: string) =>
 	value
 		.replace(/([a-z\d])([A-Z])/g, '$1_$2')
@@ -57,10 +72,33 @@ export const defaultOutputProperty = (config: WorkflowDefinitionNodeConfig) =>
 	supportsOutputProperty(config.type) ? toSnakeCase(config.name) || undefined : undefined;
 export const supportsTimeout = (type: WorkflowDefinitionNodeType) =>
 	type === 'script' || type === 'external_call' || type === 'output';
-export const supportsRetryOnRecovery = supportsFailure;
+export const supportsRetryOnRecovery = (type: WorkflowDefinitionNodeType) =>
+	type === 'external_call' || type === 'poller' || type === 'delay';
+/** What the engine assumes when `retry_on_recovery` is omitted. */
+export const retryOnRecoveryDefault = (type: WorkflowDefinitionNodeType) => type === 'poller' || type === 'delay';
+/** The engine rejects `start_delay` on these: input already waits, and a delay node is the wait itself. */
+export const supportsStartDelay = (type: WorkflowDefinitionNodeType) => type !== 'input' && type !== 'delay';
+
+/** Types whose routing goes out through one handle per editor branch instead of `next`. */
+export const hasBranches = (type: WorkflowDefinitionNodeType) => type === 'conditions' || type === 'parallel_start';
 
 export const isInlineGroup = (node: WorkflowDefinitionEditorNode) =>
 	node.config.type === 'group' && !node.config.node_definition_id;
+
+/**
+ * A library parallel_start is opaque unless the workflow node carries its own `branches`: library definitions hold
+ * hard-coded graph ids, so only inline branches can be drawn and routed.
+ */
+const routesParallelBranches = (node: WorkflowDefinitionEditorNode) =>
+	node.config.type === 'parallel_start' && (!node.config.node_definition_id || node.branches.length > 0);
+
+export const DEFAULT_COMBINING = `// branch["<name>"] is read-only: { context, status, branch_id, start_node_id }.
+// Whatever context holds when this script ends REPLACES the parent context.
+// Nothing is merged automatically: copy every value you want to keep.
+for (const name of Object.keys(branch)) {
+\tcontext[name] = branch[name].context;
+}
+`;
 
 const defaultConfigs: Record<WorkflowDefinitionNodeType, Partial<WorkflowDefinitionNodeConfig>> = {
 	script: { script: '' },
@@ -70,27 +108,42 @@ const defaultConfigs: Record<WorkflowDefinitionNodeType, Partial<WorkflowDefinit
 	external_call: { http_config: { method: 'GET', url: '' } },
 	poller: { http: { method: 'GET', url: '', until: '' } },
 	group: {},
+	parallel_start: {},
+	parallel_end: { combining_script: DEFAULT_COMBINING },
+	delay: { delay: '30s' },
 };
 
 const scopeNodes = (nodes: Record<string, WorkflowDefinitionEditorNode>, scope: string | null) =>
 	Object.values(nodes).filter((node) => node.parentId === scope);
 
-export const nextBranchKeys = (
-	nodes: Record<string, WorkflowDefinitionEditorNode>,
-	scope: string | null,
-	count: number,
-	reserved: string[] = [],
-) => {
-	const used = new Set([
-		...scopeNodes(nodes, scope).flatMap((node) => node.branches.map((branch) => branch.key)),
-		...reserved,
-	]);
+const freeBranchKeys = (used: Set<string>, count: number) => {
 	const keys: string[] = [];
 	for (let index = 1; keys.length < count; index++) {
 		if (!used.has(`branch_${index}`)) keys.push(`branch_${index}`);
 	}
 	return keys;
 };
+
+/** Condition keys share the scope's `keys` map, so they are unique across every conditions node in the scope. */
+export const nextBranchKeys = (
+	nodes: Record<string, WorkflowDefinitionEditorNode>,
+	scope: string | null,
+	count: number,
+	reserved: string[] = [],
+) =>
+	freeBranchKeys(
+		new Set([
+			...scopeNodes(nodes, scope)
+				.filter((node) => node.config.type === 'conditions')
+				.flatMap((node) => node.branches.map((branch) => branch.key)),
+			...reserved,
+		]),
+		count,
+	);
+
+/** Parallel branch names are local to their parallel_start. */
+export const nextParallelBranchNames = (branches: WorkflowDefinitionEditorBranch[], count: number) =>
+	freeBranchKeys(new Set(branches.map((branch) => branch.key)), count);
 
 const nextNodeName = (nodes: Record<string, WorkflowDefinitionEditorNode>, scope: string | null, base: string) => {
 	const used = new Set(scopeNodes(nodes, scope).map((node) => node.config.name));
@@ -126,10 +179,13 @@ export const createEditorNode = (
 		};
 	}
 
-	const branches =
+	const keys =
 		source.type === 'conditions'
-			? nextBranchKeys(nodes, scope, 2).map((key) => ({ id: shortId(), key, condition: '' }))
-			: [];
+			? nextBranchKeys(nodes, scope, 2)
+			: source.type === 'parallel_start'
+				? nextParallelBranchNames([], 2)
+				: [];
+	const branches = keys.map((key) => ({ id: shortId(), key, condition: '' }));
 
 	return {
 		id,
@@ -146,6 +202,25 @@ export const createEditorNode = (
 	};
 };
 
+/** A parallel_start with two branches and its join one step further right, linked both ways. */
+export const createParallelPair = (
+	nodes: Record<string, WorkflowDefinitionEditorNode>,
+	scope: string | null,
+	position: WorkflowDefinitionEditorPosition,
+): [WorkflowDefinitionEditorNode, WorkflowDefinitionEditorNode] => {
+	const start = createEditorNode(nodes, scope, position, { type: 'parallel_start' });
+	const end = createEditorNode(
+		nodes,
+		scope,
+		{ x: position.x + 2 * COLUMN_WIDTH, y: position.y },
+		{ type: 'parallel_end' },
+	);
+	start.pairId = end.id;
+	end.pairId = start.id;
+	return [start, end];
+};
+
+// Library parallel_starts stay opaque (see routesParallelBranches), so only conditions carry branches over.
 const referenceBranches = (definition: NodeDefinition) =>
 	(definition.content.conditions ?? []).map((condition) => ({
 		id: shortId(),
@@ -216,12 +291,20 @@ const resolveNodeConfig = (node: WorkflowDefinitionEditorNode) => {
 	return config;
 };
 
-const RAW_ROUTING_FIELDS = ['id', 'next_node', 'on_failure', 'nodes', 'start_node_id'] as const;
+const RAW_ROUTING_FIELDS = ['id', 'next_node', 'on_failure', 'nodes', 'start_node_id', 'parallel_end_node_id'] as const;
 
 const hasRawConditions = (node: WorkflowDefinitionEditorNode) =>
 	node.config.type === 'conditions' && !node.config.node_definition_id;
 
-export const formatRawNode = (node: WorkflowDefinitionEditorNode) => {
+const hasRawParallelBranches = (node: WorkflowDefinitionEditorNode) =>
+	node.config.type === 'parallel_start' && !node.config.node_definition_id;
+
+const rawParallelBranches = (node: WorkflowDefinitionEditorNode, edges: WorkflowDefinitionEditorEdge[]) =>
+	Object.fromEntries(
+		node.branches.map((branch) => [branch.key, outgoingTarget(edges, node.id, branchHandle(branch.id))]),
+	);
+
+export const formatRawNode = (node: WorkflowDefinitionEditorNode, edges: WorkflowDefinitionEditorEdge[]) => {
 	const config = resolveNodeConfig(node);
 	const metadata = readJsonField(config, 'metadata') as Record<string, unknown> | undefined;
 	if (metadata) config.metadata = metadata;
@@ -233,7 +316,42 @@ export const formatRawNode = (node: WorkflowDefinitionEditorNode) => {
 			branch.key ? { key: branch.key, condition: branch.condition } : { condition: branch.condition },
 		);
 	}
+	if (hasRawParallelBranches(node)) raw.branches = rawParallelBranches(node, edges);
 	return JSON.stringify(raw, null, 2);
+};
+
+type RawNodeResult =
+	| { ok: true; config: WorkflowDefinitionNodeConfig; branches?: WorkflowDefinitionEditorNode['branches'] }
+	| { ok: false; error: string };
+
+const parseRawParallelBranches = (
+	node: WorkflowDefinitionEditorNode,
+	edges: WorkflowDefinitionEditorEdge[],
+	branches: unknown,
+	config: WorkflowDefinitionNodeConfig,
+): RawNodeResult => {
+	if (
+		!isRecord(branches) ||
+		!Object.values(branches).every((target) => target === null || typeof target === 'string')
+	) {
+		return { ok: false, error: 'branches must be an object of { name: target }' };
+	}
+	// Untouched branches stay as they are, so duplicate names (which JSON can't hold twice) survive other edits.
+	if (JSON.stringify(branches) === JSON.stringify(rawParallelBranches(node, edges))) return { ok: true, config };
+
+	// Branches are matched by position, like conditions; only their names can change here.
+	const entries = Object.entries(branches as Record<string, string | null>);
+	const moved = entries.some(([, target], index) => {
+		const current = node.branches[index];
+		return (target || null) !== (current ? outgoingTarget(edges, node.id, branchHandle(current.id)) : null);
+	});
+	if (moved) return { ok: false, error: 'Branch targets are set on the canvas; only names can change here' };
+
+	return {
+		ok: true,
+		config,
+		branches: entries.map(([key], index) => ({ id: node.branches[index]?.id ?? shortId(), key, condition: '' })),
+	};
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -241,10 +359,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const parseRawNode = (
 	node: WorkflowDefinitionEditorNode,
+	edges: WorkflowDefinitionEditorEdge[],
 	text: string,
-):
-	| { ok: true; config: WorkflowDefinitionNodeConfig; branches?: WorkflowDefinitionEditorNode['branches'] }
-	| { ok: false; error: string } => {
+): RawNodeResult => {
 	let raw: unknown;
 	try {
 		raw = JSON.parse(text);
@@ -264,7 +381,12 @@ export const parseRawNode = (
 		return { ok: false, error: 'metadata must be a JSON object' };
 	}
 
-	const { conditions, ...config } = raw;
+	const { conditions, branches: forks, ...config } = raw;
+	if (hasRawParallelBranches(node)) {
+		if (conditions !== undefined) return { ok: false, error: 'conditions only apply to inline conditions nodes' };
+		return parseRawParallelBranches(node, edges, forks, config as unknown as WorkflowDefinitionNodeConfig);
+	}
+	if (forks !== undefined) return { ok: false, error: 'branches only apply to inline parallel_start nodes' };
 	if (!hasRawConditions(node)) {
 		if (conditions !== undefined) return { ok: false, error: 'conditions only apply to inline conditions nodes' };
 		return { ok: true, config: config as unknown as WorkflowDefinitionNodeConfig };
@@ -316,6 +438,7 @@ export const toEditorDocument = (
 	const addEdge = (source: string, sourceHandle: string, target: string | null | undefined) => {
 		if (target) document.edges.push({ id: `${source}:${sourceHandle}`, source, sourceHandle, target });
 	};
+	const pairs: [start: string, end: string][] = [];
 
 	const readScope = (
 		scope: string | null,
@@ -343,6 +466,8 @@ export const toEditorDocument = (
 				nodes: children,
 				start_node_id,
 				keys: childKeys,
+				branches: forkTargets,
+				parallel_end_node_id,
 				...config
 			} = node;
 			const reference = config.node_definition_id ? references[config.node_definition_id] : undefined;
@@ -363,9 +488,19 @@ export const toEditorDocument = (
 					y: (layout.rows + 1) * ROW_HEIGHT,
 				};
 
-			const branches = (conditions ?? (reference ? reference.content.conditions : undefined) ?? []).map(
-				(condition) => ({ id: shortId(), key: condition.key ?? '', condition: condition.condition }),
-			);
+			// Sorted by name like the engine's branch index. Only inline branches count (see routesParallelBranches).
+			const forks =
+				config.type === 'parallel_start'
+					? Object.entries(forkTargets ?? {}).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+					: [];
+			const branches =
+				config.type === 'parallel_start'
+					? forks.map(([name]) => ({ id: shortId(), key: name, condition: '' }))
+					: (conditions ?? (reference ? reference.content.conditions : undefined) ?? []).map((condition) => ({
+							id: shortId(),
+							key: condition.key ?? '',
+							condition: condition.condition,
+						}));
 
 			document.nodes[id] = {
 				id,
@@ -380,8 +515,13 @@ export const toEditorDocument = (
 
 			addEdge(id, HANDLE_NEXT, next_node);
 			addEdge(id, HANDLE_FAILURE, on_failure?.next_node);
-			for (const branch of branches) {
-				if (branch.key) addEdge(id, branchHandle(branch.id), keys?.[branch.key]);
+			if (config.type === 'parallel_start') {
+				forks.forEach(([, target], index) => addEdge(id, branchHandle(branches[index].id), target));
+				if (parallel_end_node_id) pairs.push([id, parallel_end_node_id]);
+			} else {
+				for (const branch of branches) {
+					if (branch.key) addEdge(id, branchHandle(branch.id), keys?.[branch.key]);
+				}
 			}
 
 			if (inlineGroup) readScope(id, start_node_id, children ?? [], childKeys);
@@ -396,11 +536,90 @@ export const toEditorDocument = (
 	};
 
 	readScope(null, definition.content.start_node_id, definition.content.nodes, definition.content.keys);
+
+	// Linked once every scope is read: a join may come before its start. A dangling or shared join is left for
+	// validation to point out; the start keeps its id either way so nothing is lost on save.
+	for (const [start, end] of pairs) {
+		document.nodes[start].pairId = end;
+		const join = document.nodes[end];
+		if (join?.config.type === 'parallel_end') join.pairId = start;
+	}
 	return document;
 };
 
 export const outgoingTarget = (edges: WorkflowDefinitionEditorEdge[], source: string, sourceHandle: string) =>
 	edges.find((edge) => edge.source === source && edge.sourceHandle === sourceHandle)?.target ?? null;
+
+/** Gap kept between stacked nodes when a node is taller than a plain row. */
+const ROW_GAP = 40;
+
+/**
+ * Lays a scope out left to right from its start node: each node sits one column past its furthest
+ * predecessor, and rows follow the order handles are drawn (next, branches, failure) so branches
+ * don't cross. Nodes Start can't reach go in a row below. Returns the start position too.
+ */
+export const layoutScope = (
+	document: Pick<WorkflowDefinitionEditorDocument, 'nodes' | 'edges'>,
+	scope: string | null,
+): { start: WorkflowDefinitionEditorPosition; nodes: Record<string, WorkflowDefinitionEditorPosition> } => {
+	const members = scopeNodes(document.nodes, scope);
+	const memberIds = new Set(members.map((node) => node.id));
+	const handleOrder = (node: WorkflowDefinitionEditorNode | undefined, handle: string) => {
+		if (handle === HANDLE_NEXT) return 0;
+		if (handle === HANDLE_FAILURE) return Number.MAX_SAFE_INTEGER;
+		return 1 + (node?.branches.findIndex((branch) => branchHandle(branch.id) === handle) ?? 0);
+	};
+	const targetsOf = (id: string) =>
+		document.edges
+			.filter((edge) => edge.source === id && memberIds.has(edge.target))
+			.sort(
+				(a, b) =>
+					handleOrder(document.nodes[id], a.sourceHandle) - handleOrder(document.nodes[id], b.sourceHandle),
+			)
+			.map((edge) => edge.target);
+
+	// Longest path from Start, ignoring back edges so loops don't push nodes off forever.
+	const depth = new Map<string, number>();
+	const visit = (id: string, level: number, trail: Set<string>) => {
+		if (trail.has(id) || (depth.get(id) ?? -1) >= level) return;
+		depth.set(id, level);
+		const nextTrail = new Set(trail).add(id);
+		for (const target of targetsOf(id)) visit(target, level + 1, nextTrail);
+	};
+	const first = outgoingTarget(document.edges, startNodeId(scope), HANDLE_NEXT);
+	if (first && memberIds.has(first)) visit(first, 0, new Set());
+
+	// Depth-first discovery order decides who goes above whom within a column.
+	const order = new Map<string, number>();
+	const discover = (id: string) => {
+		if (order.has(id) || !depth.has(id)) return;
+		order.set(id, order.size);
+		for (const target of targetsOf(id)) discover(target);
+	};
+	if (first) discover(first);
+
+	const columns: string[][] = [];
+	for (const id of [...order.keys()]) (columns[depth.get(id)!] ??= []).push(id);
+	const rowHeight = Math.max(ROW_HEIGHT, ...members.map((node) => (node.measured?.height ?? 0) + ROW_GAP));
+	const rows = Math.max(1, ...columns.map((column) => column?.length ?? 0));
+
+	const positions: Record<string, WorkflowDefinitionEditorPosition> = {};
+	columns.forEach((column, index) => {
+		const offset = (rows - column.length) / 2;
+		column.forEach((id, row) => {
+			positions[id] = { x: (index + 1) * COLUMN_WIDTH, y: (row + offset) * rowHeight };
+		});
+	});
+	let orphanColumn = 0;
+	for (const node of members) {
+		if (positions[node.id]) continue;
+		positions[node.id] = { x: (orphanColumn++ + 1) * COLUMN_WIDTH, y: (rows + 1) * rowHeight };
+	}
+
+	const firstPosition = first ? positions[first] : undefined;
+	const start = firstPosition ? { x: firstPosition.x - COLUMN_WIDTH + 80, y: firstPosition.y + 12 } : { x: 0, y: 0 };
+	return { start, nodes: positions };
+};
 
 export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDocument): WorkflowDefinitionContent => {
 	const writeScope = (scope: string | null) => {
@@ -416,6 +635,8 @@ export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDo
 			};
 
 			config.output_property ||= defaultOutputProperty(config);
+			// Null only means "disable the library delay" on a reference; inline it is the same as omitting it.
+			if (config.start_delay === null && !config.node_definition_id) delete config.start_delay;
 
 			const node: WorkflowDefinitionNode = { id: editorNode.id, ...config };
 			const { type } = config;
@@ -435,6 +656,19 @@ export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDo
 					return key ? { key, condition: branch.condition } : { condition: branch.condition };
 				});
 				if (!config.node_definition_id) node.conditions = conditions;
+			}
+
+			// Parallel branch names are local to the node, so they stay out of the scope's `keys`.
+			if (type === 'parallel_start') {
+				if (routesParallelBranches(editorNode)) {
+					node.branches = Object.fromEntries(
+						editorNode.branches.map((branch) => [
+							branch.key.trim(),
+							outgoingTarget(document.edges, editorNode.id, branchHandle(branch.id)) ?? '',
+						]),
+					);
+				}
+				if (editorNode.pairId) node.parallel_end_node_id = editorNode.pairId;
 			}
 
 			if (isInlineGroup(editorNode)) {
@@ -505,6 +739,7 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 
 		const keyTargets = new Map<string, string | null>();
 		for (const node of scopeNodes(document.nodes, scope)) {
+			if (node.config.type !== 'conditions') continue;
 			for (const branch of node.branches) {
 				const key = branch.key.trim();
 				const target = outgoingTarget(document.edges, node.id, branchHandle(branch.id));
@@ -521,6 +756,7 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 	};
 	checkScope(null, 'The workflow');
 
+	const broken = new Set<string>();
 	for (const node of Object.values(document.nodes)) {
 		const { config } = node;
 		requireText(node, config.name, 'Name');
@@ -539,6 +775,14 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 		checkDuration(node, config.post_script?.timeout, 'Post-script timeout');
 		if (config.pre_script) requireText(node, config.pre_script.script, 'Pre-script');
 		if (config.post_script) requireText(node, config.post_script.script, 'Post-script');
+		// References may carry start_delay (null disables the library's), so these run before the reference skip.
+		if (config.start_delay !== undefined && !supportsStartDelay(config.type)) {
+			nodeIssue(node, `${nodeTypeMeta[config.type].label} nodes don't support start delay`);
+		}
+		checkDuration(node, config.start_delay ?? undefined, 'Start delay');
+		if (config.node_definition_id && config.delay !== undefined) {
+			nodeIssue(node, "Delay can't be set on a library reference");
+		}
 
 		if (config.node_definition_id) continue;
 
@@ -592,13 +836,164 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 					checkDuration(node, config.http?.request_timeout, 'Request timeout');
 				}
 				break;
+			case 'delay':
+				requireText(node, config.delay, 'Delay');
+				checkDuration(node, config.delay, 'Delay');
+				break;
 			case 'group':
 				checkScope(node.id, `Group "${config.name}"`);
+				break;
+			case 'parallel_start':
+				if (!checkParallelStart(document, node, (message) => nodeIssue(node, message))) broken.add(node.id);
+				break;
+			case 'parallel_end':
+				requireText(node, config.combining_script, 'Combining script');
+				checkParallelEnd(document, node, (message) => nodeIssue(node, message));
+				for (const message of combiningScriptWarnings(document, node)) {
+					issues.push({ nodeId: node.id, scope: node.parentId, message, severity: 'warning' });
+				}
 				break;
 		}
 	}
 
+	// Convergence and depth run on exactly what would be saved. A start that is already structurally broken would
+	// only repeat its problem as walk noise, so it is left out.
+	const reported = new Set(issues.map((issue) => `${issue.nodeId}\u0000${issue.message}`));
+	const analysis = analyzeParallel(toWorkflowDefinitionContent(document));
+	const failedBranches = new Set(
+		analysis.problems
+			.filter((problem) => problem.kind !== 'no_path')
+			.map((problem) => `${problem.startId}\u0000${problem.branch}`),
+	);
+	for (const problem of analysis.problems) {
+		if (broken.has(problem.startId)) continue;
+		// "No path" follows from any other problem on the same branch, like the engine stopping at the first error.
+		if (problem.kind === 'no_path' && failedBranches.has(`${problem.startId}\u0000${problem.branch}`)) continue;
+		const node = document.nodes[problem.nodeId] ?? document.nodes[problem.startId];
+		if (!node) continue;
+		const message = parallelProblemMessage(problem);
+		const key = `${node.id}\u0000${message}`;
+		if (reported.has(key)) continue;
+		reported.add(key);
+		nodeIssue(node, message);
+	}
+
 	return issues;
+};
+
+const parallelProblemMessage = ({ kind, branch, detail }: ParallelProblem) => {
+	switch (kind) {
+		case 'dead_end':
+			return `Branch "${branch}" reaches this node, which never leads to the join`;
+		case 'escape':
+			return `Branch "${branch}" leaves the parallel's scope`;
+		case 'unknown_node':
+			return `Branch "${branch}" reaches an unknown node`;
+		case 'self_loop':
+			return `Branch "${branch}" loops back to its own parallel`;
+		case 'missing_key':
+			return `Branch "${branch}" routes through key "${detail}", which this scope doesn't define`;
+		case 'no_path':
+			return `Branch "${branch}" has no path to the join`;
+		case 'too_deep':
+			return `Parallel blocks nest deeper than ${MAX_PARALLEL_DEPTH} (this one is ${detail} deep)`;
+		case 'nested_cycle':
+			return 'This parallel is nested in its own branches';
+	}
+};
+
+/** The pair link both halves must agree on: the partner exists, is the other half, points back and shares the scope. */
+const pairedPartner = (
+	document: WorkflowDefinitionEditorDocument,
+	node: WorkflowDefinitionEditorNode,
+	type: WorkflowDefinitionNodeType,
+) => {
+	const partner = node.pairId ? document.nodes[node.pairId] : undefined;
+	return partner?.config.type === type && partner.pairId === node.id && partner.parentId === node.parentId
+		? partner
+		: undefined;
+};
+
+/** Reports the structural problems of a parallel_start; false when it has any. */
+const checkParallelStart = (
+	document: WorkflowDefinitionEditorDocument,
+	node: WorkflowDefinitionEditorNode,
+	report: (message: string) => void,
+) => {
+	let valid = true;
+	const fail = (message: string) => {
+		valid = false;
+		report(message);
+	};
+
+	if (node.branches.length < MIN_PARALLEL_BRANCHES) {
+		fail(`A parallel needs at least ${MIN_PARALLEL_BRANCHES} branches`);
+	} else if (node.branches.length > MAX_PARALLEL_BRANCHES) {
+		fail(`A parallel can have at most ${MAX_PARALLEL_BRANCHES} branches`);
+	}
+
+	const names = new Set<string>();
+	const duplicates = new Set<string>();
+	for (const branch of node.branches) {
+		const name = branch.key.trim();
+		if (names.has(name)) duplicates.add(name);
+		names.add(name);
+	}
+	if (names.has('')) fail('Every branch needs a name');
+	for (const name of duplicates) if (name) fail(`Branch name "${name}" is used more than once`);
+
+	let unconnected = false;
+	for (const branch of node.branches) {
+		const target = outgoingTarget(document.edges, node.id, branchHandle(branch.id));
+		const label = branch.key.trim() || 'Unnamed branch';
+		if (!target) unconnected = true;
+		else if (target === node.id) fail(`Branch "${label}" can't lead back to its own parallel`);
+		else if (document.nodes[target]?.parentId !== node.parentId) {
+			fail(`Branch "${label}" must lead to a node in the same scope`);
+		}
+	}
+	if (unconnected) fail('Connect every branch to the node it starts at');
+
+	if (!pairedPartner(document, node, 'parallel_end')) {
+		const partner = node.pairId ? document.nodes[node.pairId] : undefined;
+		if (!partner || partner.config.type !== 'parallel_end') fail('This parallel has no join');
+		else if (partner.pairId !== node.id) fail(`Join "${partner.config.name}" already closes another parallel`);
+		else fail('The join must be in the same scope as its parallel');
+	}
+	return valid;
+};
+
+const checkParallelEnd = (
+	document: WorkflowDefinitionEditorDocument,
+	node: WorkflowDefinitionEditorNode,
+	report: (message: string) => void,
+) => {
+	if (pairedPartner(document, node, 'parallel_start')) return;
+	const partner = node.pairId ? document.nodes[node.pairId] : undefined;
+	if (partner?.config.type === 'parallel_start' && partner.pairId === node.id) {
+		report('The join must be in the same scope as its parallel');
+	} else {
+		report('This join has no matching parallel');
+	}
+};
+
+const SCRIPT_COMMENTS = /\/\*[\s\S]*?\*\/|\/\/.*$/gm;
+// `branch["x"]`, `branch['x']` and `branch.x`, but not `context.branch.x` or `mybranch.x`.
+const BRANCH_READS = /(?<![\w$.])branch\s*(?:\[\s*(["'])((?:(?!\1)[^\\\n])*)\1\s*\]|\.\s*([A-Za-z_$][\w$]*))/g;
+
+/** Branch names the combining script reads that its parallel doesn't have, e.g. after a rename. Never rewritten. */
+const combiningScriptWarnings = (document: WorkflowDefinitionEditorDocument, node: WorkflowDefinitionEditorNode) => {
+	const start = pairedPartner(document, node, 'parallel_start');
+	if (!start || node.config.node_definition_id) return [];
+	const names = new Set(start.branches.map((branch) => branch.key.trim()));
+	const missing = new Set<string>();
+	for (const match of (node.config.combining_script ?? '').replace(SCRIPT_COMMENTS, '').matchAll(BRANCH_READS)) {
+		const name = match[2] ?? match[3];
+		if (!names.has(name)) missing.add(name);
+	}
+	return [...missing].map(
+		(name) => `Combining script reads branch "${name}", which "${start.config.name}" doesn't have`,
+	);
 };
 
 export const collectReferenceIds = (nodes: WorkflowDefinitionNode[]): string[] =>

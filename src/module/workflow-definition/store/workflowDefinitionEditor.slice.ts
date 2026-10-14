@@ -6,6 +6,7 @@ import {
 	descendantIds,
 	EDITOR_METADATA_KEY,
 	isStartNodeId,
+	layoutScope,
 	scopeKey,
 	scopeOfStartNode,
 	startNodeId,
@@ -38,8 +39,13 @@ const initialState: WorkflowDefinitionEditorState = {
 };
 
 const removeNodes = (state: WorkflowDefinitionEditorState, ids: string[]) => {
+	// A parallel block only exists as a pair, so either half takes the other with it.
+	const paired = ids.flatMap((id) => {
+		const pairId = state.nodes[id]?.pairId;
+		return pairId && state.nodes[pairId]?.pairId === id ? [id, pairId] : [id];
+	});
 	const removed = new Set(
-		ids.filter((id) => state.nodes[id]).flatMap((id) => [id, ...descendantIds(state.nodes, id)]),
+		paired.filter((id) => state.nodes[id]).flatMap((id) => [id, ...descendantIds(state.nodes, id)]),
 	);
 	if (removed.size === 0) return;
 
@@ -91,6 +97,12 @@ export const workflowDefinitionEditorSlice = createSlice({
 			state.scope = action.payload;
 			state.selectedId = null;
 			state.starts[scopeKey(action.payload)] ??= { position: { x: 0, y: 0 } };
+		},
+		scopeAutoLaidOut: (state) => {
+			const layout = layoutScope(state, state.scope);
+			for (const [id, position] of Object.entries(layout.nodes)) state.nodes[id].position = position;
+			state.starts[scopeKey(state.scope)] = { ...state.starts[scopeKey(state.scope)], position: layout.start };
+			state.dirty = true;
 		},
 		nodeSelected: (state, action: PayloadAction<string | null>) => {
 			state.selectedId = action.payload;
@@ -263,6 +275,7 @@ export const {
 	nodeSelected,
 	nodesChanged,
 	nodesRemoved,
+	scopeAutoLaidOut,
 	scopeEntered,
 } = workflowDefinitionEditorSlice.actions;
 
@@ -282,6 +295,11 @@ export const {
 } = workflowDefinitionEditorSlice.selectors;
 
 export const selectEditorIssues = createSelector([workflowDefinitionEditorSlice.selectSlice], validateEditorDocument);
+
+/** The issues that stop a save; warnings are only shown. */
+export const selectEditorBlockingIssues = createSelector([selectEditorIssues], (issues) =>
+	issues.filter((issue) => issue.severity !== 'warning'),
+);
 
 export const selectEditorContent = createSelector(
 	[workflowDefinitionEditorSlice.selectSlice],
