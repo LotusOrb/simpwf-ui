@@ -21,3 +21,22 @@
 .nowrap {
 	white-space: nowrap;
 }
+
+// The whole row opens the run detail page.
+.row {
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--mantine-primary-color-filled);
+		outline-offset: -2px;
+	}
+}
+
+.link {
+	color: inherit;
+	text-decoration: none;
+
+	&:hover {
+		text-decoration: underline;
+	}
+}

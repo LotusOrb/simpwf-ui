@@ -25,3 +25,13 @@
 		text-decoration: underline;
 	}
 }
+
+// Writers open the edit modal by clicking anywhere on the row.
+.row {
+	cursor: pointer;
+
+	&:focus-visible {
+		outline: 2px solid var(--mantine-primary-color-filled);
+		outline-offset: -2px;
+	}
+}
