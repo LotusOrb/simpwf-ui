@@ -6,6 +6,7 @@ import {
 	LuGitMerge,
 	LuGlobe,
 	LuLogIn,
+	LuPuzzle,
 	LuRadar,
 	LuSend,
 	LuSplit,
@@ -67,6 +68,15 @@ export const nodeTypeMeta: Record<
 };
 
 export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowDefinitionNodeType[];
+
+export const isBuiltinNodeType = (type: string): type is WorkflowDefinitionNodeType =>
+	(nodeTypeOrder as string[]).includes(type);
+
+/** Display meta for any node type; a custom type registered with the engine gets a generic look. */
+export const nodeTypeMetaOf = (type: string) =>
+	isBuiltinNodeType(type)
+		? nodeTypeMeta[type]
+		: { label: type, color: 'gray', icon: LuPuzzle, description: 'Custom node type registered with the engine' };
 
 /**
  * Card subtitle under a node's name: an inline delay node shows its duration instead of the type label. A library

@@ -4,7 +4,7 @@ import { ActionIcon, Badge, Card, Menu, Skeleton, Table, Text, Tooltip } from '@
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuEllipsisVertical, LuGitBranchPlus, LuTrash2 } from 'react-icons/lu';
-import { Link } from 'react-router';
+import { useNavigate } from 'react-router';
 
 import { Permission, useCan } from '@core/auth/authorization';
 
@@ -17,6 +17,9 @@ import classes from './NodeDefinitionTable.module.scss';
 dayjs.extend(relativeTime);
 
 const COLUMN_COUNT = 5;
+
+// Interactive cells keep their clicks (including portalled menu dropdowns) from opening the row.
+const stopRowClick = (event: React.SyntheticEvent) => event.stopPropagation();
 
 interface NodeDefinitionTableProps {
 	definitions: NodeDefinition[];
@@ -33,6 +36,7 @@ export const NodeDefinitionTable: React.FC<NodeDefinitionTableProps> = ({
 	skeletonRows,
 }) => {
 	const canWrite = useCan(Permission.DefinitionsWrite);
+	const navigate = useNavigate();
 
 	return (
 		<Card padding={0} className={classes.root}>
@@ -59,18 +63,20 @@ export const NodeDefinitionTable: React.FC<NodeDefinitionTableProps> = ({
 									</Table.Tr>
 								))
 							: definitions.map((definition) => (
-									<Table.Tr key={definition.id}>
+									<Table.Tr
+										key={definition.id}
+										className={classes.row}
+										role="link"
+										tabIndex={0}
+										aria-label={`Open ${definition.name}`}
+										onClick={() => navigate(nodeDefinitionLink(definition.id))}
+										onKeyDown={(event) => {
+											if (event.target !== event.currentTarget || event.key !== 'Enter') return;
+											navigate(nodeDefinitionLink(definition.id));
+										}}
+									>
 										<Table.Td>
-											<Text
-												component={Link}
-												to={nodeDefinitionLink(definition.id)}
-												fz="sm"
-												fw={600}
-												truncate
-												maw={320}
-												title={definition.name}
-												className={classes.link}
-											>
+											<Text fz="sm" fw={600} truncate maw={320} title={definition.name}>
 												{definition.name}
 											</Text>
 										</Table.Td>
@@ -91,7 +97,7 @@ export const NodeDefinitionTable: React.FC<NodeDefinitionTableProps> = ({
 												</Text>
 											</Tooltip>
 										</Table.Td>
-										<Table.Td>
+										<Table.Td onClick={stopRowClick}>
 											{canWrite && (
 												<Menu position="bottom-end" shadow="md" withinPortal>
 													<Menu.Target>

@@ -17,7 +17,6 @@ import type { WorkflowRunMigratePayload } from '@module/workflow-run/types/Workf
 import type { WorkflowRunMigrateResult } from '@module/workflow-run/types/WorkflowRunMigrateResult';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
-import type { WorkflowRunStatus } from '@module/workflow-run/types/WorkflowRunStatus';
 
 const RESOURCE = 'v1/workflow/instance';
 
@@ -159,11 +158,6 @@ export const workflowRunApi = coreApi.injectEndpoints({
 				{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID },
 				...(result ? [{ type: apiTagConfig.workflowRun, id: result.instance.id }] : []),
 			],
-		}),
-
-		countWorkflowRunsByStatus: build.query<Record<WorkflowRunStatus | 'all', number>, WorkflowRunQuery>({
-			query: (param) => ({ method: 'get', url: `${RESOURCE}/status-counts`, qParam: param }),
-			providesTags: [{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID }],
 		}),
 
 		pauseWorkflowRun: build.mutation<Pick<WorkflowRun, 'status' | 'pause_requested'>, string>({

@@ -21,6 +21,9 @@ const COLUMN_COUNT = 6;
 
 const RUN_ROUTE = '/app/workflow-run';
 
+// Interactive cells keep their clicks (including portalled menu dropdowns) from opening the row.
+const stopRowClick = (event: React.SyntheticEvent) => event.stopPropagation();
+
 interface ScheduleTableProps {
 	schedules: Schedule[];
 	onToggle: (schedule: Schedule, enabled: boolean) => void;
@@ -39,6 +42,7 @@ const WorkflowCell: React.FC<{ definitionId: string }> = ({ definitionId }) => {
 				<Text
 					component={Link}
 					to={`${DEFINITION_ROUTE}/${definition.id}`}
+					onClick={stopRowClick}
 					fz="sm"
 					fw={600}
 					truncate
@@ -140,7 +144,21 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
 							: schedules.map((schedule) => {
 									const analysis = analyzeCrontab(schedule.crontab, schedule.timezone);
 									return (
-										<Table.Tr key={schedule.id}>
+										<Table.Tr
+											key={schedule.id}
+											{...(canWrite && {
+												className: classes.row,
+												role: 'button',
+												tabIndex: 0,
+												'aria-label': `Edit schedule ${schedule.crontab}`,
+												onClick: () => onEdit(schedule),
+												onKeyDown: (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+													if (event.target !== event.currentTarget || event.key !== 'Enter')
+														return;
+													onEdit(schedule);
+												},
+											})}
+										>
 											<Table.Td>
 												<WorkflowCell definitionId={schedule.workflow_definition_id} />
 											</Table.Td>
@@ -162,7 +180,7 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
 											<Table.Td>
 												<NextRunCell schedule={schedule} />
 											</Table.Td>
-											<Table.Td>
+											<Table.Td onClick={stopRowClick}>
 												<Tooltip
 													label="Your role can't pause or resume schedules"
 													disabled={canWrite}
@@ -179,7 +197,7 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = ({
 													/>
 												</Tooltip>
 											</Table.Td>
-											<Table.Td>
+											<Table.Td onClick={stopRowClick}>
 												{(canWrite || canViewRuns) && (
 													<Menu position="bottom-end" shadow="md" withinPortal>
 														<Menu.Target>

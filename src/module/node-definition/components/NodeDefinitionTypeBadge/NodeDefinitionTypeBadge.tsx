@@ -7,13 +7,15 @@ import { isBuiltinNodeType, nodeDefinitionTypeMeta } from '@module/node-definiti
 interface NodeDefinitionTypeBadgeProps {
 	type: string;
 	size?: BadgeProps['size'];
+	className?: string;
 }
 
-export const NodeDefinitionTypeBadge: React.FC<NodeDefinitionTypeBadgeProps> = ({ type, size = 'sm' }) => {
+export const NodeDefinitionTypeBadge: React.FC<NodeDefinitionTypeBadgeProps> = ({ type, size = 'sm', className }) => {
 	const meta = nodeDefinitionTypeMeta(type);
 	return (
 		<Badge
 			size={size}
+			className={className}
 			color={meta.color}
 			variant="light"
 			tt="none"

@@ -1,1 +1,1 @@
-export type WorkflowRunFilterKey = 'workflow_definition_id' | 'status';
+export type WorkflowRunFilterKey = 'id' | 'workflow_definition_id' | 'status' | 'debug';

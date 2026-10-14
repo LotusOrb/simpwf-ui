@@ -1,107 +1,85 @@
 import React from 'react';
 
-import { Group, Loader, Select, Stack, Text } from '@mantine/core';
-import { skipToken } from '@reduxjs/toolkit/query';
-import dayjs from 'dayjs';
-import { LuBug, LuChevronsUpDown } from 'react-icons/lu';
+import { Group, Loader, Text, Tooltip } from '@mantine/core';
+import { LuBug, LuMenu } from 'react-icons/lu';
 
 import type { CoreQueryError } from '@core/api';
-import { Permission, useCan } from '@core/auth/authorization';
-import { useCoreSelector } from '@core/store';
 
-import { selectEditorSourceId } from '@module/workflow-definition/store';
+import { type EditorContextTypes, useEditorContextTypes } from '@module/workflow-definition/hooks';
 import { runStatusMeta } from '@module/workflow-run/data';
-import { useGetWorkflowRunDebugContextQuery, useListWorkflowRunsQuery } from '@module/workflow-run/hooks';
-import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
 
 import { ContextTypes } from './InspectorContextTypes.context';
 
-// How far back the picker looks. The instance list has no `debug` filter, so debug runs are picked out of the most
-// recent runs of this version on the client.
-const RECENT_RUNS = 100;
-
-/** Fetches the debug context of `nodeId` in the picked run and hands its TypeScript to the editors inside. */
-export const ContextTypesProvider: React.FC<{
-	debugRunId: string | null;
-	nodeId: string;
-	children: React.ReactNode;
-}> = ({ debugRunId, nodeId, children }) => {
-	const { data, error } = useGetWorkflowRunDebugContextQuery(debugRunId ? { id: debugRunId, nodeId } : skipToken);
-	return (
-		<ContextTypes.Provider value={debugRunId && !error ? data?.typescript : undefined}>
-			{children}
-		</ContextTypes.Provider>
-	);
+/** Hands the editor-wide context source's TypeScript for `nodeId` to the script editors inside. */
+export const ContextTypesProvider: React.FC<{ nodeId: string; children: React.ReactNode }> = ({ nodeId, children }) => {
+	const { typescript } = useEditorContextTypes(nodeId);
+	return <ContextTypes.Provider value={typescript}>{children}</ContextTypes.Provider>;
 };
 
-const describeError = (error: unknown) => {
+const describeError = ({ run, error }: EditorContextTypes) => {
 	const code = (error as Partial<CoreQueryError> | undefined)?.code;
-	if (code === 404) return "This node hasn't run in that debug run yet; step the run past it first.";
-	if (code === 409) return 'That run is not a debug run.';
-	return "Couldn't load context types from that run.";
+	if (run?.debug && code === 404) return "This node hasn't run in that debug run yet; step the run past it first.";
+	if (run?.debug && code === 409) return 'That run is not a debug run.';
+	return run ? "Couldn't load context types from that run." : "Couldn't look up the latest run.";
 };
 
-interface InspectorContextTypesPickerProps {
-	nodeId: string;
-	debugRunId: string | null;
-	onChange: (runId: string | null) => void;
-}
+const describeRun = ({ source, run }: EditorContextTypes) => {
+	if (!run) return '';
+	const status = run.status ? ` · ${runStatusMeta[run.status].label}` : '';
+	return `${source.mode === 'latest' ? 'latest run' : 'run'} ${run.id.slice(0, 8)}${status}`;
+};
 
-/** "Load context types from debug run…": typed autocomplete for `context` from a real step-through run. */
-export const InspectorContextTypesPicker: React.FC<InspectorContextTypesPickerProps> = ({
-	nodeId,
-	debugRunId,
-	onChange,
-}) => {
-	const canReadRuns = useCan(Permission.InstancesRead);
-	const sourceId = useCoreSelector(selectEditorSourceId);
+/** Read-only: which run the script editors' `context` types come from. Changed from the editor header. */
+export const InspectorContextTypesStatus: React.FC<{ nodeId: string }> = ({ nodeId }) => {
+	const types = useEditorContextTypes(nodeId);
 
-	const query: WorkflowRunQuery | null = sourceId
-		? {
-				page: 1,
-				perPage: RECENT_RUNS,
-				order: { by: 'created_at', direction: 'desc' },
-				filter: { workflow_definition_id: { op: '_eq', value: sourceId } },
-			}
-		: null;
-	const runs = useListWorkflowRunsQuery(canReadRuns && query ? query : skipToken);
-	const debugRuns = (runs.data?.items ?? []).filter((run) => run.debug);
-	const types = useGetWorkflowRunDebugContextQuery(debugRunId ? { id: debugRunId, nodeId } : skipToken);
-
-	// Only saved versions have runs.
-	if (!canReadRuns || !sourceId) return null;
+	let message: string;
+	switch (types.state) {
+		case 'off':
+			return <Hint icon={<LuMenu size={12} />}>Context types off.</Hint>;
+		case 'unavailable':
+			return null;
+		case 'none':
+			message = 'No runs of this version yet, so `context` has no types.';
+			break;
+		case 'loading':
+			message = types.run ? `Loading types from ${describeRun(types)}…` : 'Looking up the latest run…';
+			break;
+		case 'error':
+			return <Hint color="red">{describeError(types)}</Hint>;
+		case 'ready':
+			message = `Types from ${describeRun(types)}${types.run?.debug ? ', as it was at this node' : ''}.`;
+			break;
+	}
 
 	return (
-		<Stack gap={4}>
-			<Select
-				size="xs"
-				label="Context types"
-				placeholder={
-					debugRuns.length > 0 ? 'Load context types from debug run…' : 'No debug runs of this version'
-				}
-				leftSection={<LuBug size={13} />}
-				rightSection={runs.isFetching ? <Loader size={12} /> : <LuChevronsUpDown size={14} />}
-				disabled={debugRuns.length === 0 && !debugRunId}
-				clearable
-				data={debugRuns.map((run) => ({
-					value: run.id,
-					label: `${run.id.slice(0, 8)} · ${runStatusMeta[run.status].label} · ${dayjs(run.created_at).format('DD MMM HH:mm')}`,
-				}))}
-				value={debugRunId}
-				onChange={onChange}
-			/>
-			{debugRunId && (
-				<Group gap={6} wrap="nowrap">
-					{types.isFetching && <Loader size={10} />}
-					<Text fz="xs" c={types.error ? 'red' : 'dimmed'}>
-						{types.error
-							? describeError(types.error)
-							: types.data
-								? 'Script editors autocomplete `context` as it was at this node.'
-								: 'Loading context types…'}
-					</Text>
-				</Group>
-			)}
-		</Stack>
+		<Hint
+			icon={
+				types.state === 'loading' ? (
+					<Loader size={10} />
+				) : types.run?.debug ? (
+					<LuBug size={12} />
+				) : (
+					<LuMenu size={12} />
+				)
+			}
+		>
+			{message}
+		</Hint>
 	);
 };
+
+const Hint: React.FC<{ icon?: React.ReactNode; color?: string; children: React.ReactNode }> = ({
+	icon,
+	color = 'dimmed',
+	children,
+}) => (
+	<Tooltip label="Change the context source from the menu in the editor header" openDelay={400}>
+		<Group gap={6} wrap="nowrap" c={color}>
+			{icon}
+			<Text fz="xs" c={color}>
+				{children}
+			</Text>
+		</Group>
+	</Tooltip>
+);

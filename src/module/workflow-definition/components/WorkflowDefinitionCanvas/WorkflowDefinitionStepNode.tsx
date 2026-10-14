@@ -13,7 +13,7 @@ import {
 	hasBranches,
 	isInlineGroup,
 	nodeSubtitle,
-	nodeTypeMeta,
+	nodeTypeMetaOf,
 	shownStartDelay,
 	supportsFailure,
 	supportsNext,
@@ -61,9 +61,9 @@ const OutputRow: React.FC<OutputRowProps> = ({ label, property, isDefault, kind 
 };
 
 export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionStepFlowNode>> = ({ data, selected }) => {
-	const { node, issueCount, branchTargets, pairedStart, pairedSelected } = data;
+	const { node, issueCount, branchTargets, pairedStart, pairedSelected, standalone } = data;
 	const { config } = node;
-	const meta = nodeTypeMeta[config.type];
+	const meta = nodeTypeMetaOf(config.type);
 	const isParallel = config.type === 'parallel_start';
 	const hasFailure = supportsFailure(config.type);
 	const startDelay = shownStartDelay(config);
@@ -81,7 +81,7 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 				data-group={isInlineGroup(node) || undefined}
 				data-paired-selected={(pairedSelected && !selected) || undefined}
 			>
-				<Handle type="target" position={Position.Left} className={classes.handle} />
+				{!standalone && <Handle type="target" position={Position.Left} className={classes.handle} />}
 
 				<div className={classes.nodeHeader}>
 					<ThemeIcon size={44} variant="light" color={meta.color} radius="md">
@@ -132,18 +132,20 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 										? branch.key.trim() || 'Unnamed branch'
 										: branch.key || `Branch ${index + 1} (exit)`}
 								</Text>
-								<Handle
-									type="source"
-									id={branchHandle(branch.id)}
-									position={Position.Right}
-									className={classes.handle}
-									data-kind={isParallel ? 'parallel' : 'branch'}
-								/>
+								{!standalone && (
+									<Handle
+										type="source"
+										id={branchHandle(branch.id)}
+										position={Position.Right}
+										className={classes.handle}
+										data-kind={isParallel ? 'parallel' : 'branch'}
+									/>
+								)}
 							</div>
 						))}
 					</div>
 				)}
-				{supportsNext(config.type) && (
+				{supportsNext(config.type) && !standalone && (
 					<Handle type="source" id={HANDLE_NEXT} position={Position.Right} className={classes.handle} />
 				)}
 
@@ -167,7 +169,7 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 					/>
 				)}
 
-				{hasFailure && (
+				{hasFailure && !standalone && (
 					<>
 						<Text className={classes.failureLabel}>on failure</Text>
 						<Handle

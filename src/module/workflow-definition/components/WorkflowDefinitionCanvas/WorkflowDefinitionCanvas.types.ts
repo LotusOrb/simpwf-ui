@@ -10,6 +10,8 @@ export type WorkflowDefinitionStepNodeData = {
 	pairedStart?: { name: string; branchCount: number };
 	/** The other half of this parallel block is selected. */
 	pairedSelected: boolean;
+	/** A node definition's own node: alone on the canvas, so it has nothing to connect. */
+	standalone?: boolean;
 };
 
 export type WorkflowDefinitionStepFlowNode = Node<WorkflowDefinitionStepNodeData, 'step'>;

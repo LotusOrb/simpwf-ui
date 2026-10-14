@@ -102,7 +102,12 @@ interface WorkflowRunTimelineProps {
 	onSelect: (nodeId: string) => void;
 }
 
-export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({ timeline, rows, selectedNodeId, onSelect }) => {
+export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({
+	timeline,
+	rows,
+	selectedNodeId,
+	onSelect,
+}) => {
 	const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
 	if (timeline.entries.length === 0) {

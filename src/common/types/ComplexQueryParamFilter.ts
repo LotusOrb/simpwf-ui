@@ -4,7 +4,7 @@ export type ComplexQueryParamFilter<T extends string = string> = Partial<
 		{
 			//TODO: add another operator for other type of filter
 			op: '_eq';
-			value: string | string[] | number | number[];
+			value: string | string[] | number | number[] | boolean;
 		}
 	>
 >;

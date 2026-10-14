@@ -3,7 +3,9 @@ import React from 'react';
 import { Badge, Card, Group, Skeleton, Table, Text, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { Link, useNavigate } from 'react-router';
 
+import { DEFINITION_ROUTE } from '@module/workflow-definition/data';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 
@@ -17,6 +19,9 @@ import classes from './WorkflowRunTable.module.scss';
 dayjs.extend(relativeTime);
 
 const COLUMN_COUNT = 7;
+
+// Interactive cells keep their clicks (including portalled menu dropdowns) from opening the row.
+const stopRowClick = (event: React.SyntheticEvent) => event.stopPropagation();
 
 interface WorkflowRunTableProps {
 	runs: WorkflowRun[];
@@ -33,6 +38,8 @@ export const WorkflowRunTable: React.FC<WorkflowRunTableProps> = ({
 	onAction,
 	skeletonRows,
 }) => {
+	const navigate = useNavigate();
+
 	return (
 		<Card padding={0} className={classes.root}>
 			<Table.ScrollContainer minWidth={900} type="native">
@@ -64,18 +71,46 @@ export const WorkflowRunTable: React.FC<WorkflowRunTableProps> = ({
 									const startedAt = run.started_at ?? run.created_at;
 									const detail =
 										run.error ?? (run.waiting_reason && formatWaitingReason(run.waiting_reason));
+									const detailPath = `/app/workflow-run/${run.id}`;
 
 									return (
-										<Table.Tr key={run.id}>
-											<Table.Td>
+										<Table.Tr
+											key={run.id}
+											className={classes.row}
+											role="link"
+											tabIndex={0}
+											aria-label={`Open run ${definition?.name ?? run.id}`}
+											onClick={() => navigate(detailPath)}
+											onKeyDown={(event) => {
+												if (event.target !== event.currentTarget || event.key !== 'Enter')
+													return;
+												navigate(detailPath);
+											}}
+										>
+											<Table.Td onClick={stopRowClick}>
 												<WorkflowRunIdText id={run.id} />
 											</Table.Td>
 											<Table.Td>
 												<Group gap={6} wrap="nowrap">
-													<Text fz="sm" fw={600} truncate maw={200} title={definition?.name}>
-														{definition?.name ??
-															definitionFallbackLabel(run.workflow_definition_id)}
-													</Text>
+													{definition ? (
+														<Text
+															component={Link}
+															to={`${DEFINITION_ROUTE}/${run.workflow_definition_id}`}
+															onClick={stopRowClick}
+															fz="sm"
+															fw={600}
+															truncate
+															maw={200}
+															title={definition.name}
+															className={classes.link}
+														>
+															{definition.name}
+														</Text>
+													) : (
+														<Text fz="sm" fw={600} truncate maw={200}>
+															{definitionFallbackLabel(run.workflow_definition_id)}
+														</Text>
+													)}
 													{definition && (
 														<Badge size="xs" color="gray">
 															v{definition.version}
@@ -113,7 +148,7 @@ export const WorkflowRunTable: React.FC<WorkflowRunTableProps> = ({
 											<Table.Td ta="right" className={classes.numeric}>
 												{formatRunDuration(run)}
 											</Table.Td>
-											<Table.Td>
+											<Table.Td onClick={stopRowClick}>
 												<WorkflowRunActions
 													run={run}
 													busy={busyIds.includes(run.id)}

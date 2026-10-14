@@ -4,7 +4,7 @@ import { ActionIcon, Badge, Card, Group, Menu, Skeleton, Table, Text, ThemeIcon,
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuCopy, LuEllipsisVertical, LuHistory, LuTrash2 } from 'react-icons/lu';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import { Can, Permission } from '@core/auth/authorization';
 
@@ -22,12 +22,17 @@ interface WorkflowDefinitionTableProps {
 	onShowVersions?: (definition: WorkflowDefinition) => void;
 }
 
+// Interactive cells keep their clicks (including portalled menu dropdowns) from opening the row.
+const stopRowClick = (event: React.SyntheticEvent) => event.stopPropagation();
+
 export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = ({
 	definitions,
 	skeletonRows,
 	onDelete,
 	onShowVersions,
 }) => {
+	const navigate = useNavigate();
+
 	return (
 		<Card padding={0} className={classes.root}>
 			<Table.ScrollContainer minWidth={820} type="native">
@@ -60,19 +65,21 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 									const StartIcon = startNode && nodeTypeMeta[startNode.type]?.icon;
 
 									return (
-										<Table.Tr key={definition.id} className={classes.row}>
+										<Table.Tr
+											key={definition.id}
+											className={classes.row}
+											role="link"
+											tabIndex={0}
+											aria-label={`Open ${definition.name}`}
+											onClick={() => navigate(definition.id)}
+											onKeyDown={(event) => {
+												if (event.target !== event.currentTarget || event.key !== 'Enter')
+													return;
+												navigate(definition.id);
+											}}
+										>
 											<Table.Td>
-												<Text
-													component={Link}
-													to={definition.id}
-													display="block"
-													fz="sm"
-													fw={600}
-													truncate
-													maw={260}
-													title={definition.name}
-													className={classes.link}
-												>
+												<Text fz="sm" fw={600} truncate maw={260} title={definition.name}>
 													{definition.name}
 												</Text>
 												<Text fz="xs" c="dimmed" ff="monospace" truncate maw={260}>
@@ -112,7 +119,6 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 																	variant="default"
 																	radius="sm"
 																	c={`${meta.color}.6`}
-																	className={classes.interactive}
 																>
 																	<meta.icon size={12} />
 																</ThemeIcon>
@@ -130,14 +136,13 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 													{dayjs(definition.updated_at).fromNow()}
 												</Text>
 											</Table.Td>
-											<Table.Td ta="right">
+											<Table.Td ta="right" onClick={stopRowClick}>
 												<Menu position="bottom-end" shadow="md" withinPortal>
 													<Menu.Target>
 														<ActionIcon
 															size={26}
 															variant="subtle"
 															color="gray"
-															className={classes.interactive}
 															aria-label={`Actions for ${definition.name}`}
 														>
 															<LuEllipsisVertical size={14} />
