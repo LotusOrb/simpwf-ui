@@ -68,8 +68,9 @@ export class Http {
 
 		if (qParam?.filter) {
 			Object.entries(qParam?.filter).map(([k, v]) => {
+				// The engine reads arrays as repeated keys (`status=a&status=b`), not comma-separated values.
 				if (Array.isArray(v?.value)) {
-					u.set(k, v?.value.join(','));
+					for (const item of v.value) u.append(k, String(item));
 				}
 				if (typeof v?.value !== 'undefined' && !Array.isArray(v.value)) {
 					u.set(k, v?.value?.toString());
