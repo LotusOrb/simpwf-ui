@@ -4,7 +4,7 @@ import { coreApi } from '@core/api';
 import { authSlice } from '@core/auth/store';
 
 import { appLayoutSlice } from '@module/app/store';
-import { notificationSlice } from '@module/notification/store';
+import { notificationSlice, runWatchSlice } from '@module/notification/store';
 import { settingsSlice } from '@module/settings/store';
 import { workflowDefinitionEditorSlice } from '@module/workflow-definition/store';
 
@@ -14,5 +14,6 @@ export const coreReducer = combineSlices(
 	workflowDefinitionEditorSlice,
 	settingsSlice,
 	notificationSlice,
+	runWatchSlice,
 	coreApi,
 );
