@@ -7,8 +7,8 @@ import { Permission, useCan } from '@core/auth/authorization';
 import { useRunStream } from '@module/notification/hooks';
 import { useGetWorkflowDefinitionQuery } from '@module/workflow-definition/hooks';
 import { workflowRunApi } from '@module/workflow-run/api';
-import { buildRunTimeline, getRunProgress } from '@module/workflow-run/data';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
+import { buildRunTimeline, getRunProgress } from '@module/workflow-run/utils';
 
 import {
 	useGetWorkflowRunContextQuery,

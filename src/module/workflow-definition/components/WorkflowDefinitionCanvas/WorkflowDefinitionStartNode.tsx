@@ -4,7 +4,7 @@ import { Text } from '@mantine/core';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { LuPlay } from 'react-icons/lu';
 
-import { HANDLE_NEXT } from '@module/workflow-definition/data';
+import { HANDLE_NEXT } from '@module/workflow-definition/constant';
 
 import classes from './WorkflowDefinitionCanvas.module.scss';
 import type { WorkflowDefinitionStartFlowNode } from './WorkflowDefinitionCanvas.types';

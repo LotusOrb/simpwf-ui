@@ -26,13 +26,7 @@ import { WorkflowDefinitionPalette } from '@module/workflow-definition/component
 import { WorkflowDefinitionRunHistory } from '@module/workflow-definition/components/WorkflowDefinitionRunHistory';
 import { WorkflowDefinitionStartModal } from '@module/workflow-definition/components/WorkflowDefinitionStartModal';
 import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
-import {
-	collectReferenceIds,
-	DEFINITION_ROUTE,
-	describeSaveError,
-	toEditorDocument,
-	type WorkflowDefinitionErrorCopy,
-} from '@module/workflow-definition/data';
+import { DEFINITION_ROUTE } from '@module/workflow-definition/constant';
 import {
 	useCreateWorkflowDefinitionMutation,
 	useFocusEditorIssue,
@@ -52,6 +46,12 @@ import {
 	selectEditorName,
 	selectEditorSourceId,
 } from '@module/workflow-definition/store';
+import {
+	collectReferenceIds,
+	describeSaveError,
+	toEditorDocument,
+	type WorkflowDefinitionErrorCopy,
+} from '@module/workflow-definition/utils';
 import { useStartWorkflowRunMutation } from '@module/workflow-run/hooks';
 
 import classes from './WorkflowDefinitionEditorPage.module.scss';

@@ -6,7 +6,7 @@ import { LuBug, LuMenu } from 'react-icons/lu';
 import type { CoreQueryError } from '@core/api';
 
 import { type EditorContextTypes, useEditorContextTypes } from '@module/workflow-definition/hooks';
-import { runStatusMeta } from '@module/workflow-run/data';
+import { runStatusMeta } from '@module/workflow-run/constant';
 
 import { ContextTypes } from './InspectorContextTypes.context';
 

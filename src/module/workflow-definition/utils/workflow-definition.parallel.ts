@@ -1,10 +1,6 @@
+import { MAX_PARALLEL_DEPTH } from '@module/workflow-definition/constant';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
-
-/** The engine's defaults: `max_branches_per_parallel` and `max_depth`. */
-export const MIN_PARALLEL_BRANCHES = 2;
-export const MAX_PARALLEL_BRANCHES = 32;
-export const MAX_PARALLEL_DEPTH = 4;
 
 export const isParallelStart = (node: WorkflowDefinitionNode) => node.type === 'parallel_start';
 export const isParallelEnd = (node: WorkflowDefinitionNode) => node.type === 'parallel_end';

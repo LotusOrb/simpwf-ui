@@ -1,8 +1,18 @@
 import { humanizeKey, isRecord, seedObject } from '@common/component/SchemaForm';
 
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
-import { EMPTY_NODE_TYPE_CATALOG, nodeTypeHasField, nodeTypeMetaOf, nodeTypeValidation } from '@module/node-type/data';
+import { EMPTY_NODE_TYPE_CATALOG } from '@module/node-type/constant';
 import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';
+import { nodeTypeHasField, nodeTypeMetaOf, nodeTypeValidation } from '@module/node-type/utils';
+import { MAX_PARALLEL_BRANCHES, MAX_PARALLEL_DEPTH, MIN_PARALLEL_BRANCHES } from '@module/workflow-definition/constant';
+import {
+	DEFAULT_COMBINING,
+	EDITOR_METADATA_KEY,
+	GRAPH_FIELDS,
+	HANDLE_FAILURE,
+	HANDLE_NEXT,
+	ROOT_SCOPE,
+} from '@module/workflow-definition/constant';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
@@ -17,20 +27,7 @@ import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/t
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
 import { layoutGraph } from './workflow-definition.meta';
-import {
-	analyzeParallel,
-	MAX_PARALLEL_BRANCHES,
-	MAX_PARALLEL_DEPTH,
-	MIN_PARALLEL_BRANCHES,
-	type ParallelProblem,
-} from './workflow-definition.parallel';
-
-export const ROOT_SCOPE = 'root';
-export const HANDLE_NEXT = 'next';
-export const HANDLE_FAILURE = 'failure';
-/** Hidden handles the derived start → join edge hangs off. Never connectable, never stored. */
-export const HANDLE_PAIR = 'pair';
-export const EDITOR_METADATA_KEY = 'editor';
+import { analyzeParallel, type ParallelProblem } from './workflow-definition.parallel';
 
 const START_PREFIX = 'start:';
 const COLUMN_WIDTH = 300;
@@ -58,23 +55,6 @@ export const uuidv7 = () => {
 };
 
 export const shortId = () => Math.random().toString(36).slice(2, 10);
-
-/**
- * Node fields the canvas owns: they are drawn as edges, branches and scopes, so the generated form never shows them
- * and the canvas checks them itself.
- */
-export const GRAPH_FIELDS: ReadonlySet<string> = new Set([
-	'id',
-	'type',
-	'next_node',
-	'on_failure',
-	'conditions',
-	'branches',
-	'parallel_end_node_id',
-	'start_node_id',
-	'nodes',
-	'keys',
-]);
 
 /** What the catalog says a type accepts decides its handles and fields. */
 export const supportsNext = (type: WorkflowDefinitionNodeType, catalog: NodeTypeCatalog) =>
@@ -112,14 +92,6 @@ export const isInlineGroup = (node: WorkflowDefinitionEditorNode) =>
  */
 const routesParallelBranches = (node: WorkflowDefinitionEditorNode) =>
 	node.config.type === 'parallel_start' && (!node.config.node_definition_id || node.branches.length > 0);
-
-export const DEFAULT_COMBINING = `// branch["<name>"] is read-only: { context, status, branch_id, start_node_id }.
-// Whatever context holds when this script ends REPLACES the parent context.
-// Nothing is merged automatically: copy every value you want to keep.
-for (const name of Object.keys(branch)) {
-\tcontext[name] = branch[name].context;
-}
-`;
 
 // Name and metadata are the editor's own; graph fields come from the canvas.
 const UNSEEDED_FIELDS: ReadonlySet<string> = new Set([...GRAPH_FIELDS, 'name', 'metadata', 'node_definition_id']);

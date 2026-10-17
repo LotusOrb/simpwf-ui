@@ -1,5 +1,6 @@
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import { GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH } from '@module/workflow-run/constant';
 
 import { flattenDefinitionNodes } from './workflow-run.detail';
 
@@ -39,8 +40,6 @@ export interface WorkflowRunGraph {
 	height: number;
 }
 
-export const GRAPH_NODE_WIDTH = 216;
-export const GRAPH_NODE_HEIGHT = 96;
 const COLUMN_GAP = 76;
 const ROW_GAP = 40;
 const GROUP_PADDING = 26;

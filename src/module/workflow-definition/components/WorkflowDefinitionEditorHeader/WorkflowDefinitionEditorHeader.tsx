@@ -20,8 +20,7 @@ import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreSelector } from '@core/store';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
-import { scheduleCreateLink } from '@module/schedule/data';
-import type { WorkflowDefinitionErrorCopy } from '@module/workflow-definition/data';
+import { scheduleCreateLink } from '@module/schedule/utils';
 import {
 	selectEditorDirty,
 	selectEditorBlockingIssues,
@@ -30,6 +29,7 @@ import {
 	selectEditorSourceVersion,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import type { WorkflowDefinitionErrorCopy } from '@module/workflow-definition/utils';
 
 import { ContextSourceMenu } from './ContextSourceMenu';
 import classes from './WorkflowDefinitionEditorHeader.module.scss';

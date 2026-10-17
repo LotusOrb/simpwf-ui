@@ -4,10 +4,9 @@ import { resolveSchema } from '@common/component/SchemaForm';
 import type { JsonSchema } from '@common/types/JsonSchema';
 
 import { nodeTypeApi } from '@module/node-type/api';
+import { EMPTY_NODE_TYPE_CATALOG } from '@module/node-type/constant';
 import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';
 import type { NodeTypeList } from '@module/node-type/types/NodeTypeList';
-
-export const EMPTY_NODE_TYPE_CATALOG: NodeTypeCatalog = { items: [], byType: {} };
 
 export const toNodeTypeCatalog = (list: NodeTypeList | undefined): NodeTypeCatalog =>
 	list

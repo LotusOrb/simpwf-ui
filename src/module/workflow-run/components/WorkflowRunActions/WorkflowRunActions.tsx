@@ -8,8 +8,7 @@ import { Permission, useCan } from '@core/auth/authorization';
 
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
-
-import { getAllowedActions } from '../../data';
+import { getAllowedActions } from '@module/workflow-run/utils';
 
 interface WorkflowRunActionsProps {
 	run: WorkflowRun;

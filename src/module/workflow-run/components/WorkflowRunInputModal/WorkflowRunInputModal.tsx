@@ -16,8 +16,8 @@ import {
 } from '@mantine/core';
 import { LuCheck, LuCopy, LuInfo } from 'react-icons/lu';
 
-import type { WorkflowRunBranchInput } from '@module/workflow-run/data';
 import type { WorkflowRunPendingInput } from '@module/workflow-run/types/WorkflowRunPendingInput';
+import type { WorkflowRunBranchInput } from '@module/workflow-run/utils';
 
 interface WorkflowRunInputModalProps {
 	opened: boolean;

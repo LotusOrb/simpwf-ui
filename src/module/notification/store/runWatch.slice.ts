@@ -3,7 +3,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { clearSession } from '@core/auth/store';
 import { LocalKVStore } from '@core/localKVStore';
 
-import { RUN_WATCH_STARTED_KEY, RUN_WATCH_TTL_MS } from '@module/notification/data';
+import { RUN_WATCH_STARTED_KEY, RUN_WATCH_TTL_MS } from '@module/notification/constant';
 import type { RunStreamState } from '@module/notification/types/RunStreamState';
 import type { RunWatchEntry } from '@module/notification/types/RunWatchEntry';
 

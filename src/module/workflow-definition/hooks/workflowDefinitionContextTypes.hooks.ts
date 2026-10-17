@@ -3,13 +3,13 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { Permission, useCan } from '@core/auth/authorization';
 import { useCoreSelector } from '@core/store';
 
-import { contextTypesFromValue } from '@module/workflow-definition/data';
 import {
 	selectEditorContextSource,
 	selectEditorNodeDefinition,
 	selectEditorSourceId,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorContextSource } from '@module/workflow-definition/types/WorkflowDefinitionEditorContextSource';
+import { contextTypesFromValue } from '@module/workflow-definition/utils';
 import {
 	useGetWorkflowRunContextQuery,
 	useGetWorkflowRunDebugContextQuery,

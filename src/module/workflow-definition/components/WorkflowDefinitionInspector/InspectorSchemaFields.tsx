@@ -7,13 +7,13 @@ import { useCoreSelector } from '@core/store';
 import { CodeEditor } from '@common/component/CodeEditor';
 import { SchemaForm, type SchemaFieldContext, type SchemaFieldOverride } from '@common/component/SchemaForm';
 
-import { nodeTypeSchema, selectNodeTypeCatalog } from '@module/node-type/data';
+import { nodeTypeSchema, selectNodeTypeCatalog } from '@module/node-type/utils';
 import { useListRolesQuery } from '@module/role/hooks';
-import { isContextPath } from '@module/workflow-definition/data';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
 import { selectEditorIssues } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/types/WorkflowDefinitionNodeConfig';
+import { isContextPath } from '@module/workflow-definition/utils';
 
 import { useContextTypes } from './InspectorContextTypes.context';
 import { ContextInput, DurationInput, HeadersField, JsonField, SectionLabel } from './InspectorControls';

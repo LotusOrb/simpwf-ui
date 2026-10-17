@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router';
 
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
+import { definitionFallbackLabel, formatRunDuration, formatWaitingReason } from '@module/workflow-run/utils';
 
-import { definitionFallbackLabel, formatRunDuration, formatWaitingReason } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
 import { WorkflowRunStatusBadge } from '../WorkflowRunStatusBadge';

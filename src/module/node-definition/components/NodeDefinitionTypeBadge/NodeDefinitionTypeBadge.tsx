@@ -2,8 +2,8 @@ import React from 'react';
 
 import { Badge, type BadgeProps } from '@mantine/core';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
 import { useNodeTypeCatalog } from '@module/node-type/hooks';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 
 interface NodeDefinitionTypeBadgeProps {
 	type: string;

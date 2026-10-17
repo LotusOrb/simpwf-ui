@@ -3,7 +3,7 @@ import { API_TAG_LIST_ID, apiTagConfig } from '@config/apiTag.config';
 import { coreApi } from '@core/api';
 import type { CoreQueryError } from '@core/api/core.baseQuery';
 
-import { SCHEDULE_REPLACE_REMOVED } from '@module/schedule/data/schedule.constant';
+import { SCHEDULE_REPLACE_REMOVED } from '@module/schedule/constant';
 import type { Schedule } from '@module/schedule/types/Schedule';
 import type { ScheduleList } from '@module/schedule/types/ScheduleList';
 import type { SchedulePayload } from '@module/schedule/types/SchedulePayload';

@@ -3,7 +3,7 @@ import React from 'react';
 import { ActionIcon, CopyButton, ScrollArea, Text, Tooltip } from '@mantine/core';
 import { LuCheck, LuCopy } from 'react-icons/lu';
 
-import { formatJson } from '@module/workflow-run/data';
+import { formatJson } from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunJsonView.module.scss';
 

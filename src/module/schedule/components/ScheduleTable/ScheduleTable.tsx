@@ -8,10 +8,10 @@ import { Link } from 'react-router';
 
 import { Can, Permission, useCan } from '@core/auth/authorization';
 
-import { analyzeCrontab, formatInZone } from '@module/schedule/data';
 import { useScheduleDefinition } from '@module/schedule/hooks';
 import type { Schedule } from '@module/schedule/types/Schedule';
-import { DEFINITION_ROUTE } from '@module/workflow-definition/data';
+import { analyzeCrontab, formatInZone } from '@module/schedule/utils';
+import { DEFINITION_ROUTE } from '@module/workflow-definition/constant';
 
 import classes from './ScheduleTable.module.scss';
 

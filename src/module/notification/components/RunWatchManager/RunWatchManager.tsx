@@ -5,12 +5,7 @@ import { Permission, useCan } from '@core/auth/authorization';
 import { selectIsAuthenticated } from '@core/auth/store';
 import { useCoreDispatch, useCoreSelector, useCoreStore } from '@core/store';
 
-import {
-	isTerminalRunStatus,
-	RUN_STREAM_LIMIT,
-	toRunWatchKey,
-	toRunWatchNotification,
-} from '@module/notification/data';
+import { RUN_STREAM_LIMIT } from '@module/notification/constant';
 import { useNotify } from '@module/notification/hooks';
 import {
 	runStreamStateChanged,
@@ -22,9 +17,10 @@ import {
 	selectWatchedRuns,
 } from '@module/notification/store';
 import type { RunStreamState } from '@module/notification/types/RunStreamState';
+import { isTerminalRunStatus, toRunWatchKey, toRunWatchNotification } from '@module/notification/utils';
 import { workflowRunApi } from '@module/workflow-run/api';
-import { toRunDetail, type WorkflowRunStatusResponse } from '@module/workflow-run/data/workflow-run.mapper';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
+import { toRunDetail, type WorkflowRunStatusResponse } from '@module/workflow-run/utils/workflow-run.mapper';
 
 const isSettled = (state?: RunStreamState) => state === 'done' || state === 'failed';
 

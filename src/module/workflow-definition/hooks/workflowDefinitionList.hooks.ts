@@ -9,7 +9,7 @@ import {
 
 import { PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 
-import { sortOrders } from '@module/workflow-definition/data';
+import { sortOrders } from '@module/workflow-definition/constant';
 import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
 const listParsers = {

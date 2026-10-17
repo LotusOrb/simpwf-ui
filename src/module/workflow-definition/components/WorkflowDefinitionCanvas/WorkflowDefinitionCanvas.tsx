@@ -24,19 +24,8 @@ import { useCoreDispatch, useCoreSelector } from '@core/store';
 import { useInsetFitView } from '@common/hooks/useInsetFitView';
 
 import { useAppLayoutInsets } from '@module/app/hooks';
-import { nodeTypeMetaOf } from '@module/node-type/data';
-import {
-	HANDLE_FAILURE,
-	HANDLE_NEXT,
-	HANDLE_PAIR,
-	isInlineGroup,
-	isPairEdgeId,
-	outgoingTarget,
-	pairEdgeId,
-	scopeKey,
-	scopeTrail,
-	startNodeId,
-} from '@module/workflow-definition/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
+import { HANDLE_FAILURE, HANDLE_NEXT, HANDLE_PAIR } from '@module/workflow-definition/constant';
 import {
 	PALETTE_DRAG_TYPE,
 	useWorkflowDefinitionEditorAddNode,
@@ -58,6 +47,15 @@ import {
 	selectEditorStarts,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
+import {
+	isInlineGroup,
+	isPairEdgeId,
+	outgoingTarget,
+	pairEdgeId,
+	scopeKey,
+	scopeTrail,
+	startNodeId,
+} from '@module/workflow-definition/utils';
 
 import classes from './WorkflowDefinitionCanvas.module.scss';
 import type { WorkflowDefinitionFlowNode, WorkflowDefinitionStepFlowNode } from './WorkflowDefinitionCanvas.types';

@@ -10,7 +10,7 @@ import {
 
 import { PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 
-import { nodeDefinitionSortOrders } from '@module/node-definition/data';
+import { nodeDefinitionSortOrders } from '@module/node-definition/constant';
 import type { NodeDefinitionSort } from '@module/node-definition/types/NodeDefinitionSort';
 
 const listParsers = {

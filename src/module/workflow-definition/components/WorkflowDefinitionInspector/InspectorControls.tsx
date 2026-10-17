@@ -16,10 +16,10 @@ import { LuPlus, LuX } from 'react-icons/lu';
 
 import { CodeEditor } from '@common/component/CodeEditor';
 
-import { formatJson, isDuration, parseJsonDraft, readJsonField } from '@module/workflow-definition/data';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
+import { formatJson, isDuration, parseJsonDraft, readJsonField } from '@module/workflow-definition/utils';
 
 import { useContextPaths } from './InspectorContextTypes.context';
 

@@ -4,7 +4,7 @@ import { notifications } from '@mantine/notifications';
 
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
-import { NOTIFICATION_LEVEL } from '@module/notification/data';
+import { NOTIFICATION_LEVEL } from '@module/notification/constant';
 import {
 	notificationAdded,
 	notificationDismissed,

@@ -6,9 +6,10 @@ import { LuBug, LuGitMerge, LuRefreshCw, LuTimer } from 'react-icons/lu';
 
 import { useCoreSelector } from '@core/store';
 
-import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/data';
-import { nodeSubtitle, shownStartDelay } from '@module/workflow-definition/data';
-import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
+import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/utils';
+import { nodeSubtitle, shownStartDelay } from '@module/workflow-definition/utils';
+import { nodeRunStatusMeta } from '@module/workflow-run/constant';
+import { formatDuration } from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunGraph.module.scss';
 import type { WorkflowRunStepFlowNode } from './WorkflowRunGraph.types';

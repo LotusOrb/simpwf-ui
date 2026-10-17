@@ -1,51 +1,15 @@
-import type { IconType } from 'react-icons';
-import {
-	LuBan,
-	LuCircleCheck,
-	LuCircleDashed,
-	LuCircleX,
-	LuGitMerge,
-	LuHourglass,
-	LuLoaderCircle,
-} from 'react-icons/lu';
-
 import type { CoreQueryError } from '@core/api';
 
-import { analyzeParallel, type ParallelAnalysis, type ParallelMembership } from '@module/workflow-definition/data';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import { analyzeParallel, type ParallelAnalysis, type ParallelMembership } from '@module/workflow-definition/utils';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 import type { WorkflowRunNodeStatus } from '@module/workflow-run/types/WorkflowRunNodeStatus';
 import type { WorkflowRunParallelBranch } from '@module/workflow-run/types/WorkflowRunParallelBranch';
-import type { WorkflowRunParallelBranchStatus } from '@module/workflow-run/types/WorkflowRunParallelBranchStatus';
 import type { WorkflowRunParallelExecution } from '@module/workflow-run/types/WorkflowRunParallelExecution';
-import type { WorkflowRunParallelExecutionStatus } from '@module/workflow-run/types/WorkflowRunParallelExecutionStatus';
 import type { WorkflowRunPendingInput } from '@module/workflow-run/types/WorkflowRunPendingInput';
 
 import { flattenDefinitionNodes, type WorkflowRunTimeline, type WorkflowRunTimelineEntry } from './workflow-run.detail';
-
-export const parallelExecutionStatusMeta: Record<
-	WorkflowRunParallelExecutionStatus,
-	{ label: string; color: string; icon: IconType }
-> = {
-	waiting_for_branches: { label: 'Running branches', color: 'blue', icon: LuLoaderCircle },
-	ready_to_join: { label: 'Joining', color: 'indigo', icon: LuGitMerge },
-	completed: { label: 'Completed', color: 'teal', icon: LuCircleCheck },
-	failed: { label: 'Failed', color: 'red', icon: LuCircleX },
-	cancelled: { label: 'Cancelled', color: 'gray', icon: LuBan },
-};
-
-export const parallelBranchStatusMeta: Record<
-	WorkflowRunParallelBranchStatus,
-	{ label: string; color: string; icon: IconType }
-> = {
-	pending: { label: 'Pending', color: 'gray', icon: LuCircleDashed },
-	running: { label: 'Running', color: 'blue', icon: LuLoaderCircle },
-	waiting: { label: 'Waiting', color: 'yellow', icon: LuHourglass },
-	completed: { label: 'Completed', color: 'teal', icon: LuCircleCheck },
-	failed: { label: 'Failed', color: 'red', icon: LuCircleX },
-	cancelled: { label: 'Cancelled', color: 'gray', icon: LuBan },
-};
 
 export interface WorkflowRunParallelTreeItem {
 	execution: WorkflowRunParallelExecution;

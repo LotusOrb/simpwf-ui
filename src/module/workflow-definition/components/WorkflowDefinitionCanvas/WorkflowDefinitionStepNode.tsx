@@ -6,20 +6,18 @@ import { LuCheck, LuCircleAlert, LuCopy, LuTimer } from 'react-icons/lu';
 
 import { useCoreSelector } from '@core/store';
 
-import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/data';
+import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/utils';
+import { HANDLE_FAILURE, HANDLE_NEXT, HANDLE_PAIR } from '@module/workflow-definition/constant';
 import {
 	branchHandle,
 	defaultOutputProperty,
-	HANDLE_FAILURE,
-	HANDLE_NEXT,
-	HANDLE_PAIR,
 	hasBranches,
 	isInlineGroup,
 	nodeSubtitle,
 	shownStartDelay,
 	supportsFailure,
 	supportsNext,
-} from '@module/workflow-definition/data';
+} from '@module/workflow-definition/utils';
 
 import classes from './WorkflowDefinitionCanvas.module.scss';
 import type { WorkflowDefinitionStepFlowNode } from './WorkflowDefinitionCanvas.types';

@@ -1,11 +1,17 @@
 import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Connection, EdgeChange, NodeChange } from '@xyflow/react';
 
-import { selectNodeTypeCatalog } from '@module/node-type/data';
+import { selectNodeTypeCatalog } from '@module/node-type/utils';
+import { EDITOR_METADATA_KEY } from '@module/workflow-definition/constant';
+import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
+import type { WorkflowDefinitionEditorContextSource } from '@module/workflow-definition/types/WorkflowDefinitionEditorContextSource';
+import type { WorkflowDefinitionEditorDocument } from '@module/workflow-definition/types/WorkflowDefinitionEditorDocument';
+import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
+import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
+import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/types/WorkflowDefinitionNodeConfig';
 import {
 	branchHandle,
 	descendantIds,
-	EDITOR_METADATA_KEY,
 	isStartNodeId,
 	layoutScope,
 	scopeKey,
@@ -14,17 +20,11 @@ import {
 	toEditorDocument,
 	toWorkflowDefinitionContent,
 	validateEditorDocument,
-} from '@module/workflow-definition/data/workflow-definition.editor';
+} from '@module/workflow-definition/utils/workflow-definition.editor';
 import {
 	nodeDefinitionScope,
 	toNodeDefinitionContent,
-} from '@module/workflow-definition/data/workflow-definition.node-definition';
-import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
-import type { WorkflowDefinitionEditorContextSource } from '@module/workflow-definition/types/WorkflowDefinitionEditorContextSource';
-import type { WorkflowDefinitionEditorDocument } from '@module/workflow-definition/types/WorkflowDefinitionEditorDocument';
-import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
-import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
-import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/types/WorkflowDefinitionNodeConfig';
+} from '@module/workflow-definition/utils/workflow-definition.node-definition';
 
 export interface WorkflowDefinitionEditorState extends WorkflowDefinitionEditorDocument {
 	loadedKey: string | null;

@@ -19,10 +19,11 @@ import {
 } from '@xyflow/react';
 import { LuBoxes } from 'react-icons/lu';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
-import { buildRunGraph, GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH } from '@module/workflow-run/data';
+import { GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH } from '@module/workflow-run/constant';
+import { buildRunGraph } from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunMigrateModal.module.scss';
 

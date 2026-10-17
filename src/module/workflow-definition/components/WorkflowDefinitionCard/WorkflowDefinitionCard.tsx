@@ -8,11 +8,12 @@ import { Link } from 'react-router';
 
 import { Can, Permission } from '@core/auth/authorization';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
-import { scheduleCreateLink } from '@module/schedule/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
+import { scheduleCreateLink } from '@module/schedule/utils';
+import { DEFINITION_ROUTE } from '@module/workflow-definition/constant';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import { countNodes, getNodeTypes, getStartNode } from '@module/workflow-definition/utils';
 
-import { countNodes, DEFINITION_ROUTE, getNodeTypes, getStartNode } from '../../data';
 import { WorkflowDefinitionPreview } from '../WorkflowDefinitionPreview';
 import classes from './WorkflowDefinitionCard.module.scss';
 

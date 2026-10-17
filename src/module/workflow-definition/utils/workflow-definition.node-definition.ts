@@ -1,13 +1,13 @@
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
-import { nodeTypeSchema } from '@module/node-type/data';
 import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';
+import { nodeTypeSchema } from '@module/node-type/utils';
+import { EDITOR_METADATA_KEY } from '@module/workflow-definition/constant';
 import type { WorkflowDefinitionEditorDocument } from '@module/workflow-definition/types/WorkflowDefinitionEditorDocument';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
 import {
 	createEditorNode,
-	EDITOR_METADATA_KEY,
 	scopeKey,
 	toEditorDocument,
 	toWorkflowDefinitionContent,

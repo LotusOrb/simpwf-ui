@@ -2,7 +2,7 @@ import { parseAsInteger, parseAsNumberLiteral, parseAsString, useQueryStates } f
 
 import { PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 
-import { SCHEDULE_CREATE_PARAM } from '@module/schedule/data';
+import { SCHEDULE_CREATE_PARAM } from '@module/schedule/constant';
 
 const listParsers = {
 	page: parseAsInteger.withDefault(1),

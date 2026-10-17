@@ -1,34 +1,9 @@
-import type { IconType } from 'react-icons';
-import {
-	LuBan,
-	LuCheck,
-	LuCircleDashed,
-	LuHourglass,
-	LuLoaderCircle,
-	LuSkipForward,
-	LuUndo2,
-	LuX,
-} from 'react-icons/lu';
-
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import { nodeRunStatusMeta } from '@module/workflow-run/constant';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunNodeStatus } from '@module/workflow-run/types/WorkflowRunNodeStatus';
-
-export const nodeRunStatusMeta: Record<
-	WorkflowRunNodeStatus,
-	{ label: string; color: string; icon: IconType; settled: boolean }
-> = {
-	pending: { label: 'Not reached', color: 'gray', icon: LuCircleDashed, settled: false },
-	running: { label: 'Running', color: 'blue', icon: LuLoaderCircle, settled: false },
-	waiting: { label: 'Waiting', color: 'yellow', icon: LuHourglass, settled: false },
-	succeeded: { label: 'Succeeded', color: 'teal', icon: LuCheck, settled: true },
-	failed: { label: 'Failed', color: 'red', icon: LuX, settled: true },
-	cancelled: { label: 'Cancelled', color: 'gray', icon: LuBan, settled: true },
-	skipped: { label: 'Skipped', color: 'gray', icon: LuSkipForward, settled: true },
-	rolled_back: { label: 'Rolled back', color: 'grape', icon: LuUndo2, settled: false },
-};
 
 export const isNodeReached = (status: WorkflowRunNodeStatus) => status !== 'pending' && status !== 'skipped';
 

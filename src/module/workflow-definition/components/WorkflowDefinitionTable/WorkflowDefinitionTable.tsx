@@ -8,10 +8,10 @@ import { Link, useNavigate } from 'react-router';
 
 import { Can, Permission } from '@core/auth/authorization';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import { countNodes, getNodeTypes, getStartNode } from '@module/workflow-definition/utils';
 
-import { countNodes, getNodeTypes, getStartNode } from '../../data';
 import classes from './WorkflowDefinitionTable.module.scss';
 
 dayjs.extend(relativeTime);

@@ -7,16 +7,7 @@ import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { CodeEditor } from '@common/component/CodeEditor';
 
-import {
-	branchHandle,
-	HANDLE_FAILURE,
-	MAX_PARALLEL_BRANCHES,
-	MIN_PARALLEL_BRANCHES,
-	nextBranchKeys,
-	nextParallelBranchNames,
-	outgoingTarget,
-	shortId,
-} from '@module/workflow-definition/data';
+import { HANDLE_FAILURE, MAX_PARALLEL_BRANCHES, MIN_PARALLEL_BRANCHES } from '@module/workflow-definition/constant';
 import {
 	branchAdded,
 	branchChanged,
@@ -29,6 +20,13 @@ import {
 	selectEditorNodes,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
+import {
+	branchHandle,
+	nextBranchKeys,
+	nextParallelBranchNames,
+	outgoingTarget,
+	shortId,
+} from '@module/workflow-definition/utils';
 
 import { useContextTypes } from './InspectorContextTypes.context';
 import { SectionLabel } from './InspectorControls';

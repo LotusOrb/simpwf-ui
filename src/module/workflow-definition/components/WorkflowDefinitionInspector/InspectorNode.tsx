@@ -23,15 +23,7 @@ import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { CodeEditor } from '@common/component/CodeEditor';
 
-import { nodeTypeMetaOf, nodeTypeSchema, openNodeSchema, selectNodeTypeCatalog } from '@module/node-type/data';
-import {
-	defaultOutputProperty,
-	formatRawNode,
-	parseRawNode,
-	supportsFailure,
-	supportsOutputProperty,
-	supportsStartDelay,
-} from '@module/workflow-definition/data';
+import { nodeTypeMetaOf, nodeTypeSchema, openNodeSchema, selectNodeTypeCatalog } from '@module/node-type/utils';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
 import {
 	nodeSelected,
@@ -42,6 +34,14 @@ import {
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
+import {
+	defaultOutputProperty,
+	formatRawNode,
+	parseRawNode,
+	supportsFailure,
+	supportsOutputProperty,
+	supportsStartDelay,
+} from '@module/workflow-definition/utils';
 
 import { ContextTypesProvider, InspectorContextTypesStatus } from './InspectorContextTypes';
 import { DurationInput, JsonField, SectionLabel } from './InspectorControls';

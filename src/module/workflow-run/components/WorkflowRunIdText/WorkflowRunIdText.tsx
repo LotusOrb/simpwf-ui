@@ -3,7 +3,7 @@ import React from 'react';
 import { ActionIcon, CopyButton, Group, Text, Tooltip } from '@mantine/core';
 import { LuCheck, LuCopy } from 'react-icons/lu';
 
-import { shortRunId } from '../../data';
+import { shortRunId } from '@module/workflow-run/utils';
 
 interface WorkflowRunIdTextProps {
 	id: string;

@@ -5,7 +5,8 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuCalendarClock } from 'react-icons/lu';
 
-import { analyzeCrontab, formatInZone, SCHEDULE_PREVIEW_COUNT } from '@module/schedule/data';
+import { SCHEDULE_PREVIEW_COUNT } from '@module/schedule/constant';
+import { analyzeCrontab, formatInZone } from '@module/schedule/utils';
 
 dayjs.extend(relativeTime);
 

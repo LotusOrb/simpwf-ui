@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { describeNodeDefinitionDeleteError } from '@module/node-definition/data';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { describeNodeDefinitionDeleteError } from '@module/node-definition/utils';
 
 import { useDeleteNodeDefinitionMutation } from './node-definition.hooks';
 

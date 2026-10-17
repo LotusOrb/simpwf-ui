@@ -4,16 +4,15 @@ import { Badge, Button, Group, Paper, Progress, Stack, Text, ThemeIcon, Unstyled
 import { LuArrowRight, LuChevronDown, LuChevronRight, LuGitFork, LuHourglass } from 'react-icons/lu';
 
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import { parallelBranchStatusMeta, parallelExecutionStatusMeta } from '@module/workflow-run/constant';
+import type { WorkflowRunParallelBranch } from '@module/workflow-run/types/WorkflowRunParallelBranch';
+import type { WorkflowRunParallelExecution } from '@module/workflow-run/types/WorkflowRunParallelExecution';
 import {
 	buildParallelTree,
 	formatWaitingReason,
-	parallelBranchStatusMeta,
-	parallelExecutionStatusMeta,
 	sortBranches,
 	type WorkflowRunParallelTreeItem,
-} from '@module/workflow-run/data';
-import type { WorkflowRunParallelBranch } from '@module/workflow-run/types/WorkflowRunParallelBranch';
-import type { WorkflowRunParallelExecution } from '@module/workflow-run/types/WorkflowRunParallelExecution';
+} from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunParallelPanel.module.scss';
 

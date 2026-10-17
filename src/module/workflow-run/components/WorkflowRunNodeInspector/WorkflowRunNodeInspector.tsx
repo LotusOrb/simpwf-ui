@@ -6,15 +6,17 @@ import { LuCheck, LuCircleAlert, LuFileType, LuMousePointerClick, LuShieldCheck,
 
 import { SchemaForm } from '@common/component/SchemaForm';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
 import { useNodeTypeCatalog } from '@module/node-type/hooks';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 import { useNotify } from '@module/notification/hooks';
-import { GRAPH_FIELDS, shownStartDelay } from '@module/workflow-definition/data';
+import { GRAPH_FIELDS } from '@module/workflow-definition/constant';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
-import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
+import { shownStartDelay } from '@module/workflow-definition/utils';
+import { nodeRunStatusMeta } from '@module/workflow-run/constant';
 import { useLazyGetWorkflowRunDebugContextQuery } from '@module/workflow-run/hooks';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunNodeOccurrence } from '@module/workflow-run/types/WorkflowRunNodeOccurrence';
+import { formatDuration } from '@module/workflow-run/utils';
 
 import { WorkflowRunJsonView } from '../WorkflowRunJsonView';
 import classes from './WorkflowRunNodeInspector.module.scss';

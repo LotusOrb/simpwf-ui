@@ -10,7 +10,7 @@ import {
 
 import { PER_PAGE_OPTIONS } from '@common/component/PaginationBar';
 
-import { runSortOrders, runStatusTabOrder } from '@module/workflow-run/data';
+import { runSortOrders, runStatusTabOrder } from '@module/workflow-run/constant';
 import type { WorkflowRunSort } from '@module/workflow-run/types/WorkflowRunSort';
 
 const listParsers = {

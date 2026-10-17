@@ -12,7 +12,7 @@ import { useNotify } from '@module/notification/hooks';
 import { ScheduleDeleteModal } from '@module/schedule/components/ScheduleDeleteModal';
 import { ScheduleFormModal, type ScheduleFormMode } from '@module/schedule/components/ScheduleFormModal';
 import { ScheduleTable } from '@module/schedule/components/ScheduleTable';
-import { describeScheduleError, SCHEDULE_REPLACE_REMOVED, type ScheduleErrorCopy } from '@module/schedule/data';
+import { SCHEDULE_REPLACE_REMOVED } from '@module/schedule/constant';
 import { scheduleFromDto, type ScheduleDto } from '@module/schedule/dto';
 import {
 	useCreateScheduleMutation,
@@ -25,6 +25,7 @@ import {
 	useScheduleListParams,
 } from '@module/schedule/hooks';
 import type { Schedule } from '@module/schedule/types/Schedule';
+import { describeScheduleError, type ScheduleErrorCopy } from '@module/schedule/utils';
 
 import classes from './ScheduleListPage.module.scss';
 

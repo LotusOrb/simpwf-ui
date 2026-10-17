@@ -182,24 +182,3 @@ export const formatInZone = (date: Date, zone: string) =>
 		minute: '2-digit',
 		hour12: false,
 	}).format(date);
-
-export interface CronPreset {
-	label: string;
-	crontab: string;
-}
-
-export const CRON_PRESETS: CronPreset[] = [
-	{ label: 'Every 5 minutes', crontab: '*/5 * * * *' },
-	{ label: 'Hourly', crontab: '0 * * * *' },
-	{ label: 'Daily at 09:00', crontab: '0 9 * * *' },
-	{ label: 'Weekdays at 09:00', crontab: '0 9 * * 1-5' },
-	{ label: 'Weekly, Monday 09:00', crontab: '0 9 * * 1' },
-	{ label: 'Monthly, 1st at 00:00', crontab: '0 0 1 * *' },
-	{ label: 'Every 30 minutes (interval)', crontab: '@every 30m' },
-];
-
-/** Every IANA zone the browser knows, with UTC first since it is the engine default. */
-export const TIMEZONE_OPTIONS: string[] = (() => {
-	const zones = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
-	return ['UTC', ...zones.filter((zone) => zone !== 'UTC')];
-})();

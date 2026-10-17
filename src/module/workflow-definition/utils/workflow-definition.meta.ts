@@ -1,11 +1,8 @@
-import { sortNodeTypes } from '@module/node-type/data';
+import { sortNodeTypes } from '@module/node-type/utils';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionGraphLayout } from '@module/workflow-definition/types/WorkflowDefinitionGraphLayout';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
-import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
-
-export const DEFINITION_ROUTE = '/app/workflow-definition';
 
 /**
  * Card subtitle under a node's name: an inline delay node shows its duration instead of the type label. A library
@@ -78,12 +75,4 @@ export const layoutGraph = (content: WorkflowDefinitionContent): WorkflowDefinit
 		columns: rowsPerColumn.length,
 		rows: Math.max(1, ...rowsPerColumn),
 	};
-};
-
-export const sortOrders: Record<WorkflowDefinitionSort, { label: string; by: string; direction: 'asc' | 'desc' }> = {
-	latest: { label: 'Latest', by: 'updated_at', direction: 'desc' },
-	oldest: { label: 'Oldest', by: 'updated_at', direction: 'asc' },
-	'name-asc': { label: 'Name A–Z', by: 'name', direction: 'asc' },
-	'name-desc': { label: 'Name Z–A', by: 'name', direction: 'desc' },
-	'version-desc': { label: 'Highest version', by: 'version', direction: 'desc' },
 };

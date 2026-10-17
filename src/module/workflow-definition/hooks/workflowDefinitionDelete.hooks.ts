@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-import { describeDeleteError } from '@module/workflow-definition/data';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import { describeDeleteError } from '@module/workflow-definition/utils';
 
 import { useDeleteWorkflowDefinitionMutation } from './workflow-definition.hooks';
 

@@ -3,8 +3,6 @@ import type { NodeDefinitionSort } from '@module/node-definition/types/NodeDefin
 
 export const NODE_DEFINITION_ROUTE = '/app/node-definition';
 
-export const nodeDefinitionLink = (id: string) => `${NODE_DEFINITION_ROUTE}/${id}`;
-
 /** Latest version of every lineage; shared by the editor palette and the library so it is fetched once. */
 export const NODE_LIBRARY_QUERY: NodeDefinitionQuery = {
 	perPage: 200,

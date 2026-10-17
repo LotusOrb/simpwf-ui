@@ -40,7 +40,7 @@ import { WorkflowRunIdText } from '@module/workflow-run/components/WorkflowRunId
 import { WorkflowRunMigrateModal } from '@module/workflow-run/components/WorkflowRunMigrateModal';
 import { WorkflowRunStatusTabs } from '@module/workflow-run/components/WorkflowRunStatusTabs';
 import { WorkflowRunTable } from '@module/workflow-run/components/WorkflowRunTable';
-import { runSortOrders, runStatusTabs } from '@module/workflow-run/data';
+import { runSortOrders, runStatusTabs } from '@module/workflow-run/constant';
 import {
 	SEARCH_URL_UPDATE,
 	useListWorkflowRunsQuery,
