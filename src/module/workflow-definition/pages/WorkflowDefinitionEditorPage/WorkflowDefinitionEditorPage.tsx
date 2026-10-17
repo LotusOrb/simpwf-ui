@@ -15,6 +15,7 @@ import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useLazyGetNodeDefinitionQuery } from '@module/node-definition/hooks';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { NodeTypeCatalogGate } from '@module/node-type/components/NodeTypeCatalogGate';
 import { useNotify, useRunWatchActions } from '@module/notification/hooks';
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
 import { WorkflowDefinitionDeleteModal } from '@module/workflow-definition/components/WorkflowDefinitionDeleteModal';
@@ -57,7 +58,14 @@ import classes from './WorkflowDefinitionEditorPage.module.scss';
 
 const RUN_ROUTE = '/app/workflow-run';
 
-export const WorkflowDefinitionEditorPage: React.FC = () => {
+/** The editor only opens once the engine's node type catalog is in: it decides every node's fields and checks. */
+export const WorkflowDefinitionEditorPage: React.FC = () => (
+	<NodeTypeCatalogGate>
+		<WorkflowDefinitionEditor />
+	</NodeTypeCatalogGate>
+);
+
+const WorkflowDefinitionEditor: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	// `new?from=<id>` duplicates a definition into a fresh lineage.
 	const [searchParams] = useSearchParams();

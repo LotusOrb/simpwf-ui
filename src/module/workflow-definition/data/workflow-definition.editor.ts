@@ -1,4 +1,8 @@
+import { humanizeKey, isRecord, seedObject } from '@common/component/SchemaForm';
+
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { EMPTY_NODE_TYPE_CATALOG, nodeTypeHasField, nodeTypeMetaOf, nodeTypeValidation } from '@module/node-type/data';
+import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionEditorBranch } from '@module/workflow-definition/types/WorkflowDefinitionEditorBranch';
@@ -12,7 +16,7 @@ import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/W
 import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/types/WorkflowDefinitionNodeConfig';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
-import { layoutGraph, nodeTypeMetaOf } from './workflow-definition.meta';
+import { layoutGraph } from './workflow-definition.meta';
 import {
 	analyzeParallel,
 	MAX_PARALLEL_BRANCHES,
@@ -55,12 +59,32 @@ export const uuidv7 = () => {
 
 export const shortId = () => Math.random().toString(36).slice(2, 10);
 
-export const supportsNext = (type: WorkflowDefinitionNodeType) => type !== 'conditions' && type !== 'parallel_start';
-export const supportsFailure = (type: WorkflowDefinitionNodeType) => type === 'external_call' || type === 'poller';
+/**
+ * Node fields the canvas owns: they are drawn as edges, branches and scopes, so the generated form never shows them
+ * and the canvas checks them itself.
+ */
+export const GRAPH_FIELDS: ReadonlySet<string> = new Set([
+	'id',
+	'type',
+	'next_node',
+	'on_failure',
+	'conditions',
+	'branches',
+	'parallel_end_node_id',
+	'start_node_id',
+	'nodes',
+	'keys',
+]);
+
+/** What the catalog says a type accepts decides its handles and fields. */
+export const supportsNext = (type: WorkflowDefinitionNodeType, catalog: NodeTypeCatalog) =>
+	nodeTypeHasField(catalog, type, 'next_node');
+export const supportsFailure = (type: WorkflowDefinitionNodeType, catalog: NodeTypeCatalog) =>
+	nodeTypeHasField(catalog, type, 'on_failure');
+export const supportsOutputProperty = (type: WorkflowDefinitionNodeType, catalog: NodeTypeCatalog) =>
+	nodeTypeHasField(catalog, type, 'output_property');
 export const isParallelType = (type: WorkflowDefinitionNodeType) =>
 	type === 'parallel_start' || type === 'parallel_end';
-export const supportsOutputProperty = (type: WorkflowDefinitionNodeType) =>
-	type !== 'conditions' && type !== 'group' && !isParallelType(type);
 export const toSnakeCase = (value: string) =>
 	value
 		.replace(/([a-z\d])([A-Z])/g, '$1_$2')
@@ -68,15 +92,12 @@ export const toSnakeCase = (value: string) =>
 		.split(/[^a-z\d]+/)
 		.filter(Boolean)
 		.join('_');
-export const defaultOutputProperty = (config: WorkflowDefinitionNodeConfig) =>
-	supportsOutputProperty(config.type) ? toSnakeCase(config.name) || undefined : undefined;
-export const supportsTimeout = (type: WorkflowDefinitionNodeType) =>
-	type === 'script' || type === 'external_call' || type === 'output';
-export const supportsRetryOnRecovery = (type: WorkflowDefinitionNodeType) =>
-	type === 'external_call' || type === 'poller' || type === 'delay';
-/** What the engine assumes when `retry_on_recovery` is omitted. */
-export const retryOnRecoveryDefault = (type: WorkflowDefinitionNodeType) => type === 'poller' || type === 'delay';
-/** The engine rejects `start_delay` on these: input already waits, and a delay node is the wait itself. */
+export const defaultOutputProperty = (config: WorkflowDefinitionNodeConfig, catalog: NodeTypeCatalog) =>
+	supportsOutputProperty(config.type, catalog) ? toSnakeCase(config.name) || undefined : undefined;
+/**
+ * The engine rejects `start_delay` on these: input already waits, and a delay node is the wait itself. Kept here
+ * because the served schemas don't list `start_delay` at all, though the parser accepts it on every other type.
+ */
 export const supportsStartDelay = (type: WorkflowDefinitionNodeType) => type !== 'input' && type !== 'delay';
 
 /** Types whose routing goes out through one handle per editor branch instead of `next`. */
@@ -100,17 +121,21 @@ for (const name of Object.keys(branch)) {
 }
 `;
 
-const defaultConfigs: Record<WorkflowDefinitionNodeType, Partial<WorkflowDefinitionNodeConfig>> = {
-	script: { script: '' },
-	conditions: {},
-	input: { channel: 'http' },
-	output: { channel: 'redis', context_path: '' },
-	external_call: { http_config: { method: 'GET', url: '' } },
-	poller: { http: { method: 'GET', url: '', until: '' } },
-	group: {},
-	parallel_start: {},
-	parallel_end: { combining_script: DEFAULT_COMBINING },
-	delay: { delay: '30s' },
+// Name and metadata are the editor's own; graph fields come from the canvas.
+const UNSEEDED_FIELDS: ReadonlySet<string> = new Set([...GRAPH_FIELDS, 'name', 'metadata', 'node_definition_id']);
+
+/**
+ * A new node's starting config, read off its catalog schema: defaults, plus every required field filled with its
+ * first allowed value or an empty one, so validation points at what's left to fill in.
+ */
+const seedNodeConfig = (catalog: NodeTypeCatalog, type: WorkflowDefinitionNodeType) => {
+	const item = catalog.byType[type];
+	// A custom type registered without a schema still needs the `config` object every custom node carries.
+	if (!item?.schema) return item && !item.builtin ? { config: {} } : {};
+	const config = seedObject(item.schema, item.schema, UNSEEDED_FIELDS);
+	// The join's script starts as a commented example of how combining works rather than blank.
+	if (type === 'parallel_end' && !config.combining_script) config.combining_script = DEFAULT_COMBINING;
+	return config;
 };
 
 const scopeNodes = (nodes: Record<string, WorkflowDefinitionEditorNode>, scope: string | null) =>
@@ -158,6 +183,7 @@ export const createEditorNode = (
 	scope: string | null,
 	position: WorkflowDefinitionEditorPosition,
 	source: { type: WorkflowDefinitionNodeType } | { definition: NodeDefinition },
+	catalog: NodeTypeCatalog,
 ): WorkflowDefinitionEditorNode => {
 	const id = uuidv7();
 
@@ -194,7 +220,7 @@ export const createEditorNode = (
 		config: {
 			type: source.type,
 			name: nextNodeName(nodes, scope, nodeTypeMetaOf(source.type).label),
-			...structuredClone(defaultConfigs[source.type]),
+			...seedNodeConfig(catalog, source.type),
 		},
 		branches,
 		failureOutputProperty: '',
@@ -207,13 +233,15 @@ export const createParallelPair = (
 	nodes: Record<string, WorkflowDefinitionEditorNode>,
 	scope: string | null,
 	position: WorkflowDefinitionEditorPosition,
+	catalog: NodeTypeCatalog,
 ): [WorkflowDefinitionEditorNode, WorkflowDefinitionEditorNode] => {
-	const start = createEditorNode(nodes, scope, position, { type: 'parallel_start' });
+	const start = createEditorNode(nodes, scope, position, { type: 'parallel_start' }, catalog);
 	const end = createEditorNode(
 		nodes,
 		scope,
 		{ x: position.x + 2 * COLUMN_WIDTH, y: position.y },
 		{ type: 'parallel_end' },
+		catalog,
 	);
 	start.pairId = end.id;
 	end.pairId = start.id;
@@ -229,21 +257,14 @@ const referenceBranches = (definition: NodeDefinition) =>
 	}));
 
 export const readJsonField = (config: WorkflowDefinitionNodeConfig, field: WorkflowDefinitionJsonField): unknown => {
-	switch (field) {
-		case 'http_config.body':
-			return config.http_config?.body;
-		case 'http.body':
-			return config.http?.body;
-		case 'form.schema':
-			return config.form?.schema;
-		case 'form.ui':
-			return config.form?.ui;
-		case 'metadata': {
-			if (!config.metadata) return undefined;
-			const { [EDITOR_METADATA_KEY]: _editor, ...rest } = config.metadata;
-			return Object.keys(rest).length > 0 ? rest : undefined;
-		}
+	if (field === 'metadata') {
+		if (!config.metadata) return undefined;
+		const { [EDITOR_METADATA_KEY]: _editor, ...rest } = config.metadata;
+		return Object.keys(rest).length > 0 ? rest : undefined;
 	}
+	return field
+		.split('.')
+		.reduce<unknown>((value, key) => (isRecord(value) ? value[key] : undefined), config as Record<string, unknown>);
 };
 
 export const formatJson = (value: unknown) => (value === undefined ? '' : JSON.stringify(value, null, 2));
@@ -257,29 +278,15 @@ export const parseJsonDraft = (text: string): { ok: true; value: unknown } | { o
 	}
 };
 
+/** Writes a parsed draft into a cloned config. A nested field only lands while its parent object exists. */
 const writeJsonField = (config: WorkflowDefinitionNodeConfig, field: WorkflowDefinitionJsonField, value: unknown) => {
-	switch (field) {
-		case 'http_config.body':
-			if (config.http_config) config.http_config = { ...config.http_config, body: value };
-			if (value === undefined) delete config.http_config?.body;
-			return;
-		case 'http.body':
-			if (config.http) config.http = { ...config.http, body: value };
-			if (value === undefined) delete config.http?.body;
-			return;
-		case 'form.schema':
-			if (value === undefined) delete config.form;
-			else config.form = { ...config.form, schema: value as Record<string, unknown> };
-			return;
-		case 'form.ui':
-			if (!config.form) return;
-			config.form = { ...config.form, ui: value as Record<string, unknown> };
-			if (value === undefined) delete config.form.ui;
-			return;
-		case 'metadata':
-			config.metadata = value as Record<string, unknown> | undefined;
-			return;
-	}
+	const keys = field.split('.');
+	const last = keys.pop()!;
+	let parent: unknown = config;
+	for (const key of keys) parent = isRecord(parent) ? parent[key] : undefined;
+	if (!isRecord(parent)) return;
+	if (value === undefined) delete parent[last];
+	else parent[last] = value;
 };
 
 const resolveNodeConfig = (node: WorkflowDefinitionEditorNode) => {
@@ -353,9 +360,6 @@ const parseRawParallelBranches = (
 		branches: entries.map(([key], index) => ({ id: node.branches[index]?.id ?? shortId(), key, condition: '' })),
 	};
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export const parseRawNode = (
 	node: WorkflowDefinitionEditorNode,
@@ -622,7 +626,13 @@ export const layoutScope = (
 	return { start, nodes: positions };
 };
 
-export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDocument): WorkflowDefinitionContent => {
+/**
+ * The content to save. The catalog decides which nodes get a default output property; without it, none do.
+ */
+export const toWorkflowDefinitionContent = (
+	document: WorkflowDefinitionEditorDocument,
+	catalog: NodeTypeCatalog = EMPTY_NODE_TYPE_CATALOG,
+): WorkflowDefinitionContent => {
 	const writeScope = (scope: string | null) => {
 		const keys: Record<string, string | null> = {};
 
@@ -635,18 +645,19 @@ export const toWorkflowDefinitionContent = (document: WorkflowDefinitionEditorDo
 				},
 			};
 
-			config.output_property ||= defaultOutputProperty(config);
+			config.output_property ||= defaultOutputProperty(config, catalog);
 			// Null only means "disable the library delay" on a reference; inline it is the same as omitting it.
 			if (config.start_delay === null && !config.node_definition_id) delete config.start_delay;
 
 			const node: WorkflowDefinitionNode = { id: editorNode.id, ...config };
 			const { type } = config;
 
+			// A handle is only drawn where the type has the field, so an edge on it means the field is accepted.
 			const next = outgoingTarget(document.edges, editorNode.id, HANDLE_NEXT);
-			if (supportsNext(type) && next) node.next_node = next;
+			if (next) node.next_node = next;
 
 			const failure = outgoingTarget(document.edges, editorNode.id, HANDLE_FAILURE);
-			if (supportsFailure(type) && failure) {
+			if (failure) {
 				node.on_failure = { next_node: failure, output_property: editorNode.failureOutputProperty.trim() };
 			}
 
@@ -706,27 +717,50 @@ export const isContextPath = (value: string) => CONTEXT_PATH.test(value);
 export const isOutputKey = (value: string) => OUTPUT_KEY.test(value);
 export const isDuration = (value: string) => DURATION.test(value) && !/^(0+(\.0+)?[a-zµ]+)+$/.test(value);
 
-const jsonFieldLabels: Record<WorkflowDefinitionJsonField, string> = {
-	'http_config.body': 'Request body',
-	'http.body': 'Request body',
-	'form.schema': 'Form schema',
-	'form.ui': 'Form UI hints',
-	metadata: 'Metadata',
-};
+const flattenContentNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
+	nodes.flatMap((node) => [node, ...flattenContentNodes(node.nodes ?? [])]);
 
-export const validateEditorDocument = (document: WorkflowDefinitionEditorDocument): WorkflowDefinitionEditorIssue[] => {
+export const validateEditorDocument = (
+	document: WorkflowDefinitionEditorDocument,
+	catalog: NodeTypeCatalog,
+): WorkflowDefinitionEditorIssue[] => {
 	const issues: WorkflowDefinitionEditorIssue[] = [];
-	const nodeIssue = (node: WorkflowDefinitionEditorNode, message: string) =>
-		issues.push({ nodeId: node.id, scope: node.parentId, message });
+	const nodeIssue = (
+		node: WorkflowDefinitionEditorNode,
+		message: string,
+		extra?: Pick<WorkflowDefinitionEditorIssue, 'path' | 'severity'>,
+	) => issues.push({ nodeId: node.id, scope: node.parentId, message, ...extra });
 	const requireText = (node: WorkflowDefinitionEditorNode, value: string | undefined, label: string) => {
 		if (!value?.trim()) nodeIssue(node, `${label} is required`);
 	};
 	const checkDuration = (node: WorkflowDefinitionEditorNode, value: string | null | undefined, label: string) => {
 		if (value && !isDuration(value)) nodeIssue(node, `${label} must be a duration like 30s or 5m`);
 	};
-	const checkContextPath = (node: WorkflowDefinitionEditorNode, value: string | undefined, label: string) => {
-		if (!value?.trim()) nodeIssue(node, `${label} is required`);
-		else if (!isContextPath(value)) nodeIssue(node, `${label} must be a path like user.name or items[0]`);
+
+	// Nodes are checked exactly as they would be saved.
+	const content = toWorkflowDefinitionContent(document, catalog);
+	const saved = new Map(flattenContentNodes(content.nodes).map((node) => [node.id, node]));
+
+	/** The node's fields against its catalog schema. Graph fields are the canvas's to check. */
+	const checkSchema = (node: WorkflowDefinitionEditorNode) => {
+		const { type } = node.config;
+		const item = catalog.byType[type];
+		if (!item) {
+			nodeIssue(node, `"${type}" isn't a node type this engine lists`, { severity: 'warning' });
+			return;
+		}
+		const validation = nodeTypeValidation(item);
+		if (validation.kind === 'unsupported') {
+			nodeIssue(node, `${nodeTypeMetaOf(type, item).label} fields are checked by the engine on save`, {
+				severity: 'warning',
+			});
+			return;
+		}
+		if (validation.kind !== 'checked') return;
+		for (const issue of validation.validate(saved.get(node.id))) {
+			if (typeof issue.path[0] === 'string' && GRAPH_FIELDS.has(issue.path[0])) continue;
+			nodeIssue(node, issue.message, { path: issue.path.join('.') || undefined });
+		}
 	};
 
 	// A node definition is named by its node, whose name is checked with the other nodes.
@@ -778,19 +812,15 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 
 		for (const [field, text] of Object.entries(node.jsonDrafts)) {
 			if (!parseJsonDraft(text).ok) {
-				nodeIssue(node, `${jsonFieldLabels[field as WorkflowDefinitionJsonField]} is not valid JSON`);
+				nodeIssue(node, `${humanizeKey(field.split('.').at(-1) ?? field)} is not valid JSON`, { path: field });
 			}
 		}
 
-		if (supportsFailure(config.type) && outgoingTarget(document.edges, node.id, HANDLE_FAILURE)) {
+		if (outgoingTarget(document.edges, node.id, HANDLE_FAILURE)) {
 			requireText(node, node.failureOutputProperty, 'Failure output property');
 		}
-		checkDuration(node, config.timeout, 'Timeout');
-		checkDuration(node, config.pre_script?.timeout, 'Pre-script timeout');
-		checkDuration(node, config.post_script?.timeout, 'Post-script timeout');
-		if (config.pre_script) requireText(node, config.pre_script.script, 'Pre-script');
-		if (config.post_script) requireText(node, config.post_script.script, 'Post-script');
 		// References may carry start_delay (null disables the library's), so these run before the reference skip.
+		// The served schemas don't describe start_delay, so it's checked here.
 		if (config.start_delay !== undefined && !supportsStartDelay(config.type)) {
 			nodeIssue(node, `${nodeTypeMetaOf(config.type).label} nodes don't support start delay`);
 		}
@@ -801,59 +831,15 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 
 		if (config.node_definition_id) continue;
 
+		checkSchema(node);
+
+		// What the canvas owns: branches, scopes and parallel pairs.
 		switch (config.type) {
-			case 'script':
-				requireText(node, config.script, 'Script');
-				if (config.input_data && !isContextPath(config.input_data)) {
-					nodeIssue(node, 'Input data must be a path like user.name or items[0]');
-				}
-				break;
 			case 'conditions':
 				if (node.branches.length < 2) nodeIssue(node, 'Conditions need at least two branches');
 				if (node.branches.some((branch) => !branch.condition.trim())) {
 					nodeIssue(node, 'Every branch needs a condition script');
 				}
-				break;
-			case 'input':
-				if (config.context_path !== undefined)
-					nodeIssue(node, 'Input nodes use output_property, not context_path');
-				if (config.output_property && !isOutputKey(config.output_property)) {
-					nodeIssue(node, 'Output property must be a bare key like payload');
-				}
-				if (config.validation) requireText(node, config.validation.script, 'Validation script');
-				break;
-			case 'output':
-				checkContextPath(node, config.context_path, 'Context path');
-				break;
-			case 'external_call':
-				if (config.execution_config) {
-					if (config.execution_config.command.length === 0) nodeIssue(node, 'Command is required');
-				} else {
-					requireText(node, config.http_config?.url, 'URL');
-				}
-				break;
-			case 'poller':
-				if (config.redis) {
-					requireText(node, config.redis.until, 'Until predicate');
-					if (config.redis.method === 'SUB') requireText(node, config.redis.channel, 'Channel');
-					else requireText(node, config.redis.key, 'Key');
-					checkDuration(node, config.redis.delay, 'Delay');
-					checkDuration(node, config.redis.request_timeout, 'Request timeout');
-					checkDuration(node, config.redis.max_wait_time, 'Max wait time');
-				} else if (config.rabbitmq) {
-					requireText(node, config.rabbitmq.until, 'Until predicate');
-					requireText(node, config.rabbitmq.queue, 'Queue');
-					checkDuration(node, config.rabbitmq.max_wait_time, 'Max wait time');
-				} else {
-					requireText(node, config.http?.until, 'Until predicate');
-					requireText(node, config.http?.url, 'URL');
-					checkDuration(node, config.http?.delay, 'Delay');
-					checkDuration(node, config.http?.request_timeout, 'Request timeout');
-				}
-				break;
-			case 'delay':
-				requireText(node, config.delay, 'Delay');
-				checkDuration(node, config.delay, 'Delay');
 				break;
 			case 'group':
 				checkScope(node.id, `Group "${config.name}"`);
@@ -864,7 +850,6 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 				if (!checkParallelStart(document, node, (message) => nodeIssue(node, message))) broken.add(node.id);
 				break;
 			case 'parallel_end':
-				requireText(node, config.combining_script, 'Combining script');
 				if (node.id !== rootId) checkParallelEnd(document, node, (message) => nodeIssue(node, message));
 				for (const message of combiningScriptWarnings(document, node)) {
 					issues.push({ nodeId: node.id, scope: node.parentId, message, severity: 'warning' });
@@ -876,7 +861,7 @@ export const validateEditorDocument = (document: WorkflowDefinitionEditorDocumen
 	// Convergence and depth run on exactly what would be saved. A start that is already structurally broken would
 	// only repeat its problem as walk noise, so it is left out.
 	const reported = new Set(issues.map((issue) => `${issue.nodeId}\u0000${issue.message}`));
-	const analysis = analyzeParallel(toWorkflowDefinitionContent(document));
+	const analysis = analyzeParallel(content);
 	const failedBranches = new Set(
 		analysis.problems
 			.filter((problem) => problem.kind !== 'no_path')

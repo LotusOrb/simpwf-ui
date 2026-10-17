@@ -1,6 +1,7 @@
 import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Connection, EdgeChange, NodeChange } from '@xyflow/react';
 
+import { selectNodeTypeCatalog } from '@module/node-type/data';
 import {
 	branchHandle,
 	descendantIds,
@@ -138,8 +139,15 @@ export const workflowDefinitionEditorSlice = createSlice({
 			const node = state.nodes[action.payload.id];
 			if (!node) return;
 			for (const [key, value] of Object.entries(action.payload.patch)) {
-				if (value === undefined) delete node.config[key as keyof WorkflowDefinitionNodeConfig];
-				else Object.assign(node.config, { [key]: value });
+				if (value !== undefined) {
+					Object.assign(node.config, { [key]: value });
+					continue;
+				}
+				delete node.config[key as keyof WorkflowDefinitionNodeConfig];
+				// A removed field takes the JSON text typed into it (or into anything inside it) along.
+				for (const field of Object.keys(node.jsonDrafts)) {
+					if (field === key || field.startsWith(`${key}.`)) delete node.jsonDrafts[field];
+				}
 			}
 			state.dirty = true;
 		},
@@ -315,7 +323,10 @@ export const {
 	selectEditorStarts,
 } = workflowDefinitionEditorSlice.selectors;
 
-export const selectEditorIssues = createSelector([workflowDefinitionEditorSlice.selectSlice], validateEditorDocument);
+export const selectEditorIssues = createSelector(
+	[workflowDefinitionEditorSlice.selectSlice, selectNodeTypeCatalog],
+	validateEditorDocument,
+);
 
 /** The issues that stop a save; warnings are only shown. */
 export const selectEditorBlockingIssues = createSelector([selectEditorIssues], (issues) =>
@@ -323,7 +334,7 @@ export const selectEditorBlockingIssues = createSelector([selectEditorIssues], (
 );
 
 export const selectEditorContent = createSelector(
-	[workflowDefinitionEditorSlice.selectSlice],
+	[workflowDefinitionEditorSlice.selectSlice, selectNodeTypeCatalog],
 	toWorkflowDefinitionContent,
 );
 

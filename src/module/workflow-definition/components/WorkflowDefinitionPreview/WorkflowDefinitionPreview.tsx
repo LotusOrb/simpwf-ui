@@ -1,8 +1,9 @@
 import React from 'react';
 
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 
-import { layoutGraph, nodeTypeMeta } from '../../data';
+import { layoutGraph } from '../../data';
 import classes from './WorkflowDefinitionPreview.module.scss';
 
 const NODE_WIDTH = 46;
@@ -62,7 +63,7 @@ export const WorkflowDefinitionPreview: React.FC<WorkflowDefinitionPreviewProps>
 							cx={8}
 							cy={NODE_HEIGHT / 2}
 							r={3}
-							fill={`var(--mantine-color-${nodeTypeMeta[node.type]?.color ?? 'gray'}-6)`}
+							fill={`var(--mantine-color-${nodeTypeMetaOf(node.type).color}-6)`}
 						/>
 						<rect x={15} y={NODE_HEIGHT / 2 - 1.5} width={24} height={3} rx={1.5} className={classes.bar} />
 					</g>

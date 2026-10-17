@@ -8,9 +8,10 @@ import { Link, useNavigate } from 'react-router';
 
 import { Can, Permission } from '@core/auth/authorization';
 
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
-import { countNodes, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
+import { countNodes, getNodeTypes, getStartNode } from '../../data';
 import classes from './WorkflowDefinitionTable.module.scss';
 
 dayjs.extend(relativeTime);
@@ -62,7 +63,7 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 							: definitions.map((definition) => {
 									const { content } = definition;
 									const startNode = getStartNode(content);
-									const StartIcon = startNode && nodeTypeMeta[startNode.type]?.icon;
+									const StartIcon = startNode && nodeTypeMetaOf(startNode.type).icon;
 
 									return (
 										<Table.Tr
@@ -94,10 +95,10 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 													<Group gap={6} wrap="nowrap">
 														<StartIcon
 															size={14}
-															color={`var(--mantine-color-${nodeTypeMeta[startNode.type].color}-6)`}
+															color={`var(--mantine-color-${nodeTypeMetaOf(startNode.type).color}-6)`}
 															aria-hidden
 														/>
-														<Text fz="sm">{nodeTypeMeta[startNode.type].label}</Text>
+														<Text fz="sm">{nodeTypeMetaOf(startNode.type).label}</Text>
 													</Group>
 												) : (
 													<Text fz="sm" c="dimmed">
@@ -111,7 +112,7 @@ export const WorkflowDefinitionTable: React.FC<WorkflowDefinitionTableProps> = (
 											<Table.Td>
 												<Group gap={4} wrap="nowrap">
 													{getNodeTypes(content).map((type) => {
-														const meta = nodeTypeMeta[type];
+														const meta = nodeTypeMetaOf(type);
 														return (
 															<Tooltip key={type} label={meta.label}>
 																<ThemeIcon

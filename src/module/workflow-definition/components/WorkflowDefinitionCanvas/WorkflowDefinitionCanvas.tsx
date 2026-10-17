@@ -24,13 +24,13 @@ import { useCoreDispatch, useCoreSelector } from '@core/store';
 import { useInsetFitView } from '@common/hooks/useInsetFitView';
 
 import { useAppLayoutInsets } from '@module/app/hooks';
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import {
 	HANDLE_FAILURE,
 	HANDLE_NEXT,
 	HANDLE_PAIR,
 	isInlineGroup,
 	isPairEdgeId,
-	nodeTypeMetaOf,
 	outgoingTarget,
 	pairEdgeId,
 	scopeKey,

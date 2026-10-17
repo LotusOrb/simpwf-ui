@@ -1,18 +1,4 @@
-import type { IconType } from 'react-icons';
-import {
-	LuBoxes,
-	LuCode,
-	LuGitFork,
-	LuGitMerge,
-	LuGlobe,
-	LuLogIn,
-	LuPuzzle,
-	LuRadar,
-	LuSend,
-	LuSplit,
-	LuTimer,
-} from 'react-icons/lu';
-
+import { sortNodeTypes } from '@module/node-type/data';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionGraphLayout } from '@module/workflow-definition/types/WorkflowDefinitionGraphLayout';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
@@ -20,63 +6,6 @@ import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/typ
 import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
 export const DEFINITION_ROUTE = '/app/workflow-definition';
-
-export const nodeTypeMeta: Record<
-	WorkflowDefinitionNodeType,
-	{ label: string; color: string; icon: IconType; description: string }
-> = {
-	input: {
-		label: 'Input',
-		color: 'teal',
-		icon: LuLogIn,
-		description: 'Wait for a payload over HTTP, Redis or RabbitMQ',
-	},
-	script: {
-		label: 'Script',
-		color: 'blue',
-		icon: LuCode,
-		description: 'Run JavaScript against the workflow context',
-	},
-	conditions: { label: 'Conditions', color: 'orange', icon: LuSplit, description: 'Route to exactly one branch' },
-	external_call: {
-		label: 'External call',
-		color: 'pink',
-		icon: LuGlobe,
-		description: 'Call an HTTP endpoint or run a command',
-	},
-	poller: { label: 'Poller', color: 'cyan', icon: LuRadar, description: 'Repeat a check until a predicate matches' },
-	delay: { label: 'Delay', color: 'lime', icon: LuTimer, description: 'Wait a fixed duration, then continue' },
-	parallel_start: {
-		label: 'Parallel',
-		color: 'indigo',
-		icon: LuGitFork,
-		description: 'Run named branches at once, then join them',
-	},
-	parallel_end: {
-		label: 'Join',
-		color: 'indigo',
-		icon: LuGitMerge,
-		description: 'Wait for every branch and combine their contexts',
-	},
-	group: { label: 'Group', color: 'violet', icon: LuBoxes, description: 'Nested sub-graph with its own start' },
-	output: {
-		label: 'Output',
-		color: 'grape',
-		icon: LuSend,
-		description: 'Publish a context value to Redis or RabbitMQ',
-	},
-};
-
-export const nodeTypeOrder = Object.keys(nodeTypeMeta) as WorkflowDefinitionNodeType[];
-
-export const isBuiltinNodeType = (type: string): type is WorkflowDefinitionNodeType =>
-	(nodeTypeOrder as string[]).includes(type);
-
-/** Display meta for any node type; a custom type registered with the engine gets a generic look. */
-export const nodeTypeMetaOf = (type: string) =>
-	isBuiltinNodeType(type)
-		? nodeTypeMeta[type]
-		: { label: type, color: 'gray', icon: LuPuzzle, description: 'Custom node type registered with the engine' };
 
 /**
  * Card subtitle under a node's name: an inline delay node shows its duration instead of the type label. A library
@@ -91,18 +20,13 @@ export const nodeSubtitle = (
 export const shownStartDelay = (node: Pick<WorkflowDefinitionNode, 'start_delay'>) =>
 	typeof node.start_delay === 'string' && node.start_delay ? node.start_delay : null;
 
-/** A join only arrives together with its parallel_start, so the palette never offers it alone. */
-export const paletteNodeTypes = nodeTypeOrder.filter((type) => type !== 'parallel_end');
-
 const flattenNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
 	nodes.flatMap((node) => [node, ...(node.nodes ? flattenNodes(node.nodes) : [])]);
 
 export const countNodes = (content: WorkflowDefinitionContent) => flattenNodes(content.nodes).length;
 
-export const getNodeTypes = (content: WorkflowDefinitionContent): WorkflowDefinitionNodeType[] => {
-	const present = new Set(flattenNodes(content.nodes).map((node) => node.type));
-	return nodeTypeOrder.filter((type) => present.has(type));
-};
+export const getNodeTypes = (content: WorkflowDefinitionContent): WorkflowDefinitionNodeType[] =>
+	sortNodeTypes(new Set(flattenNodes(content.nodes).map((node) => node.type)));
 
 export const getStartNode = (content: WorkflowDefinitionContent) =>
 	content.nodes.find((node) => node.id === content.start_node_id);

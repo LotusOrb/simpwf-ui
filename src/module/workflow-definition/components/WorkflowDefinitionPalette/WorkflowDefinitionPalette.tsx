@@ -6,9 +6,10 @@ import { Link } from 'react-router';
 
 import { useCoreSelector } from '@core/store';
 
-import { NODE_LIBRARY_QUERY, nodeDefinitionLink, nodeDefinitionTypeMeta } from '@module/node-definition/data';
+import { NODE_LIBRARY_QUERY, nodeDefinitionLink } from '@module/node-definition/data';
 import { useListNodeDefinitionsQuery } from '@module/node-definition/hooks';
-import { nodeTypeMeta, paletteNodeTypes, scopeTrail } from '@module/workflow-definition/data';
+import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/data';
+import { scopeTrail } from '@module/workflow-definition/data';
 import {
 	PALETTE_DRAG_TYPE,
 	useWorkflowDefinitionEditorAddNode,
@@ -18,11 +19,14 @@ import { selectEditorNodeDefinition, selectEditorNodes, selectEditorScope } from
 
 import classes from './WorkflowDefinitionPalette.module.scss';
 
-type SectionId = 'builtin' | 'library';
+type SectionId = 'builtin' | 'custom' | 'library';
+
+// A join only arrives together with its parallel_start, so the palette never offers it alone.
+const PAIRED_ONLY_TYPES = new Set(['parallel_end']);
 
 interface PaletteEntryProps {
 	item: WorkflowDefinitionPaletteItem;
-	/** A builtin type, or a custom one from the node library. */
+	/** A type from the engine's catalog, or the type of a node library entry. */
 	type: string;
 	title: string;
 	description: string;
@@ -32,7 +36,7 @@ interface PaletteEntryProps {
 }
 
 const PaletteEntry: React.FC<PaletteEntryProps> = ({ item, type, title, description, libraryId, onAdd }) => {
-	const meta = nodeDefinitionTypeMeta(type);
+	const meta = nodeTypeMetaOf(type);
 
 	const entry = (
 		<UnstyledButton
@@ -83,7 +87,7 @@ const PaletteEntry: React.FC<PaletteEntryProps> = ({ item, type, title, descript
 
 export const WorkflowDefinitionPalette: React.FC = () => {
 	const [query, setQuery] = useState('');
-	const [openSections, setOpenSections] = useState<SectionId[]>(['builtin', 'library']);
+	const [openSections, setOpenSections] = useState<SectionId[]>(['builtin', 'custom', 'library']);
 	const addNode = useWorkflowDefinitionEditorAddNode();
 
 	const nodes = useCoreSelector(selectEditorNodes);
@@ -93,16 +97,33 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 	const withLibrary = !useCoreSelector(selectEditorNodeDefinition);
 
 	const library = useListNodeDefinitionsQuery(NODE_LIBRARY_QUERY, { skip: !withLibrary });
+	const catalog = useCoreSelector(selectNodeTypeCatalog);
 
 	const term = query.trim().toLowerCase();
 	const matches = (...values: string[]) => !term || values.some((value) => value.toLowerCase().includes(term));
 
-	const builtins = paletteNodeTypes.filter((type) =>
-		matches(nodeTypeMeta[type].label, nodeTypeMeta[type].description),
-	);
+	// Whatever the engine lists, in its order: a type added to the engine shows up here without a UI release.
+	const types = catalog.items
+		.filter((item) => !PAIRED_ONLY_TYPES.has(item.type))
+		.map((item) => ({ item, meta: nodeTypeMetaOf(item.type, item) }))
+		.filter(({ meta }) => matches(meta.label, meta.description));
+	const builtins = types.filter(({ item }) => item.builtin);
+	const customs = types.filter(({ item }) => !item.builtin);
 	const definitions = (library.data?.items ?? []).filter((definition) =>
-		matches(definition.name, nodeDefinitionTypeMeta(definition.type).label),
+		matches(definition.name, nodeTypeMetaOf(definition.type, catalog.byType[definition.type]).label),
 	);
+
+	const renderTypes = (entries: typeof types) =>
+		entries.map(({ item, meta }) => (
+			<PaletteEntry
+				key={item.type}
+				item={{ type: item.type }}
+				type={item.type}
+				title={meta.label}
+				description={meta.description}
+				onAdd={addNode}
+			/>
+		));
 
 	const toggleSection = (id: SectionId) =>
 		setOpenSections((current) => (current.includes(id) ? current.filter((s) => s !== id) : [...current, id]));
@@ -168,7 +189,7 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 				item={{ definition }}
 				type={definition.type}
 				title={definition.name}
-				description={`v${definition.version} · ${nodeDefinitionTypeMeta(definition.type).label}`}
+				description={`v${definition.version} · ${nodeTypeMetaOf(definition.type, catalog.byType[definition.type]).label}`}
 				libraryId={definition.id}
 				onAdd={addNode}
 			/>
@@ -209,18 +230,10 @@ export const WorkflowDefinitionPalette: React.FC = () => {
 							No matching node types
 						</Text>
 					) : (
-						builtins.map((type) => (
-							<PaletteEntry
-								key={type}
-								item={{ type }}
-								type={type}
-								title={nodeTypeMeta[type].label}
-								description={nodeTypeMeta[type].description}
-								onAdd={addNode}
-							/>
-						))
+						renderTypes(builtins)
 					),
 				)}
+				{customs.length > 0 && renderSection('custom', 'Custom types', customs.length, renderTypes(customs))}
 				{withLibrary &&
 					renderSection('library', 'Node library', library.data ? definitions.length : null, renderLibrary())}
 			</ScrollArea>

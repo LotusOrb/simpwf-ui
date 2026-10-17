@@ -3,7 +3,6 @@ import type { WorkflowDefinitionFailureRoute } from './WorkflowDefinitionFailure
 import type { WorkflowDefinitionHookScript } from './WorkflowDefinitionHookScript';
 import type { WorkflowDefinitionHTTPConfig } from './WorkflowDefinitionHTTPConfig';
 import type { WorkflowDefinitionInputChannel } from './WorkflowDefinitionInputChannel';
-import type { WorkflowDefinitionInputForm } from './WorkflowDefinitionInputForm';
 import type { WorkflowDefinitionNodeCondition } from './WorkflowDefinitionNodeCondition';
 import type { WorkflowDefinitionNodeType } from './WorkflowDefinitionNodeType';
 import type { WorkflowDefinitionPollerHTTPConfig } from './WorkflowDefinitionPollerHTTPConfig';
@@ -34,7 +33,11 @@ export interface WorkflowDefinitionNode {
 	channel?: WorkflowDefinitionInputChannel;
 	context_path?: string;
 	validation?: { script: string };
-	form?: WorkflowDefinitionInputForm;
+	/** input: the forms-library form the frontend renders for this node. */
+	form_id?: string;
+	allowed_roles?: string[];
+	record_actor?: boolean;
+	public?: boolean;
 
 	http_config?: WorkflowDefinitionHTTPConfig;
 	execution_config?: WorkflowDefinitionExecutionConfig;
