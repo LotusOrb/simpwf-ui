@@ -1,0 +1,1 @@
+export { NodeTypeCatalogGate } from './NodeTypeCatalogGate';
