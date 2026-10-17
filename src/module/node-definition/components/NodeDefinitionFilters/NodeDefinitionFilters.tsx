@@ -5,7 +5,8 @@ import { LuArrowUpDown, LuBoxes, LuSearch } from 'react-icons/lu';
 
 import { nodeDefinitionSortOrders } from '@module/node-definition/data';
 import type { NodeDefinitionSort } from '@module/node-definition/types/NodeDefinitionSort';
-import { nodeTypeMeta, nodeTypeOrder } from '@module/workflow-definition/data';
+import { nodeTypeMetaOf } from '@module/node-type/data';
+import { useNodeTypeCatalog } from '@module/node-type/hooks';
 
 export interface NodeDefinitionFilterValues {
 	name: string;
@@ -16,20 +17,21 @@ export interface NodeDefinitionFilterValues {
 
 interface NodeDefinitionFiltersProps {
 	value: NodeDefinitionFilterValues;
-	/** Custom node types seen in the library, offered next to the builtins. */
+	/** Custom node types seen in the library, offered next to the catalog's. */
 	customTypes: string[];
 	onChange: (value: Partial<NodeDefinitionFilterValues>) => void;
 }
 
 export const NodeDefinitionFilters: React.FC<NodeDefinitionFiltersProps> = ({ value, customTypes, onChange }) => {
+	const { catalog } = useNodeTypeCatalog();
+	const builtins = catalog.items.filter((item) => item.builtin).map((item) => item.type);
+	const customs = [
+		...new Set([...catalog.items.filter((item) => !item.builtin).map((item) => item.type), ...customTypes]),
+	].sort();
+	const option = (type: string) => ({ value: type, label: nodeTypeMetaOf(type, catalog.byType[type]).label });
 	const typeOptions = [
-		{
-			group: 'Built-in',
-			items: nodeTypeOrder.map((type) => ({ value: type, label: nodeTypeMeta[type].label })),
-		},
-		...(customTypes.length > 0
-			? [{ group: 'Custom', items: customTypes.map((type) => ({ value: type, label: type })) }]
-			: []),
+		...(builtins.length > 0 ? [{ group: 'Built-in', items: builtins.map(option) }] : []),
+		...(customs.length > 0 ? [{ group: 'Custom', items: customs.map(option) }] : []),
 	];
 
 	return (

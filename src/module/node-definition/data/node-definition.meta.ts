@@ -1,14 +1,9 @@
 import type { NodeDefinitionQuery } from '@module/node-definition/types/NodeDefinitionQuery';
 import type { NodeDefinitionSort } from '@module/node-definition/types/NodeDefinitionSort';
-import { isBuiltinNodeType, nodeTypeMetaOf } from '@module/workflow-definition/data';
 
 export const NODE_DEFINITION_ROUTE = '/app/node-definition';
 
 export const nodeDefinitionLink = (id: string) => `${NODE_DEFINITION_ROUTE}/${id}`;
-
-export { isBuiltinNodeType };
-
-export const nodeDefinitionTypeMeta = nodeTypeMetaOf;
 
 /** Latest version of every lineage; shared by the editor palette and the library so it is fetched once. */
 export const NODE_LIBRARY_QUERY: NodeDefinitionQuery = {
