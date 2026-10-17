@@ -4,7 +4,7 @@ import { Badge, Group, ScrollArea, Text, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import { LuChevronDown, LuChevronRight, LuGitBranch, LuGitFork, LuRefreshCw, LuTriangleAlert } from 'react-icons/lu';
 
-import { nodeTypeMeta } from '@module/workflow-definition/data';
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import {
 	formatDuration,
 	nodeRunStatusMeta,
@@ -177,7 +177,7 @@ export const WorkflowRunTimeline: React.FC<WorkflowRunTimelineProps> = ({
 				}
 
 				const { entry } = row;
-				const typeMeta = nodeTypeMeta[entry.type];
+				const typeMeta = nodeTypeMetaOf(entry.type);
 				return (
 					<button
 						key={row.key}

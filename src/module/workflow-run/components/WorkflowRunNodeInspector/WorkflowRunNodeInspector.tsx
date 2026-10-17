@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 
-import { Alert, Badge, Button, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
+import { Alert, Badge, Button, Fieldset, Group, ScrollArea, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import { LuCheck, LuCircleAlert, LuFileType, LuMousePointerClick, LuShieldCheck, LuUndo2 } from 'react-icons/lu';
 
-import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
+import { SchemaForm } from '@common/component/SchemaForm';
+
+import { nodeTypeMetaOf } from '@module/node-type/data';
+import { useNodeTypeCatalog } from '@module/node-type/hooks';
 import { useNotify } from '@module/notification/hooks';
-import { shownStartDelay } from '@module/workflow-definition/data';
+import { GRAPH_FIELDS, shownStartDelay } from '@module/workflow-definition/data';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
 import { useLazyGetWorkflowRunDebugContextQuery } from '@module/workflow-run/hooks';
@@ -17,6 +20,48 @@ import { WorkflowRunJsonView } from '../WorkflowRunJsonView';
 import classes from './WorkflowRunNodeInspector.module.scss';
 
 const timestamp = (value: string | null) => (value ? dayjs(value).format('DD MMM HH:mm:ss.SSS') : '—');
+
+// Shown elsewhere in the inspector (name, start delay) or meaningless here (routing, editor metadata).
+const HIDDEN_CONFIG_FIELDS: ReadonlySet<string> = new Set([
+	...GRAPH_FIELDS,
+	'name',
+	'metadata',
+	'start_delay',
+	'node_definition_id',
+]);
+
+/** The node's configuration as the run's definition snapshot has it, read-only, laid out from its catalog schema. */
+const NodeConfiguration: React.FC<{ node: WorkflowDefinitionNode }> = ({ node }) => {
+	const { catalog } = useNodeTypeCatalog();
+	const schema = catalog.byType[node.type]?.schema;
+	const config = node as unknown as Record<string, unknown>;
+	const keys = Object.keys(config).filter((key) => !HIDDEN_CONFIG_FIELDS.has(key) && config[key] !== undefined);
+
+	if (keys.length === 0) return null;
+	return (
+		<Stack gap="xs">
+			<Text fz={11} fw={600} c="dimmed">
+				Configuration
+			</Text>
+			{schema ? (
+				<Fieldset variant="unstyled" disabled>
+					<Stack gap="sm">
+						<SchemaForm
+							key={node.id}
+							schema={schema}
+							value={config}
+							onChange={() => undefined}
+							keys={keys.filter((key) => schema.properties?.[key])}
+							readOnly
+						/>
+					</Stack>
+				</Fieldset>
+			) : (
+				<WorkflowRunJsonView value={Object.fromEntries(keys.map((key) => [key, config[key]]))} />
+			)}
+		</Stack>
+	);
+};
 
 interface WorkflowRunNodeInspectorProps {
 	node: WorkflowDefinitionNode | null;
@@ -91,7 +136,7 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 		);
 	}
 
-	const typeMeta = nodeDefinitionTypeMeta(node.type);
+	const typeMeta = nodeTypeMetaOf(node.type);
 	const status = occurrence?.status ?? 'pending';
 	const statusMeta = nodeRunStatusMeta[status];
 	const isDelay = node.type === 'delay';
@@ -204,6 +249,8 @@ export const WorkflowRunNodeInspector: React.FC<WorkflowRunNodeInspectorProps> =
 							</Text>
 						)}
 					</Stack>
+
+					<NodeConfiguration node={node} />
 				</Stack>
 			</ScrollArea>
 		</div>

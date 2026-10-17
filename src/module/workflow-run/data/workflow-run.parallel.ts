@@ -281,7 +281,7 @@ export const findBranchInputs = (
 					node_id: node.id,
 					channel: node.channel,
 					output_property: node.output_property?.trim() || node.id,
-					form: node.form,
+					form_id: node.form_id,
 				},
 			});
 		}

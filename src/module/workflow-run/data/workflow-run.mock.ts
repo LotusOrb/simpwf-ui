@@ -119,17 +119,7 @@ export const mockRunDefinition: WorkflowRunMockDefinition = {
 				channel: 'http',
 				output_property: 'shipment',
 				next_node: 'notify-customer',
-				form: {
-					schema: {
-						type: 'object',
-						required: ['carrier', 'tracking_number'],
-						properties: {
-							carrier: { type: 'string', enum: ['JNE', 'SiCepat', 'AnterAja'] },
-							tracking_number: { type: 'string' },
-							notes: { type: 'string' },
-						},
-					},
-				},
+				form_id: '0190a5b2-7c3d-7e4f-8a9b-0c1d2e3f4a5b',
 			},
 			{
 				id: 'notify-customer',

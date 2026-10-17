@@ -4,7 +4,9 @@ import { Badge, Text, ThemeIcon, Tooltip } from '@mantine/core';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { LuBug, LuGitMerge, LuRefreshCw, LuTimer } from 'react-icons/lu';
 
-import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
+import { useCoreSelector } from '@core/store';
+
+import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/data';
 import { nodeSubtitle, shownStartDelay } from '@module/workflow-definition/data';
 import { formatDuration, nodeRunStatusMeta } from '@module/workflow-run/data';
 
@@ -13,8 +15,8 @@ import type { WorkflowRunStepFlowNode } from './WorkflowRunGraph.types';
 
 export const WorkflowRunGraphNode: React.FC<NodeProps<WorkflowRunStepFlowNode>> = ({ data, selected }) => {
 	const { node, occurrence, debug, current, debugCursor, join } = data;
-	// Custom types registered with the engine have no editor meta; they get the library's generic look.
-	const typeMeta = nodeDefinitionTypeMeta(node.type);
+	// A type this UI has no look for is named and described from the catalog, when it has loaded.
+	const typeMeta = nodeTypeMetaOf(node.type, useCoreSelector(selectNodeTypeCatalog).byType[node.type]);
 	const status = occurrence?.status ?? 'pending';
 	const statusMeta = nodeRunStatusMeta[status];
 	const retried = (debug?.attempt_count ?? 1) > 1;

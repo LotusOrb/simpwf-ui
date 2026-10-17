@@ -19,7 +19,7 @@ import {
 } from '@xyflow/react';
 import { LuBoxes } from 'react-icons/lu';
 
-import { nodeDefinitionTypeMeta } from '@module/node-definition/data';
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { buildRunGraph, GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH } from '@module/workflow-run/data';
@@ -44,7 +44,7 @@ interface PickGroupData extends Record<string, unknown> {
 type PickFlowNode = Node<PickNodeData, 'pick'> | Node<PickGroupData, 'pickGroup'>;
 
 const PickNode: React.FC<NodeProps<Node<PickNodeData, 'pick'>>> = ({ data }) => {
-	const meta = nodeDefinitionTypeMeta(data.node.type);
+	const meta = nodeTypeMetaOf(data.node.type);
 	const body = (
 		<div
 			className={classes.node}

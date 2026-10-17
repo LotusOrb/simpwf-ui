@@ -209,7 +209,7 @@ const pendingInputFor = (nodeId: string): WorkflowRunDetail['pending_input'] => 
 		node_id: node.id,
 		channel: node.channel ?? 'http',
 		output_property: node.output_property ?? '',
-		form: node.form,
+		form_id: node.form_id,
 	};
 };
 
