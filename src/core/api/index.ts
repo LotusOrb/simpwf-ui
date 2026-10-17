@@ -1,4 +1,5 @@
 export { coreApi } from './core.api';
+export { buildAuthHead, getCoreAuth, type CoreStoreApi } from './core.authHead';
 export {
 	coreBaseQuery,
 	resetCoreHttp,
