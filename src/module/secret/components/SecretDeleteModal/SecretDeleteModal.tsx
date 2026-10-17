@@ -3,8 +3,8 @@ import React from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { LuCircleAlert } from 'react-icons/lu';
 
-import { secretReference } from '@module/secret/data';
 import type { Secret } from '@module/secret/types/Secret';
+import { secretReference } from '@module/secret/utils';
 
 interface SecretDeleteModalProps {
 	secret: Secret | null;

@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-import { SECRET_KEY_MAX_LENGTH, SECRET_KEY_PATTERN, SECRET_VALUE_MAX_LENGTH } from '../data';
+import { SECRET_KEY_MAX_LENGTH, SECRET_KEY_PATTERN, SECRET_VALUE_MAX_LENGTH } from '@module/secret/constant';
 
 export const secretSchema = z.object({
 	key: z

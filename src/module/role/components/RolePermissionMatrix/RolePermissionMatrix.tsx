@@ -3,8 +3,9 @@ import React, { Fragment } from 'react';
 import { Card, Group, Skeleton, Table, Text, Tooltip, UnstyledButton } from '@mantine/core';
 import { LuCheck, LuMinus, LuTriangleAlert } from 'react-icons/lu';
 
-import { PERMISSION_GROUPS, PERMISSION_META, hasWildcard, unrecognizedPermissions } from '@module/role/data';
+import { PERMISSION_GROUPS, PERMISSION_META } from '@module/role/constant';
 import type { Role } from '@module/role/types/Role';
+import { hasWildcard, unrecognizedPermissions } from '@module/role/utils';
 
 import classes from './RolePermissionMatrix.module.scss';
 
