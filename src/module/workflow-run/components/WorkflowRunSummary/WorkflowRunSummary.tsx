@@ -3,7 +3,7 @@ import React from 'react';
 import { Group, Progress, Text, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 
-import { nodeTypeMeta } from '@module/workflow-definition/data';
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatDuration, type WorkflowRunProgress } from '@module/workflow-run/data';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
@@ -26,7 +26,7 @@ export const WorkflowRunSummary: React.FC<WorkflowRunSummaryProps> = ({
 	elapsedMs,
 	compact = false,
 }) => {
-	const currentTypeMeta = currentNode ? nodeTypeMeta[currentNode.type] : null;
+	const currentTypeMeta = currentNode ? nodeTypeMetaOf(currentNode.type) : null;
 
 	const stats: { label: string; value: React.ReactNode; title?: string }[] = [
 		{ label: 'Elapsed', value: formatDuration(elapsedMs) },

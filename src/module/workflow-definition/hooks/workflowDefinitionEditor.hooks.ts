@@ -5,6 +5,7 @@ import { useCoreDispatch, useCoreStore } from '@core/store';
 import { useAppLayoutPanel } from '@module/app/hooks';
 import { selectPanelInsets } from '@module/app/store';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { selectNodeTypeCatalog } from '@module/node-type/data';
 import { createEditorNode, createParallelPair, scopeKey } from '@module/workflow-definition/data';
 import {
 	jsonDraftChanged,
@@ -40,6 +41,7 @@ export const useWorkflowDefinitionEditorAddNode = () => {
 		const state = store.getState();
 		const nodes = selectEditorNodes(state);
 		const scope = selectEditorScope(state);
+		const catalog = selectNodeTypeCatalog(state);
 
 		let point = screenPoint;
 		if (!point) {
@@ -73,12 +75,12 @@ export const useWorkflowDefinitionEditorAddNode = () => {
 
 		if ('type' in item && item.type === 'parallel_start') {
 			// The join is added first so the start ends up selected.
-			const [start, end] = createParallelPair(nodes, scope, position);
+			const [start, end] = createParallelPair(nodes, scope, position, catalog);
 			dispatch(nodeAdded(end));
 			dispatch(nodeAdded(start));
 			return;
 		}
-		dispatch(nodeAdded(createEditorNode(nodes, scope, position, item)));
+		dispatch(nodeAdded(createEditorNode(nodes, scope, position, item, catalog)));
 	};
 };
 

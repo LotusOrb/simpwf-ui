@@ -28,8 +28,9 @@ import {
 	useGetNodeDefinitionQuery,
 	useListNodeDefinitionVersionPagesInfiniteQuery,
 	useNodeDefinitionDelete,
-	useNodeDefinitionLibrary,
 } from '@module/node-definition/hooks';
+import { NodeTypeCatalogGate } from '@module/node-type/components/NodeTypeCatalogGate';
+import { selectNodeTypeCatalog } from '@module/node-type/data';
 import { useNotify } from '@module/notification/hooks';
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
 import { WorkflowDefinitionInspector } from '@module/workflow-definition/components/WorkflowDefinitionInspector';
@@ -60,9 +61,16 @@ const editorKey = (id: string | undefined, newType: string | null) =>
 
 /**
  * A node definition on the workflow editor's canvas: its node alone, or a group definition's inner graph. `new`
- * asks for the type first (`new?type=<type>`), since the type is fixed for the lineage and shapes the editor.
+ * asks for the type first (`new?type=<type>`), since the type is fixed for the lineage and shapes the editor. Both
+ * need the engine's node type catalog, so nothing opens until it's in.
  */
-export const NodeDefinitionDetailPage: React.FC = () => {
+export const NodeDefinitionDetailPage: React.FC = () => (
+	<NodeTypeCatalogGate>
+		<NodeDefinitionEditor />
+	</NodeTypeCatalogGate>
+);
+
+const NodeDefinitionEditor: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const newType = id ? null : searchParams.get('type');
@@ -86,8 +94,7 @@ export const NodeDefinitionDetailPage: React.FC = () => {
 
 	const definition = useGetNodeDefinitionQuery(id ?? skipToken, { refetchOnFocus: false });
 	const current = id && definition.data?.id === id ? definition.data : null;
-	// The engine serves a type's schema only on definition reads, so a new one borrows it from the library.
-	const library = useNodeDefinitionLibrary({ skip: !newType });
+	const catalog = useCoreSelector(selectNodeTypeCatalog);
 	// Same cache entry as the history drawer; its head is the lineage's latest.
 	const versions = useListNodeDefinitionVersionPagesInfiniteQuery(
 		{ lineageId: current?.lineage_id ?? '', perPage: VERSION_PAGE_SIZE },
@@ -125,16 +132,14 @@ export const NodeDefinitionDetailPage: React.FC = () => {
 
 	useEffect(() => () => void dispatch(editorReset()), [dispatch]);
 
-	const libraryLoading = library.isLoading;
-	const newSchema = newType ? library.schemaFor(newType) : null;
 	useEffect(() => {
 		if (!routeKey || ready) return;
 		if (current) {
 			dispatch(editorLoaded({ key: routeKey, document: toNodeEditorDocument(current) }));
-		} else if (newType && !libraryLoading) {
-			dispatch(editorLoaded({ key: routeKey, document: newNodeEditorDocument(newType, newSchema) }));
+		} else if (newType) {
+			dispatch(editorLoaded({ key: routeKey, document: newNodeEditorDocument(newType, catalog) }));
 		}
-	}, [routeKey, ready, current, newType, libraryLoading, newSchema, dispatch]);
+	}, [routeKey, ready, current, newType, catalog, dispatch]);
 
 	// Opened once per version, so the user's own toggle sticks; closed for a type with nothing to add.
 	const paletteShownFor = useRef<string | null>(null);

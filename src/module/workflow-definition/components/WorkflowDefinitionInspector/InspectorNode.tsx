@@ -11,7 +11,6 @@ import {
 	ScrollArea,
 	SegmentedControl,
 	Stack,
-	Switch,
 	Text,
 	TextInput,
 	ThemeIcon,
@@ -24,19 +23,14 @@ import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { CodeEditor } from '@common/component/CodeEditor';
 
+import { nodeTypeMetaOf, nodeTypeSchema, openNodeSchema, selectNodeTypeCatalog } from '@module/node-type/data';
 import {
 	defaultOutputProperty,
 	formatRawNode,
-	isBuiltinNodeType,
-	isOutputKey,
-	nodeTypeMetaOf,
 	parseRawNode,
-	retryOnRecoveryDefault,
 	supportsFailure,
 	supportsOutputProperty,
-	supportsRetryOnRecovery,
 	supportsStartDelay,
-	supportsTimeout,
 } from '@module/workflow-definition/data';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
 import {
@@ -47,13 +41,18 @@ import {
 	selectEditorNodeDefinition,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorNode } from '@module/workflow-definition/types/WorkflowDefinitionEditorNode';
-import type { WorkflowDefinitionHookScript } from '@module/workflow-definition/types/WorkflowDefinitionHookScript';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
 
 import { ContextTypesProvider, InspectorContextTypesStatus } from './InspectorContextTypes';
-import { useContextTypes } from './InspectorContextTypes.context';
 import { DurationInput, JsonField, SectionLabel } from './InspectorControls';
-import { ConditionsFields, FailureFields, InspectorNodeFields, ParallelStartFields } from './InspectorNodeFields';
+import { InspectorSchemaFields } from './InspectorSchemaFields';
+import { hasScriptField, nodeFormKeys } from './InspectorSchemaFields.utils';
+import {
+	ConditionsFields,
+	FailureFields,
+	InspectorStructuralFields,
+	ParallelStartFields,
+} from './InspectorStructuralFields';
 import classes from './WorkflowDefinitionInspector.module.scss';
 
 export type NodeTab = 'setup' | 'hooks' | 'advanced' | 'json';
@@ -70,48 +69,6 @@ interface InspectorNodeProps {
 	tab: NodeTab;
 	onTabChange: (tab: NodeTab) => void;
 }
-
-const HookField: React.FC<{
-	label: string;
-	description: string;
-	value: WorkflowDefinitionHookScript | null | undefined;
-	onChange: (value: WorkflowDefinitionHookScript | undefined) => void;
-}> = ({ label, description, value, onChange }) => {
-	const contextTypes = useContextTypes();
-	return (
-		<Stack gap="xs">
-			<Group justify="space-between" wrap="nowrap" align="flex-start">
-				<div>
-					<SectionLabel>{label}</SectionLabel>
-					<Text fz="xs" c="dimmed">
-						{description}
-					</Text>
-				</div>
-				<Switch
-					aria-label={label}
-					checked={!!value}
-					onChange={(event) => onChange(event.currentTarget.checked ? { script: '' } : undefined)}
-				/>
-			</Group>
-			{value && (
-				<>
-					<CodeEditor
-						height={130}
-						value={value.script}
-						onChange={(script) => onChange({ ...value, script })}
-						extraLib={contextTypes}
-					/>
-					<DurationInput
-						label="Timeout"
-						placeholder="Engine default"
-						value={value.timeout}
-						onChange={(timeout) => onChange({ ...value, timeout })}
-					/>
-				</>
-			)}
-		</Stack>
-	);
-};
 
 const START_DELAY_DESCRIPTION =
 	"Wait this long on arrival before the node runs. Repeats on every visit. Doesn't hold a worker.";
@@ -237,17 +194,20 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 	const canEdit = useCan(Permission.DefinitionsWrite);
 	const nodeDefinition = useCoreSelector(selectEditorNodeDefinition);
 
+	const catalog = useCoreSelector(selectNodeTypeCatalog);
+
 	const { config } = node;
-	const meta = nodeTypeMetaOf(config.type);
-	// The editor has no form for a custom type: its node is edited as JSON, checked by the engine on save.
-	const custom = !isBuiltinNodeType(config.type);
-	const tab = custom ? 'json' : selectedTab;
+	const meta = nodeTypeMetaOf(config.type, catalog.byType[config.type]);
+	const schema = nodeTypeSchema(catalog, config.type);
+	// Without a schema (a custom type registered without one) there's nothing to generate: the node is edited as JSON.
+	const jsonOnly = !schema;
+	const tab = jsonOnly ? 'json' : selectedTab;
 	const isReference = !!config.node_definition_id;
+	const setupKeys = nodeFormKeys(schema, 'setup', isReference);
+	const outputPropertyError = issues.find((issue) => issue.path === 'output_property')?.message;
 	// Tabs whose script editors see `context`.
 	const scripted =
-		tab === 'hooks' ||
-		(tab === 'setup' &&
-			(config.type === 'script' || config.type === 'conditions' || config.type === 'parallel_end'));
+		tab === 'hooks' || (tab === 'setup' && (config.type === 'conditions' || hasScriptField(schema, setupKeys)));
 
 	return (
 		<div className={classes.root}>
@@ -277,7 +237,7 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 					value={tab}
 					onChange={(value) => onTabChange(value as NodeTab)}
 					classNames={{ root: classes.segmented, indicator: classes.indicator, label: classes.segmentLabel }}
-					data={custom ? JSON_TAB : ALL_TABS}
+					data={jsonOnly ? JSON_TAB : ALL_TABS}
 				/>
 			</div>
 
@@ -318,26 +278,20 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 										value={config.name}
 										onChange={(event) => patch({ name: event.currentTarget.value })}
 									/>
-									{supportsOutputProperty(config.type) && (
+									{supportsOutputProperty(config.type, catalog) && (
 										<TextInput
 											label={<SectionLabel>Output property</SectionLabel>}
 											description={outputPropertyDescription(config.type)}
 											inputWrapperOrder={['label', 'input', 'description', 'error']}
 											placeholder={
-												defaultOutputProperty(config) ??
+												defaultOutputProperty(config, catalog) ??
 												(config.type === 'input' ? 'payload' : 'result')
 											}
 											value={config.output_property ?? ''}
 											onChange={(event) =>
 												patch({ output_property: event.currentTarget.value || undefined })
 											}
-											error={
-												config.type === 'input' &&
-												config.output_property &&
-												!isOutputKey(config.output_property)
-													? 'Use a bare key like payload'
-													: undefined
-											}
+											error={outputPropertyError}
 										/>
 									)}
 
@@ -363,69 +317,43 @@ export const InspectorNode: React.FC<InspectorNodeProps> = ({
 											)}
 										</>
 									) : (
-										<InspectorNodeFields node={node} />
+										<>
+											<InspectorStructuralFields node={node} />
+											<InspectorSchemaFields key={node.id} node={node} keys={setupKeys} />
+										</>
 									)}
 
-									{supportsFailure(config.type) && <FailureFields node={node} />}
+									{supportsFailure(config.type, catalog) && <FailureFields node={node} />}
 								</>
 							)}
 
 							{tab === 'hooks' && (
-								<>
-									<HookField
-										label="Pre-script"
-										description="Transforms context before the node runs. Return value is ignored."
-										value={config.pre_script}
-										onChange={(pre_script) => patch({ pre_script })}
-									/>
-									<HookField
-										label="Post-script"
-										description="Runs after the output is merged. The native output is available as `output`."
-										value={config.post_script}
-										onChange={(post_script) => patch({ post_script })}
-									/>
-								</>
+								<InspectorSchemaFields
+									key={node.id}
+									node={node}
+									keys={nodeFormKeys(schema, 'hooks', isReference)}
+								/>
 							)}
 
 							{tab === 'json' && (
 								<RawJsonField
 									node={node}
-									jsonSchema={(isDefinitionRoot && nodeDefinition?.schema) || undefined}
+									jsonSchema={
+										schema
+											? openNodeSchema(schema)
+											: (isDefinitionRoot && nodeDefinition?.schema) || undefined
+									}
 								/>
 							)}
 
 							{tab === 'advanced' && (
 								<>
-									{supportsTimeout(config.type) && !isReference && (
-										<DurationInput
-											label={<SectionLabel>Timeout</SectionLabel>}
-											description="Defaults to the engine timeout, capped by the engine maximum"
-											inputWrapperOrder={['label', 'input', 'description', 'error']}
-											placeholder="30s"
-											value={config.timeout}
-											onChange={(timeout) => patch({ timeout })}
-										/>
-									)}
+									<InspectorSchemaFields
+										key={node.id}
+										node={node}
+										keys={nodeFormKeys(schema, 'advanced', isReference)}
+									/>
 									{supportsStartDelay(config.type) && <StartDelayField node={node} />}
-									{supportsRetryOnRecovery(config.type) && (
-										<Group justify="space-between" wrap="nowrap" align="flex-start">
-											<div>
-												<SectionLabel>Retry on recovery</SectionLabel>
-												<Text fz="xs" c="dimmed">
-													Requeue instead of failing when a worker lease expires mid-run
-												</Text>
-											</div>
-											<Switch
-												aria-label="Retry on recovery"
-												checked={
-													config.retry_on_recovery ?? retryOnRecoveryDefault(config.type)
-												}
-												onChange={(event) =>
-													patch({ retry_on_recovery: event.currentTarget.checked })
-												}
-											/>
-										</Group>
-									)}
 									<JsonField
 										node={node}
 										field="metadata"

@@ -39,12 +39,12 @@ interface DurationInputProps extends Omit<TextInputProps, 'value' | 'onChange'> 
 	onChange: (value: string | undefined) => void;
 }
 
-export const DurationInput: React.FC<DurationInputProps> = ({ value, onChange, ...props }) => (
+export const DurationInput: React.FC<DurationInputProps> = ({ value, onChange, error, ...props }) => (
 	<TextInput
 		{...props}
 		value={value ?? ''}
 		onChange={(event) => onChange(event.currentTarget.value.trim() || undefined)}
-		error={value && !isDuration(value) ? 'Use a duration like 30s or 5m' : undefined}
+		error={value && !isDuration(value) ? 'Use a duration like 30s or 5m' : error}
 	/>
 );
 
@@ -132,11 +132,14 @@ export const JsonField: React.FC<JsonFieldProps> = ({
 };
 
 interface HeadersFieldProps {
+	label?: React.ReactNode;
+	description?: React.ReactNode;
 	value: Record<string, string> | undefined;
 	onChange: (value: Record<string, string> | undefined) => void;
 }
 
-export const HeadersField: React.FC<HeadersFieldProps> = ({ value, onChange }) => {
+/** Name/value rows whose values take `{{ path }}` templates, like HTTP headers. */
+export const HeadersField: React.FC<HeadersFieldProps> = ({ label = 'Headers', description, value, onChange }) => {
 	const [rows, setRows] = useState(() =>
 		Object.entries(value ?? {}).map(([key, headerValue]) => ({ key, value: headerValue })),
 	);
@@ -149,14 +152,21 @@ export const HeadersField: React.FC<HeadersFieldProps> = ({ value, onChange }) =
 
 	return (
 		<Stack gap={6}>
-			<SectionLabel>Headers</SectionLabel>
+			<div>
+				<SectionLabel>{label}</SectionLabel>
+				{description && (
+					<Text fz="xs" c="dimmed">
+						{description}
+					</Text>
+				)}
+			</div>
 			{rows.map((row, index) => (
 				<Group key={index} gap={6} wrap="nowrap">
 					<TextInput
 						size="xs"
 						flex={1}
 						placeholder="Name"
-						aria-label="Header name"
+						aria-label="Name"
 						value={row.key}
 						onChange={(event) =>
 							commit(
@@ -171,7 +181,7 @@ export const HeadersField: React.FC<HeadersFieldProps> = ({ value, onChange }) =
 						size="xs"
 						flex={1.4}
 						placeholder="Value or {{ path }}"
-						aria-label="Header value"
+						aria-label="Value"
 						value={row.value}
 						onChange={(headerValue) =>
 							commit(rows.map((item, i) => (i === index ? { ...item, value: headerValue } : item)))
@@ -179,7 +189,7 @@ export const HeadersField: React.FC<HeadersFieldProps> = ({ value, onChange }) =
 					/>
 					<ActionIcon
 						size="sm"
-						aria-label="Remove header"
+						aria-label="Remove row"
 						onClick={() => commit(rows.filter((_, i) => i !== index))}
 					>
 						<LuX size={14} />
@@ -193,7 +203,7 @@ export const HeadersField: React.FC<HeadersFieldProps> = ({ value, onChange }) =
 				w="fit-content"
 				onClick={() => setRows([...rows, { key: '', value: '' }])}
 			>
-				Add header
+				Add row
 			</Button>
 		</Stack>
 	);

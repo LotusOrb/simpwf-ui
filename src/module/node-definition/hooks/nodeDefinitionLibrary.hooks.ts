@@ -1,19 +1,20 @@
-import { NODE_LIBRARY_QUERY, isBuiltinNodeType } from '@module/node-definition/data';
+import { NODE_LIBRARY_QUERY } from '@module/node-definition/data';
+import { useNodeTypeCatalog } from '@module/node-type/hooks';
 
 import { useListNodeDefinitionsQuery } from './node-definition.hooks';
 
 /**
- * The latest version of every node definition, plus what can be read off it: the custom node types in use and
- * the engine's schema per type (schemas are only served on definition reads).
+ * The latest version of every node definition, plus the custom node types they use. A type the catalog doesn't list
+ * as builtin counts as custom, so definitions of a type no longer registered still show up.
  */
 export const useNodeDefinitionLibrary = (options?: { skip?: boolean }) => {
 	const library = useListNodeDefinitionsQuery(NODE_LIBRARY_QUERY, options);
+	const { catalog } = useNodeTypeCatalog();
 	const items = library.data?.items ?? [];
 
 	const customTypes = [
-		...new Set(items.map((item) => item.type as string).filter((type) => !isBuiltinNodeType(type))),
+		...new Set(items.map((item) => item.type as string).filter((type) => !catalog.byType[type]?.builtin)),
 	].sort();
-	const schemaFor = (type: string) => items.find((item) => item.type === type && item.schema)?.schema ?? null;
 
-	return { ...library, customTypes, schemaFor };
+	return { ...library, customTypes };
 };

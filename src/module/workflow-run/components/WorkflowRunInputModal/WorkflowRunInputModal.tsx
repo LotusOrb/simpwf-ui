@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
 
-import { Alert, Badge, Button, Group, Modal, Select, Stack, Text, Textarea } from '@mantine/core';
-import { LuInfo } from 'react-icons/lu';
+import {
+	ActionIcon,
+	Alert,
+	Badge,
+	Button,
+	CopyButton,
+	Group,
+	Modal,
+	Select,
+	Stack,
+	Text,
+	Textarea,
+	TextInput,
+} from '@mantine/core';
+import { LuCheck, LuCopy, LuInfo } from 'react-icons/lu';
 
 import type { WorkflowRunBranchInput } from '@module/workflow-run/data';
 import type { WorkflowRunPendingInput } from '@module/workflow-run/types/WorkflowRunPendingInput';
@@ -110,6 +123,29 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({
 							channel {target.channel}
 						</Badge>
 					</Alert>
+
+					{target.form_id && (
+						<TextInput
+							label="Form"
+							description="The forms-library form this input expects. Send a payload matching it below."
+							inputWrapperOrder={['label', 'input', 'description']}
+							value={target.form_id}
+							readOnly
+							styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 12 } }}
+							rightSection={
+								<CopyButton value={target.form_id} timeout={1500}>
+									{({ copied, copy }) => (
+										<ActionIcon
+											aria-label={copied ? 'Form ID copied' : 'Copy form ID'}
+											onClick={copy}
+										>
+											{copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
+										</ActionIcon>
+									)}
+								</CopyButton>
+							}
+						/>
+					)}
 
 					<Textarea
 						label="Payload"

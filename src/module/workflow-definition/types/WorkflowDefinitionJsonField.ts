@@ -1,1 +1,2 @@
-export type WorkflowDefinitionJsonField = 'http_config.body' | 'http.body' | 'form.schema' | 'form.ui' | 'metadata';
+/** Dotted path of a node field edited as JSON text, e.g. `http_config.body` or `metadata`. */
+export type WorkflowDefinitionJsonField = string;

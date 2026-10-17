@@ -1,4 +1,6 @@
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { nodeTypeSchema } from '@module/node-type/data';
+import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';
 import type { WorkflowDefinitionEditorDocument } from '@module/workflow-definition/types/WorkflowDefinitionEditorDocument';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
@@ -10,7 +12,6 @@ import {
 	toEditorDocument,
 	toWorkflowDefinitionContent,
 } from './workflow-definition.editor';
-import { isBuiltinNodeType } from './workflow-definition.meta';
 
 /**
  * A node definition as an editor document: a workflow whose only root node is the definition's node, so the canvas,
@@ -24,7 +25,6 @@ export const toNodeEditorDocument = (definition: NodeDefinition): WorkflowDefini
 	const root: WorkflowDefinitionNode = {
 		...content,
 		id: rootId,
-		// Custom types are plain strings the editor treats as opaque.
 		type: definition.type as WorkflowDefinitionNodeType,
 		name: definition.name,
 	};
@@ -42,16 +42,12 @@ export const toNodeEditorDocument = (definition: NodeDefinition): WorkflowDefini
 	};
 };
 
-/** A new node definition of `type`, unnamed, with the type's starting config. */
-export const newNodeEditorDocument = (
-	type: string,
-	schema: Record<string, unknown> | null,
-): WorkflowDefinitionEditorDocument => {
+/** A new node definition of `type`, unnamed, with the starting config its catalog schema gives it. */
+export const newNodeEditorDocument = (type: string, catalog: NodeTypeCatalog): WorkflowDefinitionEditorDocument => {
 	const document = toEditorDocument(null, {});
-	const root = createEditorNode({}, null, { x: 0, y: 0 }, { type: type as WorkflowDefinitionNodeType });
+	const root = createEditorNode({}, null, { x: 0, y: 0 }, { type }, catalog);
 	root.config.name = '';
-	// A custom type's only executable field is its `config` object.
-	if (!isBuiltinNodeType(type)) Object.assign(root.config, { config: {} });
+	const schema = nodeTypeSchema(catalog, type);
 
 	document.nodes[root.id] = root;
 	// A group definition's canvas opens inside it, so its Start needs a place there.

@@ -8,10 +8,11 @@ import { Link } from 'react-router';
 
 import { Can, Permission } from '@core/auth/authorization';
 
+import { nodeTypeMetaOf } from '@module/node-type/data';
 import { scheduleCreateLink } from '@module/schedule/data';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 
-import { countNodes, DEFINITION_ROUTE, getNodeTypes, getStartNode, nodeTypeMeta } from '../../data';
+import { countNodes, DEFINITION_ROUTE, getNodeTypes, getStartNode } from '../../data';
 import { WorkflowDefinitionPreview } from '../WorkflowDefinitionPreview';
 import classes from './WorkflowDefinitionCard.module.scss';
 
@@ -35,7 +36,7 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 	const { content } = definition;
 	const nodeCount = countNodes(content);
 	const startNode = getStartNode(content);
-	const startMeta = startNode && nodeTypeMeta[startNode.type];
+	const startMeta = startNode && nodeTypeMetaOf(startNode.type);
 
 	return (
 		<Card className={classes.root} padding="xs">
@@ -128,7 +129,7 @@ export const WorkflowDefinitionCard: React.FC<WorkflowDefinitionCardProps> = ({
 
 				<Group gap={4} mt="xs" wrap="nowrap">
 					{getNodeTypes(content).map((type) => {
-						const meta = nodeTypeMeta[type];
+						const meta = nodeTypeMetaOf(type);
 						return (
 							<Tooltip key={type} label={meta.label}>
 								<ThemeIcon

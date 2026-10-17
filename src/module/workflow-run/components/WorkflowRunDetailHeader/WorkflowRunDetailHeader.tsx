@@ -320,6 +320,14 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 								{' · '}
 								{detail.pending_input.channel} →{' '}
 								{detail.pending_input.output_property || detail.pending_input.node_id}
+								{detail.pending_input.form_id && (
+									<>
+										{' · form '}
+										<Text span fz="xs" ff="monospace" title={detail.pending_input.form_id}>
+											{detail.pending_input.form_id.slice(0, 8)}
+										</Text>
+									</>
+								)}
 							</Text>
 						</Text>
 					) : (

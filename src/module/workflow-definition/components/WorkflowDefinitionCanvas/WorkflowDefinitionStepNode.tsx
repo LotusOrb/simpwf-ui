@@ -4,6 +4,9 @@ import { CopyButton, Text, ThemeIcon, Tooltip, UnstyledButton } from '@mantine/c
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { LuCheck, LuCircleAlert, LuCopy, LuTimer } from 'react-icons/lu';
 
+import { useCoreSelector } from '@core/store';
+
+import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/data';
 import {
 	branchHandle,
 	defaultOutputProperty,
@@ -13,7 +16,6 @@ import {
 	hasBranches,
 	isInlineGroup,
 	nodeSubtitle,
-	nodeTypeMetaOf,
 	shownStartDelay,
 	supportsFailure,
 	supportsNext,
@@ -63,12 +65,13 @@ const OutputRow: React.FC<OutputRowProps> = ({ label, property, isDefault, kind 
 export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionStepFlowNode>> = ({ data, selected }) => {
 	const { node, issueCount, branchTargets, pairedStart, pairedSelected, standalone } = data;
 	const { config } = node;
-	const meta = nodeTypeMetaOf(config.type);
+	const catalog = useCoreSelector(selectNodeTypeCatalog);
+	const meta = nodeTypeMetaOf(config.type, catalog.byType[config.type]);
 	const isParallel = config.type === 'parallel_start';
-	const hasFailure = supportsFailure(config.type);
+	const hasFailure = supportsFailure(config.type, catalog);
 	const startDelay = shownStartDelay(config);
 
-	const outputProperty = config.output_property || defaultOutputProperty(config);
+	const outputProperty = config.output_property || defaultOutputProperty(config, catalog);
 	const failureOutputProperty = hasFailure ? node.failureOutputProperty.trim() : '';
 	const hasOutputs = Boolean(outputProperty || failureOutputProperty);
 
@@ -145,7 +148,7 @@ export const WorkflowDefinitionStepNode: React.FC<NodeProps<WorkflowDefinitionSt
 						))}
 					</div>
 				)}
-				{supportsNext(config.type) && !standalone && (
+				{supportsNext(config.type, catalog) && !standalone && (
 					<Handle type="source" id={HANDLE_NEXT} position={Position.Right} className={classes.handle} />
 				)}
 
