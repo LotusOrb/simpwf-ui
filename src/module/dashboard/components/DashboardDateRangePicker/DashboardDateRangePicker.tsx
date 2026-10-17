@@ -8,7 +8,7 @@ import {
 	DASHBOARD_DATE_FORMAT,
 	DASHBOARD_RANGE_LABEL_FORMAT,
 	DASHBOARD_RANGE_PRESETS,
-} from '@module/dashboard/constant/dashboard.constant';
+} from '@module/dashboard/constant';
 import { getRecentDaysRange } from '@module/dashboard/hooks';
 import type { DashboardDateRange } from '@module/dashboard/types/DashboardDateRange';
 
