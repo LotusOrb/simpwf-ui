@@ -3,6 +3,8 @@ import React from 'react';
 import { ActionIcon, Alert, Anchor, Badge, Button, Group, Switch, Text, Title, Tooltip } from '@mantine/core';
 import {
 	LuArrowLeft,
+	LuBell,
+	LuBellRing,
 	LuBug,
 	LuGitBranchPlus,
 	LuHourglass,
@@ -20,6 +22,8 @@ import { Link } from 'react-router';
 import { Permission, useCan } from '@core/auth/authorization';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
+import { isTerminalRunStatus } from '@module/notification/data';
+import { useRunWatch } from '@module/notification/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
 import { formatWaitingReason, getAllowedActions } from '@module/workflow-run/data';
@@ -88,6 +92,7 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 	const actions = getAllowedActions(detail).filter((action) => (action === 'migrate' ? !!onMigrate : canControl));
 	const title = definition?.name ?? 'Workflow run';
 	const busy = pending.pause || pending.resume || pending.stop || pending.rollback;
+	const runWatch = useRunWatch(detail.id);
 
 	return (
 		<div className={classes.root}>
@@ -153,6 +158,29 @@ export const WorkflowRunDetailHeader: React.FC<WorkflowRunDetailHeaderProps> = (
 						checked={live}
 						onChange={(event) => onLiveChange(event.currentTarget.checked)}
 					/>
+					{!isTerminalRunStatus(detail.status) && (
+						<Tooltip
+							label={runWatch.watching ? 'Stop notifying about this run' : 'Notify me about this run'}
+						>
+							<ActionIcon
+								variant={runWatch.watching ? 'light' : 'default'}
+								size={30}
+								aria-label={runWatch.watching ? 'Unwatch run' : 'Watch run'}
+								aria-pressed={runWatch.watching}
+								onClick={() =>
+									runWatch.watching
+										? runWatch.unwatch()
+										: runWatch.watch({
+												label: definition
+													? `${definition.name} v${definition.version}`
+													: undefined,
+											})
+								}
+							>
+								{runWatch.watching ? <LuBellRing size={16} /> : <LuBell size={16} />}
+							</ActionIcon>
+						</Tooltip>
+					)}
 
 					{(detail.pending_input || branchInputCount > 0) && onProvideInput && (
 						<Button size="sm" leftSection={<LuHourglass size={15} />} onClick={onProvideInput}>
