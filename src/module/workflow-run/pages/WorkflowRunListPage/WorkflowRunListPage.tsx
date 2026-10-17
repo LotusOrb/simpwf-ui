@@ -27,7 +27,7 @@ import { PaginationBar } from '@common/component/PaginationBar';
 import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
 import { useGetStatisticsQuery } from '@module/dashboard/hooks';
-import { useNotify } from '@module/notification/hooks';
+import { useNotify, useRunWatchActions } from '@module/notification/hooks';
 import { useListViewPreference } from '@module/settings/hooks';
 import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
 import {
@@ -134,6 +134,7 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [stopRun] = useStopWorkflowRunMutation();
 	const [startRun, startState] = useStartWorkflowRunMutation();
 	const notify = useNotify();
+	const runWatch = useRunWatchActions();
 	const navigate = useNavigate();
 	const actionRequests: Record<
 		Exclude<WorkflowRunAction, 'migrate'>,
@@ -204,6 +205,10 @@ export const WorkflowRunListPage: React.FC = () => {
 		try {
 			const run = await startRun({ workflowDefinitionId: startDefinitionId, debug: startDebug }).unwrap();
 			const definition = definitionInfo.get(startDefinitionId);
+			runWatch.watch(run.id, {
+				label: definition ? `${definition.name} v${definition.version}` : undefined,
+				fromStart: true,
+			});
 			notify.success({
 				title: 'Run started',
 				message: definition ? `${definition.name} v${definition.version} started` : 'Workflow run started',

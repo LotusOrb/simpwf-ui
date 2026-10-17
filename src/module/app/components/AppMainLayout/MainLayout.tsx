@@ -7,6 +7,7 @@ import { Outlet } from 'react-router';
 import { useCoreDispatch } from '@core/store';
 
 import { setPanelInset, setSlotMounted, type AppLayoutPanelSide } from '@module/app/store';
+import { RunWatchManager } from '@module/notification/components/RunWatchManager';
 
 import { AppNavRail } from '../AppNavRail';
 import { AppTopBar } from '../AppTopBar';
@@ -65,6 +66,7 @@ export const MainLayout: React.FC = () => {
 			padding={0}
 			classNames={{ root: classes.root, header: classes.header, navbar: classes.navbar, main: classes.main }}
 		>
+			<RunWatchManager />
 			<AppShell.Header>
 				<AppTopBar navOpened={opened} onToggleNav={toggle} />
 			</AppShell.Header>

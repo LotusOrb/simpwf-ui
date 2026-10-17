@@ -4,6 +4,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 
 import { Permission, useCan } from '@core/auth/authorization';
 
+import { useRunStream } from '@module/notification/hooks';
 import { useGetWorkflowDefinitionQuery } from '@module/workflow-definition/hooks';
 import { workflowRunApi } from '@module/workflow-run/api';
 import { buildRunTimeline, getRunProgress } from '@module/workflow-run/data';
@@ -25,7 +26,8 @@ const EMPTY_CONTEXT: Record<string, unknown> = {};
 /**
  * Loads everything the run detail screen renders: the instance status, the definition it
  * runs, per-node debug records and the live context. While `live` is on and the run has
- * not settled, the status is polled and everything else follows its changes.
+ * not settled, the status follows the run's event stream, falling back to polling when the
+ * stream is unavailable, and everything else follows its changes.
  */
 export const useWorkflowRunDetail = (runId: string) => {
 	const [live, setLive] = useState(true);
@@ -33,7 +35,9 @@ export const useWorkflowRunDetail = (runId: string) => {
 	// Reads the cached status without subscribing, so polling can stop once the run settles.
 	const cached = workflowRunApi.endpoints.getWorkflowRun.useQueryState(runId).data;
 	const active = !!cached && ['running', 'waiting', 'paused'].includes(cached.status);
-	const pollingInterval = live && active ? POLL_MS : 0;
+	const streamState = useRunStream(runId, live && active);
+	const streaming = streamState === 'open' || streamState === 'connecting';
+	const pollingInterval = live && active && !streaming ? POLL_MS : 0;
 
 	const status = useGetWorkflowRunQuery(runId, { pollingInterval });
 	const detail = status.data;
@@ -65,6 +69,16 @@ export const useWorkflowRunDetail = (runId: string) => {
 		pollingInterval,
 	});
 	const debugCursor = detail?.debug && !debugContext.error ? (debugContext.data ?? null) : null;
+
+	// Streamed status events replace the status poll, so the context and debug cursor refetch on each one.
+	const refetchContext = context.isUninitialized ? null : context.refetch;
+	const refetchDebugContext = debugContext.isUninitialized ? null : debugContext.refetch;
+	useEffect(() => {
+		if (!streaming) return;
+		refetchContext?.();
+		refetchDebugContext?.();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [detail]);
 
 	// Keeps in-flight timeline bars and the elapsed counter moving between polls.
 	const [clock, setClock] = useState(() => Date.now());

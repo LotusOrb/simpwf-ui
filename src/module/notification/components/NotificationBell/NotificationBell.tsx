@@ -5,7 +5,7 @@ import { LuBell, LuBellOff } from 'react-icons/lu';
 import { useNavigate } from 'react-router';
 
 import { NotificationItem } from '@module/notification/components/NotificationItem';
-import { useNotificationList, useUnreadNotificationCount } from '@module/notification/hooks';
+import { useNotificationList, useUnreadNotificationCount, useWatchedRunCount } from '@module/notification/hooks';
 import type { AppNotification } from '@module/notification/types/AppNotification';
 
 import classes from './NotificationBell.module.scss';
@@ -15,6 +15,7 @@ export const NotificationBell: React.FC = () => {
 	const navigate = useNavigate();
 	const { items, read, readAll, dismiss, clear } = useNotificationList();
 	const unread = useUnreadNotificationCount();
+	const watchedRuns = useWatchedRunCount();
 
 	const handleClick = (item: AppNotification) => {
 		read(item.id);
@@ -45,6 +46,11 @@ export const NotificationBell: React.FC = () => {
 				<Group className={classes.header} justify="space-between">
 					<Text fz="sm" fw={600}>
 						Notifications
+						{watchedRuns > 0 && (
+							<Text span fz="xs" fw={400} c="dimmed">
+								{' · '}watching {watchedRuns} {watchedRuns === 1 ? 'run' : 'runs'}
+							</Text>
+						)}
 					</Text>
 					<Button variant="subtle" size="compact-xs" disabled={unread === 0} onClick={readAll}>
 						Mark all read

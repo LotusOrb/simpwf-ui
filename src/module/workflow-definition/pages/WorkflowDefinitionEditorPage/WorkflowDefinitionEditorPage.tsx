@@ -15,7 +15,7 @@ import { MainLayoutPanel } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useLazyGetNodeDefinitionQuery } from '@module/node-definition/hooks';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
-import { useNotify } from '@module/notification/hooks';
+import { useNotify, useRunWatchActions } from '@module/notification/hooks';
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
 import { WorkflowDefinitionDeleteModal } from '@module/workflow-definition/components/WorkflowDefinitionDeleteModal';
 import { WorkflowDefinitionEditorHeader } from '@module/workflow-definition/components/WorkflowDefinitionEditorHeader';
@@ -86,6 +86,7 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 	const [createDefinition, createState] = useCreateWorkflowDefinitionMutation();
 	const [startRun, startState] = useStartWorkflowRunMutation();
 	const notify = useNotify();
+	const runWatch = useRunWatchActions();
 
 	const [saveError, setSaveError] = useState<WorkflowDefinitionErrorCopy | null>(null);
 	const [startError, setStartError] = useState<string | null>(null);
@@ -202,6 +203,10 @@ export const WorkflowDefinitionEditorPage: React.FC = () => {
 			return;
 		}
 
+		runWatch.watch(result.data.id, {
+			label: current ? `${current.name} v${current.version}` : undefined,
+			fromStart: true,
+		});
 		notify.success({
 			title: 'Run started',
 			message: current

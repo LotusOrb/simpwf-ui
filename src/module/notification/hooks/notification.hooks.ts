@@ -23,9 +23,17 @@ export const useNotify = () => {
 	return useMemo(() => {
 		const publish =
 			(level: NotificationLevel) =>
-			({ title, message, link, toastOnly, autoClose }: NotifyOptions) => {
+			({ title, message, link, toastOnly, recordOnly, autoClose }: NotifyOptions) => {
 				const { color, icon: Icon } = NOTIFICATION_LEVEL[level];
-				notifications.show({ color, icon: React.createElement(Icon, { size: 18 }), title, message, autoClose });
+				if (!recordOnly) {
+					notifications.show({
+						color,
+						icon: React.createElement(Icon, { size: 18 }),
+						title,
+						message,
+						autoClose,
+					});
+				}
 				if (toastOnly) return;
 				dispatch(
 					notificationAdded({
