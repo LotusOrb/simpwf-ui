@@ -1,0 +1,414 @@
+// Panels: the same look as the workflow definition palette and inspector.
+
+.panelRoot {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	background-color: var(--mantine-color-white);
+}
+
+.paletteHeader {
+	padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+	color: var(--mantine-color-dark-6);
+}
+
+.paletteSearch {
+	padding: 0 var(--mantine-spacing-sm) var(--mantine-spacing-sm);
+	border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.paletteSection {
+	border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.paletteSectionHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 10px var(--mantine-spacing-md);
+	color: var(--mantine-color-dark-6);
+	background-color: var(--mantine-color-gray-0);
+}
+
+.paletteItems {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 6px var(--mantine-spacing-sm) var(--mantine-spacing-sm);
+}
+
+.paletteItem {
+	display: flex;
+	align-items: center;
+	gap: var(--mantine-spacing-sm);
+	padding: 8px;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+	transition: border-color 120ms ease;
+
+	cursor: grab;
+
+	&:hover {
+		border-color: var(--mantine-color-brand-2);
+	}
+
+	&:active {
+		cursor: grabbing;
+	}
+
+	// The entry stays in the palette while its copy follows the pointer.
+	&[data-dragging] {
+		opacity: 0.5;
+	}
+
+	&[data-overlay] {
+		width: 248px;
+		cursor: grabbing;
+		border-color: var(--mantine-color-brand-4);
+		box-shadow: var(--mantine-shadow-md);
+	}
+}
+
+.paletteIcon,
+.treeIcon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-sm);
+	background-color: var(--mantine-color-white);
+}
+
+.treeIcon {
+	width: 30px;
+	height: 30px;
+}
+
+.paletteBody {
+	flex: 1;
+	min-width: 0;
+	line-height: 1.3;
+}
+
+.paletteGrip {
+	flex-shrink: 0;
+	color: var(--mantine-color-gray-5);
+}
+
+.inspectorHeader {
+	display: flex;
+	align-items: center;
+	gap: var(--mantine-spacing-sm);
+	padding: var(--mantine-spacing-md) var(--mantine-spacing-md) 0;
+}
+
+.inspectorTitle {
+	flex: 1;
+	min-width: 0;
+	line-height: 1.3;
+}
+
+.inspectorTabs {
+	padding: var(--mantine-spacing-md) var(--mantine-spacing-md) 0;
+}
+
+// The tab strip: the same look as the workflow definition inspector's.
+.segmented {
+	padding: 4px;
+	border: 1px solid var(--mantine-color-gray-2);
+	background-color: var(--mantine-color-gray-0);
+}
+
+.indicator {
+	box-shadow: 0 2px 6px color-mix(in srgb, var(--mantine-primary-color-filled) 30%, transparent);
+}
+
+.segmentLabel {
+	font-weight: 500;
+
+	&[data-active] {
+		color: var(--mantine-color-white);
+	}
+}
+
+.inspectorBody {
+	padding: var(--mantine-spacing-md);
+}
+
+.inspectorFooter {
+	padding: var(--mantine-spacing-md);
+	border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.metric {
+	text-align: center;
+}
+
+.usage {
+	padding: var(--mantine-spacing-sm);
+	border-radius: var(--mantine-radius-md);
+	color: var(--mantine-color-blue-9);
+	background-color: var(--mantine-color-blue-0);
+}
+
+.usageIcon {
+	flex-shrink: 0;
+	margin-top: 1px;
+	color: var(--mantine-color-blue-6);
+}
+
+.segmented {
+	padding: 4px;
+	border: 1px solid var(--mantine-color-gray-2);
+	background-color: var(--mantine-color-gray-0);
+}
+
+.indicator {
+	box-shadow: 0 2px 6px color-mix(in srgb, var(--mantine-primary-color-filled) 30%, transparent);
+}
+
+.segmentLabel {
+	font-weight: 500;
+
+	&[data-active] {
+		color: var(--mantine-color-white);
+	}
+}
+
+// Canvas: a dotted surface like the workflow canvas; the floating panels' insets keep the sheet clear of them.
+
+.canvas {
+	height: 100%;
+	overflow: auto;
+	padding: calc(var(--layout-inset-top, 0px) + var(--mantine-spacing-lg))
+		calc(var(--layout-inset-right, 0px) + var(--mantine-spacing-lg))
+		calc(var(--layout-inset-bottom, 0px) + var(--mantine-spacing-lg))
+		calc(var(--layout-inset-left, 0px) + var(--mantine-spacing-lg));
+	background-color: var(--mantine-color-gray-0);
+	background-image: radial-gradient(var(--mantine-color-gray-4) 1.2px, transparent 1.2px);
+	background-size: 16px 16px;
+}
+
+.sheet {
+	max-width: 1200px;
+	margin: 0 auto;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-lg);
+	background-color: var(--mantine-color-white);
+	box-shadow: var(--mantine-shadow-xs);
+
+	&[data-width='narrow'] {
+		max-width: 720px;
+	}
+}
+
+.sheetHeader {
+	padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+	border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.sheetBody {
+	padding: var(--mantine-spacing-md);
+}
+
+.empty {
+	margin: var(--mantine-spacing-sm);
+	padding: var(--mantine-spacing-xl) var(--mantine-spacing-md);
+	border: 1px dashed transparent;
+	border-radius: var(--mantine-radius-md);
+	transition:
+		border-color 120ms ease,
+		background-color 120ms ease;
+
+	&[data-over] {
+		border-color: var(--mantine-color-brand-4);
+		background-color: var(--mantine-color-brand-0);
+	}
+}
+
+// Field tree.
+
+.treeContainer {
+	min-height: 36px;
+	padding: 4px;
+	border: 1px dashed transparent;
+	border-radius: var(--mantine-radius-md);
+	transition:
+		border-color 120ms ease,
+		background-color 120ms ease;
+
+	&[data-over] {
+		border-color: var(--mantine-color-brand-4);
+		background-color: var(--mantine-color-brand-0);
+	}
+}
+
+.treeItem {
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-white);
+	transition:
+		border-color 120ms ease,
+		box-shadow 120ms ease;
+
+	&:hover {
+		border-color: var(--mantine-color-brand-2);
+	}
+
+	&[data-selected] {
+		border-color: var(--mantine-color-brand-5);
+		box-shadow: 0 0 0 1px var(--mantine-color-brand-5);
+	}
+
+	&[data-dragging] {
+		opacity: 0.5;
+		position: relative;
+		z-index: 2;
+	}
+
+	&[data-over] > .treeRow {
+		background-color: var(--mantine-color-brand-0);
+	}
+}
+
+.treeRow {
+	padding: 6px 8px;
+	cursor: pointer;
+	border-radius: var(--mantine-radius-md);
+}
+
+.treeLabel {
+	flex: 1;
+	min-width: 0;
+	line-height: 1.3;
+}
+
+.treeChildren {
+	padding: 0 8px 8px 44px;
+}
+
+.handle {
+	cursor: grab;
+	touch-action: none;
+}
+
+.inlineIcon {
+	display: inline-flex;
+	color: var(--mantine-color-gray-6);
+}
+
+// Issues: the same cards as the workflow definition issues panel.
+
+.issueList {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 6px;
+	padding: var(--mantine-spacing-xs);
+}
+
+.issue {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--mantine-spacing-xs);
+	padding: 8px;
+	border: 1px solid var(--mantine-color-red-1);
+	border-radius: var(--mantine-radius-md);
+	background-color: var(--mantine-color-red-0);
+
+	&[data-severity='warning'] {
+		border-color: var(--mantine-color-yellow-2);
+		background-color: var(--mantine-color-yellow-0);
+	}
+}
+
+.issueIcon {
+	flex-shrink: 0;
+	margin-top: 2px;
+	color: var(--mantine-color-red-6);
+
+	.issue[data-severity='warning'] & {
+		color: var(--mantine-color-yellow-7);
+	}
+}
+
+.ready {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: var(--mantine-spacing-sm);
+	color: var(--mantine-color-teal-7);
+}
+
+// Inline layout (no app layout panels, e.g. in a drawer).
+
+.inline {
+	display: flex;
+	flex-direction: column;
+	gap: var(--mantine-spacing-sm);
+	height: calc(100dvh - 140px);
+	min-height: 520px;
+}
+
+.inlineToolbar {
+	display: flex;
+	justify-content: flex-start;
+}
+
+.inlineBody {
+	display: flex;
+	flex: 1;
+	gap: var(--mantine-spacing-sm);
+	min-height: 0;
+}
+
+.inlinePanel,
+.inlineIssues {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-lg);
+	background-color: var(--mantine-color-white);
+	box-shadow: var(--mantine-shadow-sm);
+}
+
+.inlinePanel {
+	flex-shrink: 0;
+
+	&[data-side='left'] {
+		width: 260px;
+	}
+
+	&[data-side='right'] {
+		width: 360px;
+	}
+
+	@media (max-width: 62em) {
+		&[data-side='left'] {
+			display: none;
+		}
+	}
+}
+
+.inlineCanvas {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	border: 1px solid var(--mantine-color-gray-2);
+	border-radius: var(--mantine-radius-lg);
+}
+
+.inlineIssuesHeader {
+	display: flex;
+	align-items: center;
+	gap: var(--mantine-spacing-xs);
+	padding: 6px var(--mantine-spacing-sm);
+	border-bottom: 1px solid var(--mantine-color-gray-2);
+}
