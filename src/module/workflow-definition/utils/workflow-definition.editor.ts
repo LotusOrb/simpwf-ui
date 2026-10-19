@@ -1,5 +1,4 @@
-import { humanizeKey, isRecord, seedObject } from '@common/component/SchemaForm';
-
+import { humanizeKey, isRecord, seedObject } from '@module/form-engine/components/SchemaForm';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
 import { EMPTY_NODE_TYPE_CATALOG } from '@module/node-type/constant';
 import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';

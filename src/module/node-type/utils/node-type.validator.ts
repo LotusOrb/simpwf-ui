@@ -1,8 +1,8 @@
 import * as z from 'zod';
 
-import { humanizeKey, isRecord, variantKeys } from '@common/component/SchemaForm';
 import type { JsonSchema } from '@common/types/JsonSchema';
 
+import { humanizeKey, isRecord, variantKeys } from '@module/form-engine/components/SchemaForm';
 import type { NodeTypeCatalogItem } from '@module/node-type/types/NodeTypeCatalogItem';
 
 export interface NodeTypeIssue {
