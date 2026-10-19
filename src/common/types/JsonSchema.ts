@@ -15,11 +15,17 @@ export interface JsonSchema {
 	minProperties?: number;
 	items?: JsonSchema;
 	minItems?: number;
+	maxItems?: number;
+	uniqueItems?: boolean;
 	minLength?: number;
+	maxLength?: number;
 	pattern?: string;
 	format?: string;
 	minimum?: number;
 	maximum?: number;
+	exclusiveMinimum?: number;
+	exclusiveMaximum?: number;
+	multipleOf?: number;
 	oneOf?: JsonSchema[];
 	anyOf?: JsonSchema[];
 	allOf?: JsonSchema[];
