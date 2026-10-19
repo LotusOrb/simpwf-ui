@@ -7,10 +7,11 @@ import { Link } from 'react-router';
 
 import { Permission, useCan } from '@core/auth/authorization';
 
-import { DASHBOARD_RECENT_RUNS_LIMIT, DASHBOARD_RUN_TIME_FORMAT } from '@module/dashboard/constant/dashboard.constant';
+import { DASHBOARD_RECENT_RUNS_LIMIT, DASHBOARD_RUN_TIME_FORMAT } from '@module/dashboard/constant';
 import { useListWorkflowDefinitionsQuery } from '@module/workflow-definition/hooks';
-import { definitionFallbackLabel, formatRunDuration, runStatusMeta, shortRunId } from '@module/workflow-run/data';
+import { runStatusMeta } from '@module/workflow-run/constant';
 import { useListWorkflowRunsQuery } from '@module/workflow-run/hooks';
+import { definitionFallbackLabel, formatRunDuration, shortRunId } from '@module/workflow-run/utils';
 
 import classes from './DashboardExecutionList.module.scss';
 

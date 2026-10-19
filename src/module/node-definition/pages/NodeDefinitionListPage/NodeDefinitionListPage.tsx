@@ -12,7 +12,7 @@ import { PaginationBar } from '@common/component/PaginationBar';
 import { NodeDefinitionDeleteModal } from '@module/node-definition/components/NodeDefinitionDeleteModal';
 import { NodeDefinitionFilters } from '@module/node-definition/components/NodeDefinitionFilters';
 import { NodeDefinitionTable } from '@module/node-definition/components/NodeDefinitionTable';
-import { nodeDefinitionLink, nodeDefinitionSortOrders } from '@module/node-definition/data';
+import { nodeDefinitionSortOrders } from '@module/node-definition/constant';
 import {
 	NAME_URL_UPDATE,
 	useListNodeDefinitionsQuery,
@@ -20,6 +20,7 @@ import {
 	useNodeDefinitionLibrary,
 	useNodeDefinitionListParams,
 } from '@module/node-definition/hooks';
+import { nodeDefinitionLink } from '@module/node-definition/utils';
 
 import classes from './NodeDefinitionListPage.module.scss';
 

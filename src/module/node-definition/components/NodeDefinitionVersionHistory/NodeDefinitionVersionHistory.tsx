@@ -7,9 +7,9 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { LuTrash2 } from 'react-icons/lu';
 import { Link } from 'react-router';
 
-import { nodeDefinitionLink } from '@module/node-definition/data';
 import { useListNodeDefinitionVersionPagesInfiniteQuery } from '@module/node-definition/hooks';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { nodeDefinitionLink } from '@module/node-definition/utils';
 
 import classes from './NodeDefinitionVersionHistory.module.scss';
 

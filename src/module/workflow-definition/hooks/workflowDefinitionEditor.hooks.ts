@@ -5,8 +5,7 @@ import { useCoreDispatch, useCoreStore } from '@core/store';
 import { useAppLayoutPanel } from '@module/app/hooks';
 import { selectPanelInsets } from '@module/app/store';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
-import { selectNodeTypeCatalog } from '@module/node-type/data';
-import { createEditorNode, createParallelPair, scopeKey } from '@module/workflow-definition/data';
+import { selectNodeTypeCatalog } from '@module/node-type/utils';
 import {
 	jsonDraftChanged,
 	nodeAdded,
@@ -23,6 +22,7 @@ import type { WorkflowDefinitionEditorIssue } from '@module/workflow-definition/
 import type { WorkflowDefinitionJsonField } from '@module/workflow-definition/types/WorkflowDefinitionJsonField';
 import type { WorkflowDefinitionNodeConfig } from '@module/workflow-definition/types/WorkflowDefinitionNodeConfig';
 import type { WorkflowDefinitionNodeType } from '@module/workflow-definition/types/WorkflowDefinitionNodeType';
+import { createEditorNode, createParallelPair, scopeKey } from '@module/workflow-definition/utils';
 
 export type WorkflowDefinitionPaletteItem = { type: WorkflowDefinitionNodeType } | { definition: NodeDefinition };
 

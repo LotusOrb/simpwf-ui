@@ -4,14 +4,14 @@ import { Badge, Group, ScrollArea, Text, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 import { LuChevronDown, LuChevronRight, LuGitBranch, LuGitFork, LuRefreshCw, LuTriangleAlert } from 'react-icons/lu';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
+import { nodeRunStatusMeta } from '@module/workflow-run/constant';
+import type { WorkflowRunNodeStatus } from '@module/workflow-run/types/WorkflowRunNodeStatus';
 import {
 	formatDuration,
-	nodeRunStatusMeta,
 	type WorkflowRunTimeline as Timeline,
 	type WorkflowRunTimelineRow,
-} from '@module/workflow-run/data';
-import type { WorkflowRunNodeStatus } from '@module/workflow-run/types/WorkflowRunNodeStatus';
+} from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunTimeline.module.scss';
 

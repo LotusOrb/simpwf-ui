@@ -18,7 +18,7 @@ import {
 	selectEditorSourceId,
 } from '@module/workflow-definition/store';
 import type { WorkflowDefinitionEditorContextSource } from '@module/workflow-definition/types/WorkflowDefinitionEditorContextSource';
-import { runStatusMeta } from '@module/workflow-run/data';
+import { runStatusMeta } from '@module/workflow-run/constant';
 import { useListWorkflowRunsQuery } from '@module/workflow-run/hooks';
 
 const RECENT_RUNS = 20;

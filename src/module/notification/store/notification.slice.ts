@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { LocalKVStore } from '@core/localKVStore';
 
-import { NOTIFICATION_LEVEL, NOTIFICATION_LIMIT } from '@module/notification/data';
+import { NOTIFICATION_LEVEL, NOTIFICATION_LIMIT } from '@module/notification/constant';
 import type { AppNotification } from '@module/notification/types/AppNotification';
 
 const notificationStore = new LocalKVStore('notification');

@@ -17,26 +17,25 @@ import { NodeDefinitionDeleteModal } from '@module/node-definition/components/No
 import { NodeDefinitionEditorHeader } from '@module/node-definition/components/NodeDefinitionEditorHeader';
 import { NodeDefinitionTypePicker } from '@module/node-definition/components/NodeDefinitionTypePicker';
 import { NodeDefinitionVersionHistory } from '@module/node-definition/components/NodeDefinitionVersionHistory';
-import {
-	describeNodeDefinitionSaveError,
-	NODE_DEFINITION_ROUTE,
-	nodeDefinitionLink,
-	type NodeDefinitionErrorCopy,
-} from '@module/node-definition/data';
+import { NODE_DEFINITION_ROUTE } from '@module/node-definition/constant';
 import {
 	useCreateNodeDefinitionMutation,
 	useGetNodeDefinitionQuery,
 	useListNodeDefinitionVersionPagesInfiniteQuery,
 	useNodeDefinitionDelete,
 } from '@module/node-definition/hooks';
+import {
+	describeNodeDefinitionSaveError,
+	nodeDefinitionLink,
+	type NodeDefinitionErrorCopy,
+} from '@module/node-definition/utils';
 import { NodeTypeCatalogGate } from '@module/node-type/components/NodeTypeCatalogGate';
-import { selectNodeTypeCatalog } from '@module/node-type/data';
+import { selectNodeTypeCatalog } from '@module/node-type/utils';
 import { useNotify } from '@module/notification/hooks';
 import { WorkflowDefinitionCanvas } from '@module/workflow-definition/components/WorkflowDefinitionCanvas';
 import { WorkflowDefinitionInspector } from '@module/workflow-definition/components/WorkflowDefinitionInspector';
 import { WorkflowDefinitionIssuesPanel } from '@module/workflow-definition/components/WorkflowDefinitionIssuesPanel';
 import { WorkflowDefinitionPalette } from '@module/workflow-definition/components/WorkflowDefinitionPalette';
-import { newNodeEditorDocument, toNodeEditorDocument } from '@module/workflow-definition/data';
 import { useFocusEditorIssue } from '@module/workflow-definition/hooks';
 import {
 	editorDiscarded,
@@ -50,6 +49,7 @@ import {
 	selectEditorNodeDefinition,
 	selectNodeDefinitionContent,
 } from '@module/workflow-definition/store';
+import { newNodeEditorDocument, toNodeEditorDocument } from '@module/workflow-definition/utils';
 
 import classes from './NodeDefinitionDetailPage.module.scss';
 

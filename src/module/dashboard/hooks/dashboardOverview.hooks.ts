@@ -4,8 +4,8 @@ import {
 	DASHBOARD_CHART_DATE_FORMAT,
 	DASHBOARD_DATE_FORMAT,
 	DASHBOARD_DEFAULT_RANGE_DAYS,
-} from '@module/dashboard/constant/dashboard.constant';
-import { dashboardStatDefinitions } from '@module/dashboard/constant/dashboardStat.constant';
+} from '@module/dashboard/constant';
+import { dashboardStatDefinitions } from '@module/dashboard/constant';
 import type { DashboardDateRange } from '@module/dashboard/types/DashboardDateRange';
 import type { DashboardRunsPoint } from '@module/dashboard/types/DashboardRunsPoint';
 import type { DashboardStat } from '@module/dashboard/types/DashboardStat';

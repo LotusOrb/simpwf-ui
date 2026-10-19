@@ -5,11 +5,11 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { Link, useNavigate } from 'react-router';
 
-import { DEFINITION_ROUTE } from '@module/workflow-definition/data';
+import { DEFINITION_ROUTE } from '@module/workflow-definition/constant';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
+import { definitionFallbackLabel, formatRunDuration, formatWaitingReason } from '@module/workflow-run/utils';
 
-import { definitionFallbackLabel, formatRunDuration, formatWaitingReason } from '../../data';
 import { WorkflowRunActions } from '../WorkflowRunActions';
 import type { WorkflowRunDefinitionInfo } from '../WorkflowRunCard';
 import { WorkflowRunIdText } from '../WorkflowRunIdText';

@@ -6,16 +6,17 @@ import { Link } from 'react-router';
 
 import { useCoreSelector } from '@core/store';
 
-import { NODE_LIBRARY_QUERY, nodeDefinitionLink } from '@module/node-definition/data';
+import { NODE_LIBRARY_QUERY } from '@module/node-definition/constant';
 import { useListNodeDefinitionsQuery } from '@module/node-definition/hooks';
-import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/data';
-import { scopeTrail } from '@module/workflow-definition/data';
+import { nodeDefinitionLink } from '@module/node-definition/utils';
+import { nodeTypeMetaOf, selectNodeTypeCatalog } from '@module/node-type/utils';
 import {
 	PALETTE_DRAG_TYPE,
 	useWorkflowDefinitionEditorAddNode,
 	type WorkflowDefinitionPaletteItem,
 } from '@module/workflow-definition/hooks';
 import { selectEditorNodeDefinition, selectEditorNodes, selectEditorScope } from '@module/workflow-definition/store';
+import { scopeTrail } from '@module/workflow-definition/utils';
 
 import classes from './WorkflowDefinitionPalette.module.scss';
 

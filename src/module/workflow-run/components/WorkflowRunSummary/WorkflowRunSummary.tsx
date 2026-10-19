@@ -3,10 +3,10 @@ import React from 'react';
 import { Group, Progress, Text, Tooltip } from '@mantine/core';
 import dayjs from 'dayjs';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
-import { formatDuration, type WorkflowRunProgress } from '@module/workflow-run/data';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
+import { formatDuration, type WorkflowRunProgress } from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunSummary.module.scss';
 

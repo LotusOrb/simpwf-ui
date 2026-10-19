@@ -9,7 +9,7 @@ import { ViewModeToggle } from '@common/component/ViewModeToggle';
 
 import { useNotify } from '@module/notification/hooks';
 import { SettingsRow } from '@module/settings/components/SettingsRow';
-import { LIST_VIEW_OPTIONS } from '@module/settings/data';
+import { LIST_VIEW_OPTIONS } from '@module/settings/constant';
 import { listViewSaved, selectListView } from '@module/settings/store';
 import type { ListViewPreference } from '@module/settings/types/ListViewPreference';
 

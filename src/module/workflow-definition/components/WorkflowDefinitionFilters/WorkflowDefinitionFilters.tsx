@@ -3,10 +3,10 @@ import React from 'react';
 import { Group, Select } from '@mantine/core';
 import { LuArrowUpDown } from 'react-icons/lu';
 
+import { sortOrders } from '@module/workflow-definition/constant';
 import type { WorkflowDefinitionFilterValues } from '@module/workflow-definition/types/WorkflowDefinitionFilterValues';
 import type { WorkflowDefinitionSort } from '@module/workflow-definition/types/WorkflowDefinitionSort';
 
-import { sortOrders } from '../../data';
 import classes from './WorkflowDefinitionFilters.module.scss';
 
 interface WorkflowDefinitionFiltersProps {

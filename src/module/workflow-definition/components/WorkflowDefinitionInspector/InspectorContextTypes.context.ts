@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo } from 'react';
 
-import { contextPathsFromTypes } from '@module/workflow-definition/data';
+import { contextPathsFromTypes } from '@module/workflow-definition/utils';
 
 export const ContextTypes = createContext<string | undefined>(undefined);
 

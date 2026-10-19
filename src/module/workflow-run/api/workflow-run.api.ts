@@ -2,12 +2,6 @@ import { API_TAG_LIST_ID, apiTagConfig } from '@config/apiTag.config';
 
 import { coreApi } from '@core/api';
 
-import {
-	toRunDetail,
-	toRunNodeDebug,
-	type WorkflowRunNodeDebugResponse,
-	type WorkflowRunStatusResponse,
-} from '@module/workflow-run/data/workflow-run.mapper';
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunDebugContext } from '@module/workflow-run/types/WorkflowRunDebugContext';
 import type { WorkflowRunDebugContextQuery } from '@module/workflow-run/types/WorkflowRunDebugContextQuery';
@@ -17,6 +11,12 @@ import type { WorkflowRunMigratePayload } from '@module/workflow-run/types/Workf
 import type { WorkflowRunMigrateResult } from '@module/workflow-run/types/WorkflowRunMigrateResult';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
+import {
+	toRunDetail,
+	toRunNodeDebug,
+	type WorkflowRunNodeDebugResponse,
+	type WorkflowRunStatusResponse,
+} from '@module/workflow-run/utils/workflow-run.mapper';
 
 const RESOURCE = 'v1/workflow/instance';
 

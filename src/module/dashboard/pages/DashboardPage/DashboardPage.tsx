@@ -11,7 +11,7 @@ import { DashboardDateRangePicker } from '@module/dashboard/components/Dashboard
 import { DashboardExecutionList } from '@module/dashboard/components/DashboardExecutionList';
 import { DashboardRunsChart } from '@module/dashboard/components/DashboardRunsChart';
 import { DashboardStatCard, DashboardStatCardSkeleton } from '@module/dashboard/components/DashboardStatCard';
-import { DASHBOARD_RANGE_LABEL_FORMAT } from '@module/dashboard/constant/dashboard.constant';
+import { DASHBOARD_RANGE_LABEL_FORMAT } from '@module/dashboard/constant';
 import { getRecentDaysRange, useDashboardOverview } from '@module/dashboard/hooks';
 import type { DashboardDateRange } from '@module/dashboard/types/DashboardDateRange';
 

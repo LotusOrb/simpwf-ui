@@ -4,8 +4,9 @@ import { Alert, Button, Group, Modal, PasswordInput, Stack, Text, TextInput } fr
 import { useForm } from '@mantine/form';
 import { LuCircleAlert, LuTriangleAlert } from 'react-icons/lu';
 
-import { SECRET_VALUE_MAX_LENGTH, secretReference } from '@module/secret/data';
+import { SECRET_VALUE_MAX_LENGTH } from '@module/secret/constant';
 import { secretInitialValues, secretSchema, type SecretDto } from '@module/secret/dto';
+import { secretReference } from '@module/secret/utils';
 
 export type SecretFormMode = { type: 'create' } | { type: 'rotate'; key: string };
 

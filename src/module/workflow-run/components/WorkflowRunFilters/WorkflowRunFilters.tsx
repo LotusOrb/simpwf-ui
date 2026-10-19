@@ -3,9 +3,9 @@ import React from 'react';
 import { CloseButton, Group, Select, TextInput } from '@mantine/core';
 import { LuArrowUpDown, LuBug, LuSearch, LuWorkflow } from 'react-icons/lu';
 
+import { runSortOrders } from '@module/workflow-run/constant';
 import type { WorkflowRunSort } from '@module/workflow-run/types/WorkflowRunSort';
 
-import { runSortOrders } from '../../data';
 import classes from './WorkflowRunFilters.module.scss';
 
 export interface WorkflowRunFilterValues {

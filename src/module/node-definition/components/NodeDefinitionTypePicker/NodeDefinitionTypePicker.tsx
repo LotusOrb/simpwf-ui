@@ -3,9 +3,9 @@ import React from 'react';
 import { SimpleGrid, Stack, Text, ThemeIcon, Title, UnstyledButton } from '@mantine/core';
 
 import { useAppLayoutInsets } from '@module/app/hooks';
-import { nodeTypeMetaOf } from '@module/node-type/data';
 import { useNodeTypeCatalog } from '@module/node-type/hooks';
 import type { NodeTypeCatalogItem } from '@module/node-type/types/NodeTypeCatalogItem';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 
 import classes from './NodeDefinitionTypePicker.module.scss';
 

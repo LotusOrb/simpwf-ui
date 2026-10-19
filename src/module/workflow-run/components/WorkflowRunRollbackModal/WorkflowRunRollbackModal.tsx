@@ -4,7 +4,7 @@ import { Alert, Button, Group, Modal, Radio, ScrollArea, Stack, Text, TextInput 
 import dayjs from 'dayjs';
 import { LuTriangleAlert } from 'react-icons/lu';
 
-import { formatDuration, type WorkflowRunTimelineEntry } from '@module/workflow-run/data';
+import { formatDuration, type WorkflowRunTimelineEntry } from '@module/workflow-run/utils';
 
 interface WorkflowRunRollbackModalProps {
 	opened: boolean;

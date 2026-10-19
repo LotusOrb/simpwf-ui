@@ -20,7 +20,7 @@ import { WorkflowDefinitionFilters } from '@module/workflow-definition/component
 import { WorkflowDefinitionHero } from '@module/workflow-definition/components/WorkflowDefinitionHero';
 import { WorkflowDefinitionTable } from '@module/workflow-definition/components/WorkflowDefinitionTable';
 import { WorkflowDefinitionVersionHistory } from '@module/workflow-definition/components/WorkflowDefinitionVersionHistory';
-import { sortOrders } from '@module/workflow-definition/data';
+import { sortOrders } from '@module/workflow-definition/constant';
 import {
 	NAME_URL_UPDATE,
 	useListWorkflowDefinitionsQuery,

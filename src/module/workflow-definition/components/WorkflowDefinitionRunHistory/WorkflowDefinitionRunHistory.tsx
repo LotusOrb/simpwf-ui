@@ -7,7 +7,7 @@ import { LuActivity, LuCircleAlert } from 'react-icons/lu';
 
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import { WorkflowRunCard, WorkflowRunCardSkeleton } from '@module/workflow-run/components/WorkflowRunCard';
-import { runSortOrders } from '@module/workflow-run/data';
+import { runSortOrders } from '@module/workflow-run/constant';
 import { useListWorkflowRunPagesInfiniteQuery } from '@module/workflow-run/hooks';
 
 const PER_PAGE = 20;

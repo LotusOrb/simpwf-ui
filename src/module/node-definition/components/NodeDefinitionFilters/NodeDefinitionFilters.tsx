@@ -3,10 +3,10 @@ import React from 'react';
 import { CloseButton, Group, Select, Switch, TextInput } from '@mantine/core';
 import { LuArrowUpDown, LuBoxes, LuSearch } from 'react-icons/lu';
 
-import { nodeDefinitionSortOrders } from '@module/node-definition/data';
+import { nodeDefinitionSortOrders } from '@module/node-definition/constant';
 import type { NodeDefinitionSort } from '@module/node-definition/types/NodeDefinitionSort';
-import { nodeTypeMetaOf } from '@module/node-type/data';
 import { useNodeTypeCatalog } from '@module/node-type/hooks';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 
 export interface NodeDefinitionFilterValues {
 	name: string;

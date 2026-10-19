@@ -7,8 +7,8 @@ import { LuBraces, LuCheck, LuRefreshCcw, LuTrash2 } from 'react-icons/lu';
 
 import { Can, Permission } from '@core/auth/authorization';
 
-import { secretReference } from '@module/secret/data';
 import type { Secret } from '@module/secret/types/Secret';
+import { secretReference } from '@module/secret/utils';
 
 import classes from './SecretTable.module.scss';
 

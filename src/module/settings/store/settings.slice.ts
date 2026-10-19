@@ -4,7 +4,7 @@ import { LocalKVStore } from '@core/localKVStore';
 
 import type { ViewMode } from '@common/component/ViewModeToggle';
 
-import { DEFAULT_LIST_VIEW } from '@module/settings/data';
+import { DEFAULT_LIST_VIEW } from '@module/settings/constant';
 import type { ListViewKey, ListViewPreference } from '@module/settings/types/ListViewPreference';
 
 const settingsStore = new LocalKVStore('settings');

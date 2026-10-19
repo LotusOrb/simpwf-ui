@@ -16,8 +16,8 @@ import { useCoreSelector } from '@core/store';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
 import { NodeDefinitionTypeBadge } from '@module/node-definition/components/NodeDefinitionTypeBadge';
-import type { NodeDefinitionErrorCopy } from '@module/node-definition/data';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import type { NodeDefinitionErrorCopy } from '@module/node-definition/utils';
 import {
 	selectEditorBlockingIssues,
 	selectEditorDirty,

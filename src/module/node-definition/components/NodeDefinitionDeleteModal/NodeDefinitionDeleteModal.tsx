@@ -3,8 +3,8 @@ import React from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { LuCircleAlert } from 'react-icons/lu';
 
-import type { NodeDefinitionErrorCopy } from '@module/node-definition/data';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import type { NodeDefinitionErrorCopy } from '@module/node-definition/utils';
 
 interface NodeDefinitionDeleteModalProps {
 	definition: NodeDefinition | null;

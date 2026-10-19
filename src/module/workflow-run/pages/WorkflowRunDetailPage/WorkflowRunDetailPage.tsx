@@ -12,8 +12,8 @@ import { useNavigateBack } from '@common/hooks/useNavigateBack';
 import { MainLayoutPanel, MainLayoutPanelBar } from '@module/app/components/AppMainLayout';
 import { useAppLayoutPanel, useAppLayoutPanels } from '@module/app/hooks';
 import { useNotify } from '@module/notification/hooks';
-import { analyzeParallel, parallelMembership } from '@module/workflow-definition/data';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import { analyzeParallel, parallelMembership } from '@module/workflow-definition/utils';
 import { WorkflowRunDetailHeader } from '@module/workflow-run/components/WorkflowRunDetailHeader';
 import { WorkflowRunGraph } from '@module/workflow-run/components/WorkflowRunGraph';
 import { WorkflowRunInputModal } from '@module/workflow-run/components/WorkflowRunInputModal';
@@ -24,13 +24,6 @@ import { WorkflowRunSidePanel } from '@module/workflow-run/components/WorkflowRu
 import { WorkflowRunSummary } from '@module/workflow-run/components/WorkflowRunSummary';
 import { WorkflowRunTimeline } from '@module/workflow-run/components/WorkflowRunTimeline';
 import {
-	buildTimelineRows,
-	describeInputError,
-	findBranchInputs,
-	indexDebugNodes,
-	indexDefinitionNodes,
-} from '@module/workflow-run/data';
-import {
 	usePauseWorkflowRunMutation,
 	useProvideWorkflowRunInputMutation,
 	useReplaceWorkflowRunContextMutation,
@@ -39,6 +32,13 @@ import {
 	useStopWorkflowRunMutation,
 	useWorkflowRunDetail,
 } from '@module/workflow-run/hooks';
+import {
+	buildTimelineRows,
+	describeInputError,
+	findBranchInputs,
+	indexDebugNodes,
+	indexDefinitionNodes,
+} from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunDetailPage.module.scss';
 

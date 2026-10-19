@@ -20,17 +20,10 @@ import { useInsetFitView } from '@common/hooks/useInsetFitView';
 
 import { useAppLayoutInsets } from '@module/app/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
-import {
-	buildRunGraph,
-	GRAPH_NODE_HEIGHT,
-	GRAPH_NODE_WIDTH,
-	isNodeReached,
-	latestJoinExecution,
-	nodeRunStatusMeta,
-	flattenDefinitionNodes,
-} from '@module/workflow-run/data';
+import { GRAPH_NODE_HEIGHT, GRAPH_NODE_WIDTH, nodeRunStatusMeta } from '@module/workflow-run/constant';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
 import type { WorkflowRunNodeDebug } from '@module/workflow-run/types/WorkflowRunNodeDebug';
+import { buildRunGraph, isNodeReached, latestJoinExecution, flattenDefinitionNodes } from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunGraph.module.scss';
 import type { WorkflowRunGraphFlowNode } from './WorkflowRunGraph.types';

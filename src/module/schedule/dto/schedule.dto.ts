@@ -1,6 +1,7 @@
 import * as z from 'zod';
 
-import { analyzeCrontab, isValidTimeZone } from '../data';
+import { analyzeCrontab, isValidTimeZone } from '@module/schedule/utils';
+
 import type { Schedule } from '../types/Schedule';
 import type { SchedulePayload } from '../types/SchedulePayload';
 

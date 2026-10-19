@@ -1,4 +1,4 @@
-import { NODE_LIBRARY_QUERY } from '@module/node-definition/data';
+import { NODE_LIBRARY_QUERY } from '@module/node-definition/constant';
 import { useNodeTypeCatalog } from '@module/node-type/hooks';
 
 import { useListNodeDefinitionsQuery } from './node-definition.hooks';

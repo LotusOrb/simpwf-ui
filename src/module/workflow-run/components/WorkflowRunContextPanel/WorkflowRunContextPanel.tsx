@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Alert, Button, Group, Stack, Text, Textarea, TextInput } from '@mantine/core';
 import { LuPencil, LuTriangleAlert } from 'react-icons/lu';
 
-import { formatJson } from '@module/workflow-run/data';
+import { formatJson } from '@module/workflow-run/utils';
 
 import { WorkflowRunJsonView } from '../WorkflowRunJsonView';
 

@@ -3,7 +3,8 @@ import React from 'react';
 import { Alert, Badge, Group, Stack, Text } from '@mantine/core';
 import { LuCheck, LuShieldAlert, LuTriangleAlert } from 'react-icons/lu';
 
-import { PERMISSION_GROUPS, PERMISSION_META, hasWildcard, unrecognizedPermissions } from '@module/role/data';
+import { PERMISSION_GROUPS, PERMISSION_META } from '@module/role/constant';
+import { hasWildcard, unrecognizedPermissions } from '@module/role/utils';
 
 interface PermissionListProps {
 	permissions: string[];

@@ -4,7 +4,7 @@ import { CloseButton, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { NOTIFICATION_LEVEL } from '@module/notification/data';
+import { NOTIFICATION_LEVEL } from '@module/notification/constant';
 import type { AppNotification } from '@module/notification/types/AppNotification';
 
 import classes from './NotificationItem.module.scss';

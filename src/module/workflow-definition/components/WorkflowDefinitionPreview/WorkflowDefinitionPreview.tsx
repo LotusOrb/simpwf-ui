@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { nodeTypeMetaOf } from '@module/node-type/data';
+import { nodeTypeMetaOf } from '@module/node-type/utils';
 import type { WorkflowDefinitionContent } from '@module/workflow-definition/types/WorkflowDefinitionContent';
+import { layoutGraph } from '@module/workflow-definition/utils';
 
-import { layoutGraph } from '../../data';
 import classes from './WorkflowDefinitionPreview.module.scss';
 
 const NODE_WIDTH = 46;

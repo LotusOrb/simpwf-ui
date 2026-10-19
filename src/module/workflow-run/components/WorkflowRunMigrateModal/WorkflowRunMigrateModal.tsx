@@ -27,12 +27,18 @@ import { useNavigate } from 'react-router';
 import { CodeEditor } from '@common/component/CodeEditor';
 
 import { useNotify } from '@module/notification/hooks';
-import { parallelInterior } from '@module/workflow-definition/data';
 import {
 	useGetWorkflowDefinitionQuery,
 	useListWorkflowDefinitionVersionsQuery,
 } from '@module/workflow-definition/hooks';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
+import { parallelInterior } from '@module/workflow-definition/utils';
+import {
+	useGetWorkflowRunContextQuery,
+	useGetWorkflowRunQuery,
+	useMigrateWorkflowRunMutation,
+} from '@module/workflow-run/hooks';
+import type { WorkflowRunMigrateStep } from '@module/workflow-run/types/WorkflowRunMigrateStep';
 import {
 	buildRunGraph,
 	describeMigrateError,
@@ -40,13 +46,7 @@ import {
 	indexDefinitionNodes,
 	migrateSourceNodeId,
 	type WorkflowRunMigrateErrorCopy,
-} from '@module/workflow-run/data';
-import {
-	useGetWorkflowRunContextQuery,
-	useGetWorkflowRunQuery,
-	useMigrateWorkflowRunMutation,
-} from '@module/workflow-run/hooks';
-import type { WorkflowRunMigrateStep } from '@module/workflow-run/types/WorkflowRunMigrateStep';
+} from '@module/workflow-run/utils';
 
 import { WorkflowRunMigrateGraph } from './WorkflowRunMigrateGraph';
 import classes from './WorkflowRunMigrateModal.module.scss';

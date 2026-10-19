@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { toNodeTypeCatalog } from '@module/node-type/data';
+import { toNodeTypeCatalog } from '@module/node-type/utils';
 
 import { useListNodeTypesQuery } from './node-type.hooks';
 

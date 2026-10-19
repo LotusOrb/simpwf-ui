@@ -22,13 +22,13 @@ import { Link } from 'react-router';
 import { Permission, useCan } from '@core/auth/authorization';
 
 import { useAppLayoutPanel } from '@module/app/hooks';
-import { isTerminalRunStatus } from '@module/notification/data';
 import { useRunWatch } from '@module/notification/hooks';
+import { isTerminalRunStatus } from '@module/notification/utils';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
 import type { WorkflowDefinitionNode } from '@module/workflow-definition/types/WorkflowDefinitionNode';
-import { formatWaitingReason, getAllowedActions } from '@module/workflow-run/data';
 import type { WorkflowRunDebugContext } from '@module/workflow-run/types/WorkflowRunDebugContext';
 import type { WorkflowRunDetail } from '@module/workflow-run/types/WorkflowRunDetail';
+import { formatWaitingReason, getAllowedActions } from '@module/workflow-run/utils';
 
 import { WorkflowRunIdText } from '../WorkflowRunIdText';
 import { WorkflowRunStatusBadge } from '../WorkflowRunStatusBadge';

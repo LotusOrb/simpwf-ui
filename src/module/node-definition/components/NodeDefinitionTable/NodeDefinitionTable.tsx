@@ -9,8 +9,8 @@ import { useNavigate } from 'react-router';
 import { Permission, useCan } from '@core/auth/authorization';
 
 import { NodeDefinitionTypeBadge } from '@module/node-definition/components/NodeDefinitionTypeBadge';
-import { nodeDefinitionLink } from '@module/node-definition/data';
 import type { NodeDefinition } from '@module/node-definition/types/NodeDefinition';
+import { nodeDefinitionLink } from '@module/node-definition/utils';
 
 import classes from './NodeDefinitionTable.module.scss';
 

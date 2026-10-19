@@ -4,9 +4,9 @@ import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { LuCircleAlert } from 'react-icons/lu';
 
-import type { WorkflowDefinitionErrorCopy } from '@module/workflow-definition/data';
 import { useListWorkflowDefinitionVersionsQuery } from '@module/workflow-definition/hooks';
 import type { WorkflowDefinition } from '@module/workflow-definition/types/WorkflowDefinition';
+import type { WorkflowDefinitionErrorCopy } from '@module/workflow-definition/utils';
 
 interface WorkflowDefinitionDeleteModalProps {
 	definition: WorkflowDefinition | null;

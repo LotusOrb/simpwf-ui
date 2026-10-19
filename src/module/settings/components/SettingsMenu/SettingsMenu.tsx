@@ -5,7 +5,7 @@ import { NavLink } from 'react-router';
 
 import { useAuthorization } from '@core/auth/authorization';
 
-import { SETTINGS_MENU } from '@module/settings/data';
+import { SETTINGS_MENU } from '@module/settings/constant';
 
 import classes from './SettingsMenu.module.scss';
 
