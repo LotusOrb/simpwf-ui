@@ -20,6 +20,15 @@ export const formatDuration = (ms: number | null): string => {
 export const flattenDefinitionNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[] =>
 	nodes.flatMap((node) => [node, ...(node.nodes ? flattenDefinitionNodes(node.nodes) : [])]);
 
+/**
+ * Whether a run of `content` may render a forms-library form: an input node sets `form_id`, or references a node
+ * definition that might. Decides whether starting a run offers to freeze forms.
+ */
+export const definitionMayUseForms = (content: WorkflowDefinitionContent | undefined) =>
+	flattenDefinitionNodes(content?.nodes ?? []).some(
+		(node) => node.type === 'input' && (!!node.form_id || !!node.node_definition_id),
+	);
+
 /** Nodes of the definition keyed by id, including nodes nested inside groups. */
 export const indexDefinitionNodes = (content: WorkflowDefinitionContent) =>
 	new Map(flattenDefinitionNodes(content.nodes).map((node) => [node.id, node]));

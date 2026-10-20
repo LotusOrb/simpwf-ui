@@ -13,9 +13,9 @@ import {
 	LuTimer,
 } from 'react-icons/lu';
 
-import { humanizeKey } from '@common/component/SchemaForm';
 import type { JsonSchema } from '@common/types/JsonSchema';
 
+import { humanizeKey } from '@module/form-engine/components/SchemaForm';
 import type { NodeTypeCatalogItem } from '@module/node-type/types/NodeTypeCatalogItem';
 
 export interface NodeTypeMeta {

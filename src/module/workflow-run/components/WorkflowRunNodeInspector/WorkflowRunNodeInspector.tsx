@@ -4,8 +4,8 @@ import { Alert, Badge, Button, Fieldset, Group, ScrollArea, Stack, Text, ThemeIc
 import dayjs from 'dayjs';
 import { LuCheck, LuCircleAlert, LuFileType, LuMousePointerClick, LuShieldCheck, LuUndo2 } from 'react-icons/lu';
 
-import { SchemaForm } from '@common/component/SchemaForm';
-
+import { FormPicker } from '@module/form-engine/components/FormPicker';
+import { SchemaForm } from '@module/form-engine/components/SchemaForm';
 import { useNodeTypeCatalog } from '@module/node-type/hooks';
 import { nodeTypeMetaOf } from '@module/node-type/utils';
 import { useNotify } from '@module/notification/hooks';
@@ -38,6 +38,8 @@ const NodeConfiguration: React.FC<{ node: WorkflowDefinitionNode }> = ({ node })
 	const schema = catalog.byType[node.type]?.schema;
 	const config = node as unknown as Record<string, unknown>;
 	const keys = Object.keys(config).filter((key) => !HIDDEN_CONFIG_FIELDS.has(key) && config[key] !== undefined);
+	// Outside the disabled fieldset, so its preview and library link stay usable.
+	const formId = typeof config.form_id === 'string' && config.form_id ? config.form_id : undefined;
 
 	if (keys.length === 0) return null;
 	return (
@@ -53,7 +55,7 @@ const NodeConfiguration: React.FC<{ node: WorkflowDefinitionNode }> = ({ node })
 							schema={schema}
 							value={config}
 							onChange={() => undefined}
-							keys={keys.filter((key) => schema.properties?.[key])}
+							keys={keys.filter((key) => key !== 'form_id' && schema.properties?.[key])}
 							readOnly
 						/>
 					</Stack>
@@ -61,6 +63,7 @@ const NodeConfiguration: React.FC<{ node: WorkflowDefinitionNode }> = ({ node })
 			) : (
 				<WorkflowRunJsonView value={Object.fromEntries(keys.map((key) => [key, config[key]]))} />
 			)}
+			{schema && formId && <FormPicker label="Form" value={formId} readOnly />}
 		</Stack>
 	);
 };

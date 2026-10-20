@@ -53,6 +53,7 @@ import {
 import type { WorkflowRun } from '@module/workflow-run/types/WorkflowRun';
 import type { WorkflowRunAction } from '@module/workflow-run/types/WorkflowRunAction';
 import type { WorkflowRunQuery } from '@module/workflow-run/types/WorkflowRunQuery';
+import { definitionMayUseForms } from '@module/workflow-run/utils';
 
 import classes from './WorkflowRunListPage.module.scss';
 
@@ -75,6 +76,7 @@ export const WorkflowRunListPage: React.FC = () => {
 	const [startOpened, setStartOpened] = useState(false);
 	const [startDefinitionId, setStartDefinitionId] = useState<string | null>(null);
 	const [startDebug, setStartDebug] = useState(false);
+	const [startSnapshot, setStartSnapshot] = useState(false);
 	const canReadDefinitions = useCan(Permission.DefinitionsRead);
 	const canReadStatistics = useCan(Permission.StatisticsRead);
 	// Starting means picking a definition, so it needs both.
@@ -181,6 +183,9 @@ export const WorkflowRunListPage: React.FC = () => {
 			});
 		}
 	}
+	const startDefinition = definitions?.items.find((definition) => definition.id === startDefinitionId);
+	const offerSnapshot = definitionMayUseForms(startDefinition?.content);
+
 	const startOptions = [...latestDefinitions.values()]
 		.sort((a, b) => a.label.localeCompare(b.label))
 		.map(({ value, label }) => ({ value, label }));
@@ -203,7 +208,11 @@ export const WorkflowRunListPage: React.FC = () => {
 		if (!startDefinitionId) return;
 		setActionError(null);
 		try {
-			const run = await startRun({ workflowDefinitionId: startDefinitionId, debug: startDebug }).unwrap();
+			const run = await startRun({
+				workflowDefinitionId: startDefinitionId,
+				debug: startDebug,
+				snapshotForms: offerSnapshot && startSnapshot,
+			}).unwrap();
 			const definition = definitionInfo.get(startDefinitionId);
 			runWatch.watch(run.id, {
 				label: definition ? `${definition.name} v${definition.version}` : undefined,
@@ -217,6 +226,7 @@ export const WorkflowRunListPage: React.FC = () => {
 			setStartOpened(false);
 			setStartDefinitionId(null);
 			setStartDebug(false);
+			setStartSnapshot(false);
 			navigate(`/app/workflow-run/${run.id}`);
 		} catch (error) {
 			const message = error && typeof error === 'object' && 'message' in error ? error.message : null;
@@ -393,6 +403,15 @@ export const WorkflowRunListPage: React.FC = () => {
 											checked={startDebug}
 											onChange={(event) => setStartDebug(event.currentTarget.checked)}
 										/>
+										{offerSnapshot && (
+											<Switch
+												size="sm"
+												label="Freeze forms at start"
+												description="Input forms stay as they are now, even if the library copy is edited later"
+												checked={startSnapshot}
+												onChange={(event) => setStartSnapshot(event.currentTarget.checked)}
+											/>
+										)}
 										<Group justify="flex-end">
 											<Button
 												size="xs"

@@ -1,0 +1,1 @@
+export { FormDeleteModal } from './FormDeleteModal';

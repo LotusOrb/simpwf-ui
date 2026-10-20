@@ -15,6 +15,8 @@ export const PERMISSION_META: Record<Permission, { group: PermissionGroupId; lab
 	[Permission.SchedulesWrite]: { group: 'schedules', label: 'Create, pause and delete schedules' },
 	[Permission.SecretsRead]: { group: 'secrets', label: 'View secret keys' },
 	[Permission.SecretsWrite]: { group: 'secrets', label: 'Create, rotate and delete secrets' },
+	[Permission.FormsRead]: { group: 'forms', label: 'View forms and where they are used' },
+	[Permission.FormsWrite]: { group: 'forms', label: 'Create, edit and delete forms' },
 	[Permission.StatisticsRead]: { group: 'statistics', label: 'View dashboard statistics' },
 	[Permission.RolesRead]: { group: 'roles', label: 'View roles and their permissions' },
 };
@@ -24,6 +26,7 @@ const GROUP_LABELS: Record<PermissionGroupId, string> = {
 	instances: 'Workflow runs',
 	schedules: 'Schedules',
 	secrets: 'Secrets',
+	forms: 'Forms',
 	statistics: 'Statistics',
 	roles: 'Roles',
 };

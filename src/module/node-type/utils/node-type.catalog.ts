@@ -1,8 +1,8 @@
 import { createSelector } from '@reduxjs/toolkit';
 
-import { resolveSchema } from '@common/component/SchemaForm';
 import type { JsonSchema } from '@common/types/JsonSchema';
 
+import { resolveSchema } from '@module/form-engine/components/SchemaForm';
 import { nodeTypeApi } from '@module/node-type/api';
 import { EMPTY_NODE_TYPE_CATALOG } from '@module/node-type/constant';
 import type { NodeTypeCatalog } from '@module/node-type/types/NodeTypeCatalog';

@@ -1,6 +1,6 @@
-import { fieldKind, resolveSchema } from '@common/component/SchemaForm';
 import type { JsonSchema } from '@common/types/JsonSchema';
 
+import { fieldKind, resolveSchema } from '@module/form-engine/components/SchemaForm';
 import { GRAPH_FIELDS } from '@module/workflow-definition/constant';
 
 export type NodeFormSection = 'setup' | 'hooks' | 'advanced';

@@ -307,6 +307,7 @@ export const WorkflowRunDetailPage: React.FC = () => {
 
 				<WorkflowRunInputModal
 					opened={inputOpened}
+					runId={detail.id}
 					pending={detail.pending_input}
 					branches={branchInputs}
 					branchId={inputBranchId}

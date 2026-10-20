@@ -5,8 +5,13 @@ import { Autocomplete, TagsInput } from '@mantine/core';
 import { useCoreSelector } from '@core/store';
 
 import { CodeEditor } from '@common/component/CodeEditor';
-import { SchemaForm, type SchemaFieldContext, type SchemaFieldOverride } from '@common/component/SchemaForm';
 
+import { FormPicker } from '@module/form-engine/components/FormPicker';
+import {
+	SchemaForm,
+	type SchemaFieldContext,
+	type SchemaFieldOverride,
+} from '@module/form-engine/components/SchemaForm';
 import { nodeTypeSchema, selectNodeTypeCatalog } from '@module/node-type/utils';
 import { useListRolesQuery } from '@module/role/hooks';
 import { useWorkflowDefinitionEditorNodeActions } from '@module/workflow-definition/hooks';
@@ -23,10 +28,9 @@ import { branchDeclaration, usePartner } from './InspectorStructuralFields.utils
 const FIELD_OVERRIDES: Record<string, SchemaFieldOverride> = {
 	form_id: {
 		kind: 'string',
-		label: 'Form ID',
+		label: 'Form',
 		description:
-			'Forms-library form the frontend renders while this node waits for input. Paste the form id; picking from the library comes with the forms page.',
-		placeholder: 'Form id (UUID)',
+			'Shown to whoever delivers this input, instead of a raw JSON box. The payload is checked against it.',
 	},
 	pre_script: {
 		label: 'Pre-script',
@@ -94,6 +98,18 @@ export const InspectorSchemaFields: React.FC<InspectorSchemaFieldsProps> = ({ no
 					value={text}
 					onChange={(next) => onChange(next || undefined)}
 					error={error}
+				/>
+			);
+		}
+		if (path === 'form_id') {
+			return (
+				<FormPicker
+					label={labelNode}
+					description={description}
+					value={text || undefined}
+					onChange={onChange}
+					error={error}
+					readOnly={field.readOnly}
 				/>
 			);
 		}

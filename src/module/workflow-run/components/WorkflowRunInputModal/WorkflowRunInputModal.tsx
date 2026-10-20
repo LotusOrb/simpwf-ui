@@ -1,26 +1,23 @@
 import React, { useState } from 'react';
 
-import {
-	ActionIcon,
-	Alert,
-	Badge,
-	Button,
-	CopyButton,
-	Group,
-	Modal,
-	Select,
-	Stack,
-	Text,
-	Textarea,
-	TextInput,
-} from '@mantine/core';
-import { LuCheck, LuCopy, LuInfo } from 'react-icons/lu';
+import { Alert, Anchor, Badge, Button, Center, Group, Loader, Modal, Select, Stack, Text } from '@mantine/core';
+import { LuCircleAlert, LuInfo, LuLock } from 'react-icons/lu';
+import { Link } from 'react-router';
 
+import { useResolvedForm } from '@module/form-engine/hooks';
+import type { FormResolveState } from '@module/form-engine/types/FormResolveState';
+import { formLibraryPath } from '@module/form-engine/utils';
+import { useGetWorkflowRunContextQuery } from '@module/workflow-run/hooks';
 import type { WorkflowRunPendingInput } from '@module/workflow-run/types/WorkflowRunPendingInput';
 import type { WorkflowRunBranchInput } from '@module/workflow-run/utils';
 
+import { WorkflowRunInputFormBody } from './WorkflowRunInputFormBody';
+import { WorkflowRunInputRawBody } from './WorkflowRunInputRawBody';
+
 interface WorkflowRunInputModalProps {
 	opened: boolean;
+	/** The run, whose context feeds `{{ context.* }}` in the form's remote selects. */
+	runId: string;
 	/** The run's own parked input; takes precedence over branches. */
 	pending: WorkflowRunPendingInput | null;
 	/** Parallel branches parked on an http input while the run waits on their join. */
@@ -32,17 +29,61 @@ interface WorkflowRunInputModalProps {
 	onSubmit: (payload: unknown, branchId?: string) => Promise<void>;
 }
 
+/** Which form the input renders, or why it falls back to raw JSON. */
+const FormSourceNote: React.FC<{ resolved: FormResolveState }> = ({ resolved }) => {
+	switch (resolved.status) {
+		case 'ready':
+			return (
+				<Group gap={6}>
+					<Text fz="xs" c="dimmed">
+						Form
+					</Text>
+					{resolved.form ? (
+						<Anchor component={Link} to={formLibraryPath(resolved.form.id)} fz="xs" fw={600}>
+							{resolved.form.name}
+						</Anchor>
+					) : null}
+					{resolved.frozen && (
+						<Badge size="xs" variant="light" color="gray" leftSection={<LuLock size={10} />}>
+							frozen at start
+						</Badge>
+					)}
+				</Group>
+			);
+		case 'forbidden':
+			return (
+				<Alert color="gray" variant="light" icon={<LuInfo size={16} />} p="sm">
+					<Text fz="xs">
+						This input has a form, but your role can't load forms (needs <code>forms:read</code>). Send the
+						JSON payload directly.
+					</Text>
+				</Alert>
+			);
+		case 'error':
+			return (
+				<Alert color="red" variant="light" icon={<LuCircleAlert size={16} />} p="sm">
+					<Group justify="space-between" gap="xs" wrap="nowrap">
+						<Text fz="xs">{resolved.message} Send the JSON payload directly instead.</Text>
+						<Button size="compact-xs" variant="default" onClick={resolved.retry}>
+							Retry
+						</Button>
+					</Group>
+				</Alert>
+			);
+		default:
+			return null;
+	}
+};
+
 export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({
 	opened,
+	runId,
 	pending,
 	branches = [],
 	branchId,
 	onClose,
 	onSubmit,
 }) => {
-	const [raw, setRaw] = useState('');
-	const [error, setError] = useState<string | null>(null);
-	const [submitting, setSubmitting] = useState(false);
 	const [picked, setPicked] = useState<string | null>(null);
 
 	// The run's own input wins; otherwise the requested branch, and only while it is still parked.
@@ -53,39 +94,56 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({
 			? (branches.find((item) => item.branch.id === requested) ?? null)
 			: (branches[0] ?? null);
 	const target = pending ?? branch?.pending ?? null;
+	const resolved = useResolvedForm(opened ? target : null);
+	const { data: context } = useGetWorkflowRunContextQuery(runId, {
+		skip: !opened || resolved.status !== 'ready',
+		refetchOnMountOrArgChange: true,
+	});
 
 	const close = () => {
-		setRaw('');
-		setError(null);
 		setPicked(null);
 		onClose();
 	};
 
-	const submit = async () => {
-		if (!target) return;
+	const deliver = async (payload: unknown) => {
+		await onSubmit(payload, branch?.branch.id);
+		close();
+	};
 
-		let payload: unknown;
-		try {
-			payload = raw.trim() ? JSON.parse(raw) : {};
-		} catch {
-			setError('Payload must be valid JSON');
-			return;
-		}
+	// A new target or form starts a fresh body, so nothing typed for one input leaks into another.
+	const bodyKey = `${branch?.branch.id ?? 'run'}:${target?.node_id}:${resolved.status}`;
 
-		setError(null);
-		setSubmitting(true);
-		try {
-			await onSubmit(payload, branch?.branch.id);
-			close();
-		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to deliver input');
-		} finally {
-			setSubmitting(false);
+	const renderBody = () => {
+		if (resolved.status === 'loading') {
+			return (
+				<Center py="lg">
+					<Loader size="sm" />
+				</Center>
+			);
 		}
+		if (resolved.status === 'ready') {
+			return (
+				<WorkflowRunInputFormBody
+					key={bodyKey}
+					schema={resolved.schema}
+					ui={resolved.ui}
+					context={context}
+					onCancel={close}
+					onSubmit={deliver}
+				/>
+			);
+		}
+		return <WorkflowRunInputRawBody key={bodyKey} onCancel={close} onSubmit={deliver} />;
 	};
 
 	return (
-		<Modal opened={opened} onClose={close} title="Provide workflow input" centered size="md">
+		<Modal
+			opened={opened}
+			onClose={close}
+			title="Provide workflow input"
+			centered
+			size={resolved.status === 'ready' ? 'xl' : 'md'}
+		>
 			{target && (
 				<Stack gap="md">
 					{branches.length > 1 && !pending && (
@@ -98,10 +156,7 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({
 							}))}
 							value={branch?.branch.id ?? null}
 							allowDeselect={false}
-							onChange={(value) => {
-								setPicked(value);
-								setError(null);
-							}}
+							onChange={setPicked}
 						/>
 					)}
 
@@ -124,55 +179,9 @@ export const WorkflowRunInputModal: React.FC<WorkflowRunInputModalProps> = ({
 						</Badge>
 					</Alert>
 
-					{target.form_id && (
-						<TextInput
-							label="Form"
-							description="The forms-library form this input expects. Send a payload matching it below."
-							inputWrapperOrder={['label', 'input', 'description']}
-							value={target.form_id}
-							readOnly
-							styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 12 } }}
-							rightSection={
-								<CopyButton value={target.form_id} timeout={1500}>
-									{({ copied, copy }) => (
-										<ActionIcon
-											aria-label={copied ? 'Form ID copied' : 'Copy form ID'}
-											onClick={copy}
-										>
-											{copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
-										</ActionIcon>
-									)}
-								</CopyButton>
-							}
-						/>
-					)}
+					<FormSourceNote resolved={resolved} />
 
-					<Textarea
-						label="Payload"
-						description="Raw JSON body, exactly as the input channel would receive it"
-						placeholder='{ "approved": true }'
-						autosize
-						minRows={6}
-						maxRows={18}
-						value={raw}
-						styles={{ input: { fontFamily: 'var(--mantine-font-family-monospace)', fontSize: 12 } }}
-						onChange={(event) => setRaw(event.currentTarget.value)}
-					/>
-
-					{error && (
-						<Text fz="xs" c="red.7">
-							{error}
-						</Text>
-					)}
-
-					<Group justify="flex-end" gap="xs">
-						<Button variant="default" onClick={close} disabled={submitting}>
-							Cancel
-						</Button>
-						<Button onClick={submit} loading={submitting}>
-							Submit input
-						</Button>
-					</Group>
+					{renderBody()}
 				</Stack>
 			)}
 			{!target && (

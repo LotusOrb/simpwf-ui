@@ -1,0 +1,16 @@
+export type FormWidget =
+	| 'text'
+	| 'textarea'
+	| 'number'
+	| 'switch'
+	| 'checkbox'
+	| 'select'
+	| 'radio'
+	| 'multiselect'
+	| 'checkbox-group'
+	| 'date'
+	| 'datetime'
+	| 'time'
+	| 'group'
+	| 'repeater'
+	| 'remote-select';

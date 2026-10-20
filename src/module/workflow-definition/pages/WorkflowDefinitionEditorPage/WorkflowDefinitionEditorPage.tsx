@@ -53,6 +53,7 @@ import {
 	type WorkflowDefinitionErrorCopy,
 } from '@module/workflow-definition/utils';
 import { useStartWorkflowRunMutation } from '@module/workflow-run/hooks';
+import { definitionMayUseForms } from '@module/workflow-run/utils';
 
 import classes from './WorkflowDefinitionEditorPage.module.scss';
 
@@ -199,11 +200,11 @@ const WorkflowDefinitionEditor: React.FC = () => {
 		allowLeave.current = false;
 	};
 
-	const start = async (debug: boolean) => {
+	const start = async ({ debug, snapshotForms }: { debug: boolean; snapshotForms: boolean }) => {
 		if (!id) return;
 		setStartError(null);
 
-		const result = await startRun({ workflowDefinitionId: id, debug });
+		const result = await startRun({ workflowDefinitionId: id, debug, snapshotForms });
 		setStartOpened(false);
 		if ('error' in result) {
 			const error = result.error as { message?: string; explain?: string };
@@ -309,6 +310,7 @@ const WorkflowDefinitionEditor: React.FC = () => {
 			<WorkflowDefinitionStartModal
 				definition={startOpened ? current : null}
 				starting={startState.isLoading}
+				offerSnapshot={definitionMayUseForms(current?.content)}
 				onClose={() => setStartOpened(false)}
 				onStart={start}
 			/>

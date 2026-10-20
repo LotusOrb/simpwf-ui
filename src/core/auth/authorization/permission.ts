@@ -4,6 +4,8 @@ export const Permission = {
 	DefinitionsWrite: 'definitions:write',
 	SecretsRead: 'secrets:read',
 	SecretsWrite: 'secrets:write',
+	FormsRead: 'forms:read',
+	FormsWrite: 'forms:write',
 	InstancesCreate: 'instances:create',
 	InstancesRead: 'instances:read',
 	InstancesUpdateContext: 'instances:update-context',
