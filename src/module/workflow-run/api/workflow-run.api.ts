@@ -177,12 +177,16 @@ export const workflowRunApi = coreApi.injectEndpoints({
 
 		startWorkflowRun: build.mutation<
 			Pick<WorkflowRun, 'id' | 'status'>,
-			{ workflowDefinitionId: string; debug?: boolean }
+			{ workflowDefinitionId: string; debug?: boolean; snapshotForms?: boolean }
 		>({
-			query: ({ workflowDefinitionId, debug }) => ({
+			query: ({ workflowDefinitionId, debug, snapshotForms }) => ({
 				method: 'post',
 				url: RESOURCE,
-				body: { workflow_definition_id: workflowDefinitionId, ...(debug ? { debug: true } : {}) },
+				body: {
+					workflow_definition_id: workflowDefinitionId,
+					...(debug ? { debug: true } : {}),
+					...(snapshotForms ? { snapshot_forms: true } : {}),
+				},
 			}),
 			invalidatesTags: [{ type: apiTagConfig.workflowRun, id: API_TAG_LIST_ID }],
 		}),
