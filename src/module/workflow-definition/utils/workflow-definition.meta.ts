@@ -23,7 +23,13 @@ const flattenNodes = (nodes: WorkflowDefinitionNode[]): WorkflowDefinitionNode[]
 export const countNodes = (content: WorkflowDefinitionContent) => flattenNodes(content.nodes).length;
 
 export const getNodeTypes = (content: WorkflowDefinitionContent): WorkflowDefinitionNodeType[] =>
-	sortNodeTypes(new Set(flattenNodes(content.nodes).map((node) => node.type)));
+	sortNodeTypes(
+		new Set(
+			flattenNodes(content.nodes)
+				.map((node) => node.type)
+				.filter(Boolean),
+		),
+	);
 
 export const getStartNode = (content: WorkflowDefinitionContent) =>
 	content.nodes.find((node) => node.id === content.start_node_id);

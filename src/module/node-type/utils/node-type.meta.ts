@@ -5,6 +5,7 @@ import {
 	LuGitFork,
 	LuGitMerge,
 	LuGlobe,
+	LuLink,
 	LuLogIn,
 	LuPuzzle,
 	LuRadar,
@@ -81,16 +82,26 @@ export const schemaDescription = (schema: JsonSchema | null | undefined) => {
 	return /[.!?]$/.test(text) ? text : `${text}.`;
 };
 
+/** A library reference node stored without an inline type: its type lives on the node definition. */
+const referenceNodeTypeMeta: NodeTypeMeta = {
+	label: 'Reference',
+	color: 'gray',
+	icon: LuLink,
+	description: 'Node from the library; its type comes from the node definition',
+};
+
 /** Display meta for any node type; one this UI doesn't know is named after its type and described by its schema. */
-export const nodeTypeMetaOf = (type: string, item?: NodeTypeCatalogItem): NodeTypeMeta =>
-	knownNodeTypeMeta[type] ?? {
-		label: humanizeKey(type),
-		color: 'gray',
-		icon: LuPuzzle,
-		description:
-			schemaDescription(item?.schema) ??
-			(item?.builtin ? 'Node type served by the engine' : 'Custom node type registered with the engine'),
-	};
+export const nodeTypeMetaOf = (type: string | undefined, item?: NodeTypeCatalogItem): NodeTypeMeta =>
+	!type
+		? referenceNodeTypeMeta
+		: (knownNodeTypeMeta[type] ?? {
+				label: humanizeKey(type),
+				color: 'gray',
+				icon: LuPuzzle,
+				description:
+					schemaDescription(item?.schema) ??
+					(item?.builtin ? 'Node type served by the engine' : 'Custom node type registered with the engine'),
+			});
 
 /** Types in a stable display order: the ones this UI knows first, then the rest by name. */
 export const sortNodeTypes = <T extends string>(types: Iterable<T>): T[] => {
