@@ -1,4 +1,13 @@
-import { LuBoxes, LuCalendarClock, LuHouse, LuKeyRound, LuPlay, LuSettings, LuWorkflow } from 'react-icons/lu';
+import {
+	LuBoxes,
+	LuCalendarClock,
+	LuClipboardList,
+	LuHouse,
+	LuKeyRound,
+	LuPlay,
+	LuSettings,
+	LuWorkflow,
+} from 'react-icons/lu';
 
 import { Permission } from '@core/auth/authorization/permission';
 
@@ -41,6 +50,7 @@ export const menuConfig: MenuConfig = {
 			to: '/app/schedule',
 			permission: Permission.SchedulesRead,
 		},
+		{ id: 'form', label: 'Forms', icon: LuClipboardList, to: '/app/form', permission: Permission.FormsRead },
 		{ id: 'secret', label: 'Secrets', icon: LuKeyRound, to: '/app/secret', permission: Permission.SecretsRead },
 	],
 	bottom: [{ id: 'settings', label: 'Settings', icon: LuSettings, to: '/app/settings' }],
