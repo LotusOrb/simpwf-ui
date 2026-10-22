@@ -1,6 +1,13 @@
+# 📦 Archived — Archived
+
+> [!IMPORTANT]
+> **This repository is officially archived and read-only only for historical purpose.**
+
+Moved to [BeelineWF](https://github.com/beelinewf)
+
 <img src="./src/assets/banner.png" />
 
-# SimpWFUI
+## SimpWFUI
 
 Another UI for [SimpWF](https://github.com/didasy/simpwf).
 
