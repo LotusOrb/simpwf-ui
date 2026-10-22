@@ -2,6 +2,8 @@ import React, { useCallback, useMemo } from 'react';
 
 import { notifications } from '@mantine/notifications';
 
+import { v4 as uuidv4 } from 'uuid';
+
 import { useCoreDispatch, useCoreSelector } from '@core/store';
 
 import { NOTIFICATION_LEVEL } from '@module/notification/constant';
@@ -37,7 +39,7 @@ export const useNotify = () => {
 				if (toastOnly) return;
 				dispatch(
 					notificationAdded({
-						id: crypto.randomUUID(),
+						id: uuidv4(),
 						level,
 						title,
 						message,

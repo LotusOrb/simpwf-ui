@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 import { API_TAG_LIST_ID, apiTagConfig } from '@config/apiTag.config';
 
 import { coreApi } from '@core/api';
@@ -133,7 +135,7 @@ export const workflowRunApi = coreApi.injectEndpoints({
 				qParam: branchId ? { filter: { branch_id: { op: '_eq', value: branchId } } } : undefined,
 				// Pre-serialised so a bare string/number payload still goes out as JSON.
 				body: JSON.stringify(payload),
-				head: { 'Idempotency-Key': crypto.randomUUID() },
+				head: { 'Idempotency-Key': uuidv4() },
 			}),
 			invalidatesTags: (_result, _error, { id }) => [{ type: apiTagConfig.workflowRun, id }],
 		}),
